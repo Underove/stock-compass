@@ -28,6 +28,7 @@ export default function Home() {
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [showAlerts, setShowAlerts] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,13 +108,40 @@ export default function Home() {
           <AlertBell alerts={alerts} show={showAlerts} onToggle={() => setShowAlerts(v => !v)} />
           <BackendStatusCard />
           {session?.user?.image && (
-            <img
-              src={session.user.image}
-              alt="프로필"
-              title={`${session.user.name ?? ""}\n로그아웃`}
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              style={{ width: 28, height: 28, borderRadius: "50%", cursor: "pointer", border: "1.5px solid var(--sep)" }}
-            />
+            <div style={{ position: "relative" }}>
+              <img
+                src={session.user.image}
+                alt="프로필"
+                onClick={() => setShowProfileMenu(v => !v)}
+                style={{ width: 28, height: 28, borderRadius: "50%", cursor: "pointer", border: "1.5px solid var(--sep)", display: "block" }}
+              />
+              {showProfileMenu && (
+                <>
+                  <div onClick={() => setShowProfileMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 19 }} />
+                  <div style={{
+                    position: "absolute", top: 36, right: 0, zIndex: 20,
+                    background: "var(--surface)", borderRadius: 14,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
+                    border: "0.5px solid var(--sep)", minWidth: 180, overflow: "hidden",
+                  }}>
+                    <div style={{ padding: "12px 16px", borderBottom: "0.5px solid var(--sep)" }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--label)" }}>{session.user.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 2 }}>{session.user.email}</div>
+                    </div>
+                    <button
+                      onClick={() => { setShowProfileMenu(false); signOut({ callbackUrl: "/login" }); }}
+                      style={{
+                        width: "100%", padding: "12px 16px", textAlign: "left",
+                        fontSize: 13, fontWeight: 600, color: "var(--red)",
+                        background: "transparent", cursor: "pointer",
+                      }}
+                    >
+                      로그아웃
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           )}
         </div>
       </header>
