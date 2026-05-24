@@ -1047,19 +1047,9 @@ export function PortfolioCard() {
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--label)", marginBottom: 8 }}>보유 종목이 없어요</div>
                 <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7 }}>
-                  종목을 추가하면 실시간 시세와<br />AI 분석을 바로 확인할 수 있어요
+                  위 종목 추가 버튼으로<br />실시간 시세와 AI 분석을 시작해보세요
                 </div>
               </div>
-              <button
-                onClick={() => setShowAdd(true)}
-                style={{
-                  padding: "11px 28px", borderRadius: 14,
-                  background: "var(--primary)", color: "white",
-                  fontSize: 14, fontWeight: 700, cursor: "pointer",
-                }}
-              >
-                종목 추가하기
-              </button>
             </div>
           )}
 
