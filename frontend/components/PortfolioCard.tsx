@@ -23,7 +23,7 @@ type Tab = "stocks" | "watchlist" | "allocation";
 
 function StockLogo({ code, name, isEditing }: { code: string; name: string; isEditing: boolean }) {
   const [failed, setFailed] = useState(false);
-  const logoUrl = `https://file.alphawave.co.kr/stock/${code}.png`;
+  const logoUrl = `https://static.toss.im/png-icons/securities/icod-krx-${code}.png`;
   return (
     <div style={{
       width: 40, height: 40, borderRadius: 12, overflow: "hidden",
