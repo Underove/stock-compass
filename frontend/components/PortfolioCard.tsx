@@ -938,7 +938,7 @@ function AllocationTab({ items, prices }: { items: PortfolioItem[]; prices: Reco
 
 // ─── 포트폴리오 메인 ──────────────────────────────────────────────────────────
 
-export function PortfolioCard() {
+export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () => void } = {}) {
   const [activeTab, setActiveTab] = useState<Tab>("stocks");
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [showAdd, setShowAdd] = useState(false);
@@ -973,6 +973,7 @@ export function PortfolioCard() {
     await addPortfolioItem(item);
     setItems(await listPortfolio());
     fetchPortfolioAlerts().then(setAlerts).catch(() => {});
+    onPortfolioChange?.();
   }
 
   async function handleDelete(stock_code: string) {
@@ -981,6 +982,7 @@ export function PortfolioCard() {
     setPrices(prev => { const { [stock_code]: _p, ...rest } = prev; return rest; });
     setAlerts(prev => { const { [stock_code]: _a, ...rest } = prev; return rest; });
     if (editingCode === stock_code) setEditingCode(null);
+    onPortfolioChange?.();
   }
 
   async function handleEdit(stock_code: string, quantity: number, buyPrice: number) {

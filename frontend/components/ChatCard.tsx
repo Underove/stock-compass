@@ -8,7 +8,7 @@ import { UploadCard } from "./UploadCard";
 
 type Tab = "briefing" | "news" | "chat" | "factcheck";
 
-export function ChatCard() {
+export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number } = {}) {
   const [activeTab, setActiveTab] = useState<Tab>("briefing");
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
@@ -41,6 +41,14 @@ export function ChatCard() {
       setLoadingBriefing(false);
     }
   }, []);
+
+  // 포트폴리오 변경 시 브리핑 초기화
+  useEffect(() => {
+    if (portfolioVersion > 0) {
+      setBriefing(null);
+      setBriefingError(null);
+    }
+  }, [portfolioVersion]);
 
   // 브리핑 탭 진입 시 자동 로드 (에러 시 재시도 안 함)
   useEffect(() => {

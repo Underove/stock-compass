@@ -29,6 +29,7 @@ export default function Home() {
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [portfolioVersion, setPortfolioVersion] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -155,13 +156,13 @@ export default function Home() {
         {/* ── 왼쪽: 내 지갑 ── */}
         <div className={`dashboard-panel dashboard-panel--highlight ${mobilePanel === 0 ? "dashboard-panel--active" : ""}`}>
           <PanelHeader title="내 지갑" subtitle="보유 종목 · 관심종목 · 배분" />
-          <PortfolioCard />
+          <PortfolioCard onPortfolioChange={() => setPortfolioVersion(v => v + 1)} />
         </div>
 
         {/* ── 오른쪽: AI 비서 ── */}
         <div className={`dashboard-panel ${mobilePanel === 1 ? "dashboard-panel--active" : ""}`}>
           <PanelHeader title="AI 비서" subtitle="브리핑 · 채팅 · 팩트체크" />
-          <ChatCard />
+          <ChatCard portfolioVersion={portfolioVersion} />
         </div>
 
       </div>
