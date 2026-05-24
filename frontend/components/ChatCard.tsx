@@ -29,11 +29,11 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [turns]);
 
-  const loadBriefing = useCallback(async () => {
+  const loadBriefing = useCallback(async (force = false) => {
     setLoadingBriefing(true);
     setBriefingError(null);
     try {
-      const data = await fetchPortfolioBriefing();
+      const data = await fetchPortfolioBriefing(force);
       setBriefing(data);
     } catch (err) {
       setBriefingError(err instanceof Error ? err.message : "브리핑 로드 실패");
@@ -42,13 +42,14 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
     }
   }, []);
 
-  // 포트폴리오 변경 시 브리핑 초기화
+  // 포트폴리오 변경 시 캐시 무시하고 강제 재생성
   useEffect(() => {
     if (portfolioVersion > 0) {
       setBriefing(null);
       setBriefingError(null);
+      loadBriefing(true);
     }
-  }, [portfolioVersion]);
+  }, [portfolioVersion, loadBriefing]);
 
   // 브리핑 탭 진입 시 자동 로드 (에러 시 재시도 안 함)
   useEffect(() => {
@@ -138,7 +139,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               <div style={{ fontSize: 13, color: "var(--label3)", marginBottom: 6 }}>브리핑 로드 실패</div>
               <div style={{ fontSize: 13, color: "var(--red)", marginBottom: 16, fontWeight: 600 }}>{briefingError}</div>
               <button
-                onClick={loadBriefing}
+                onClick={() => loadBriefing()}
                 style={{
                   padding: "10px 24px", borderRadius: 12,
                   background: "var(--primary)", color: "white", fontSize: 13, fontWeight: 700,
@@ -166,7 +167,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               </div>
             </div>
           ) : briefing ? (
-            <BriefingView briefing={briefing} onRefresh={loadBriefing} refreshing={loadingBriefing} />
+            <BriefingView briefing={briefing} onRefresh={() => loadBriefing(true)} refreshing={loadingBriefing} />
           ) : null}
         </div>
       )}

@@ -169,8 +169,8 @@ export async function removeWatchlistItem(stock_code: string): Promise<void> {
 
 // ─── AI 브리핑 ────────────────────────────────────────────────────────────────
 
-export async function fetchPortfolioBriefing(): Promise<PortfolioBriefing> {
-  return getJSON("/api/portfolio/briefing");
+export async function fetchPortfolioBriefing(force = false): Promise<PortfolioBriefing> {
+  return getJSON(`/api/portfolio/briefing${force ? "?force=true" : ""}`);
 }
 
 export async function fetchStockPrice(stock_code: string): Promise<StockPrice> {
