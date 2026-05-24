@@ -32,17 +32,29 @@ function stockColor(code: string): [string, string] {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 function StockLogo({ code, name, isEditing }: { code: string; name: string; isEditing: boolean }) {
+  const [imgFailed, setImgFailed] = useState(false);
   const [bg, fg] = isEditing ? ["rgba(0,122,255,0.1)", "var(--primary)"] : stockColor(code);
+  const logoUrl = `https://static.toss.im/png-icons/securities/icod-krx-${code}.png`;
   return (
     <div style={{
-      width: 40, height: 40, borderRadius: 12,
+      width: 40, height: 40, borderRadius: 12, overflow: "hidden",
       background: bg,
       display: "flex", alignItems: "center", justifyContent: "center",
       flexShrink: 0, transition: "all 0.15s",
     }}>
-      <span style={{ fontSize: 15, fontWeight: 800, color: fg, letterSpacing: "-0.02em" }}>
-        {name.slice(0, 1)}
-      </span>
+      {!imgFailed ? (
+        <img
+          src={logoUrl}
+          alt={name}
+          referrerPolicy="no-referrer"
+          onError={() => setImgFailed(true)}
+          style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 12 }}
+        />
+      ) : (
+        <span style={{ fontSize: 15, fontWeight: 800, color: fg, letterSpacing: "-0.02em" }}>
+          {name.slice(0, 1)}
+        </span>
+      )}
     </div>
   );
 }
