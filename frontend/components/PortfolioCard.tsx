@@ -21,6 +21,32 @@ import { StockDetailModal } from "./StockDetailModal";
 
 type Tab = "stocks" | "watchlist" | "allocation";
 
+function StockLogo({ code, name, isEditing }: { code: string; name: string; isEditing: boolean }) {
+  const [failed, setFailed] = useState(false);
+  const logoUrl = `https://file.alphawave.co.kr/stock/${code}.png`;
+  return (
+    <div style={{
+      width: 40, height: 40, borderRadius: 12, overflow: "hidden",
+      background: isEditing ? "rgba(0,122,255,0.1)" : "var(--surface2)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      transition: "all 0.15s", flexShrink: 0,
+    }}>
+      {!failed ? (
+        <img
+          src={logoUrl}
+          alt={name}
+          onError={() => setFailed(true)}
+          style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 12 }}
+        />
+      ) : (
+        <span style={{ fontSize: 16, fontWeight: 800, color: isEditing ? "var(--primary)" : "var(--label2)" }}>
+          {name.slice(0, 1)}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
 function pctColor(pct: number) {
   if (pct > 0) return "var(--red)";
@@ -514,17 +540,10 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
         style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12, cursor: "pointer" }}
         onClick={onClick}
       >
-        {/* 이니셜 + 공시 배지 */}
+        {/* 로고 + 알림 배지 */}
         <div style={{ position: "relative", flexShrink: 0 }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: 12,
-            background: isEditing ? "rgba(0,122,255,0.1)" : "var(--surface2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: 16, fontWeight: 800, color: isEditing ? "var(--primary)" : "var(--label2)",
-            transition: "all 0.15s",
-          }}>
-            {item.corp_name.slice(0, 1)}
-          </div>
+          <StockLogo code={item.stock_code} name={item.corp_name} isEditing={isEditing} />
+
           {alertCount > 0 && (
             <div style={{ position: "absolute", top: -3, right: -3, minWidth: 15, height: 15, borderRadius: 8, background: "var(--red)", border: "2px solid var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "white", padding: "0 2px" }}>
               {alertCount > 9 ? "9+" : alertCount}
