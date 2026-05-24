@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python312", "gcc", "gcc", "cmake", "libffi", "openssl", "zlib", "stdenv.cc.cc.lib"]
+nixPkgs = ["python312", "gcc", "cmake", "libffi", "openssl", "zlib"]
 
 [phases.install]
 cmds = [
