@@ -2,9 +2,10 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
+from app.api.auth import get_current_user
 from app.collectors.dart import download_corp_codes, fetch_recent_disclosures
 from app.collectors.krx import get_chart_data, get_current_price, search_ticker
 from app.collectors.ta_engine import analyze as ta_analyze, ta_text_summary
@@ -12,22 +13,27 @@ from app.llm.gemini import generate_answer, parse_json_response
 
 router = APIRouter()
 
-PORTFOLIO_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "portfolio.json"
-PORTFOLIO_FILE.parent.mkdir(parents=True, exist_ok=True)
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # ─── 스토리지 헬퍼 ───────────────────────────────────────────────────────────
 
-def _load() -> list[dict]:
-    if not PORTFOLIO_FILE.exists():
+def _portfolio_file(username: str) -> Path:
+    return _DATA_DIR / f"portfolio_{username}.json"
+
+
+def _load(username: str) -> list[dict]:
+    f = _portfolio_file(username)
+    if not f.exists():
         return []
-    with open(PORTFOLIO_FILE, encoding="utf-8") as f:
-        return json.load(f)
+    with open(f, encoding="utf-8") as fp:
+        return json.load(fp)
 
 
-def _save(items: list[dict]) -> None:
-    with open(PORTFOLIO_FILE, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
+def _save(items: list[dict], username: str) -> None:
+    with open(_portfolio_file(username), "w", encoding="utf-8") as fp:
+        json.dump(items, fp, ensure_ascii=False, indent=2)
 
 
 # ─── 스키마 ──────────────────────────────────────────────────────────────────
@@ -51,37 +57,31 @@ class UpdatePortfolioBody(BaseModel):
 # ─── 엔드포인트 ──────────────────────────────────────────────────────────────
 
 @router.get("/portfolio")
-def list_portfolio():
-    """보유 종목 목록 반환."""
-    return {"items": _load()}
+def list_portfolio(username: str = Depends(get_current_user)):
+    return {"items": _load(username)}
 
 
 @router.post("/portfolio")
-def add_portfolio(item: PortfolioItem):
-    """종목 추가 (동일 stock_code 중복 시 수량·단가 덮어씀)."""
-    items = _load()
+def add_portfolio(item: PortfolioItem, username: str = Depends(get_current_user)):
+    items = _load(username)
     existing = next((i for i in items if i["stock_code"] == item.stock_code), None)
     if existing:
         existing.update(item.model_dump())
     else:
         items.append(item.model_dump())
-    _save(items)
+    _save(items, username)
     return {"ok": True, "item": item.model_dump()}
 
 
 @router.delete("/portfolio/{stock_code}")
-def remove_portfolio(stock_code: str):
-    """종목 삭제."""
-    items = _load()
-    items = [i for i in items if i["stock_code"] != stock_code]
-    _save(items)
+def remove_portfolio(stock_code: str, username: str = Depends(get_current_user)):
+    _save([i for i in _load(username) if i["stock_code"] != stock_code], username)
     return {"ok": True}
 
 
 @router.put("/portfolio/{stock_code}")
-def update_portfolio(stock_code: str, body: UpdatePortfolioBody):
-    """수량·단가 수정. quantity ≤ 0이면 자동 삭제."""
-    items = _load()
+def update_portfolio(stock_code: str, body: UpdatePortfolioBody, username: str = Depends(get_current_user)):
+    items = _load(username)
     target = next((i for i in items if i["stock_code"] == stock_code), None)
     if not target:
         raise HTTPException(status_code=404, detail="종목 없음")
@@ -92,7 +92,7 @@ def update_portfolio(stock_code: str, body: UpdatePortfolioBody):
         target["quantity"] = body.quantity
         target["target_price"] = body.target_price
         target["stop_loss"] = body.stop_loss
-    _save(items)
+    _save(items, username)
     return {"ok": True}
 
 
@@ -199,7 +199,7 @@ def get_commentary(stock_code: str, corp_name: str = ""):
 
 
 @router.get("/portfolio/briefing")
-def get_portfolio_briefing(force: bool = False):
+def get_portfolio_briefing(force: bool = False, username: str = Depends(get_current_user)):
     """포트폴리오 전체 기반 AI 오늘의 브리핑. force=true면 캐시 무시."""
     import datetime
 
@@ -209,7 +209,7 @@ def get_portfolio_briefing(force: bool = False):
         if cached:
             return cached
 
-    items = _load()
+    items = _load(username)
     if not items:
         return {
             "briefing": "포트폴리오에 종목이 없습니다. 종목을 추가하면 AI 브리핑을 받을 수 있어요.",
@@ -433,20 +433,21 @@ def get_short_selling(stock_code: str, days: int = 5):
         return {"ratio": None, "trend": []}
 
 
-NOTES_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "notes.json"
+def _notes_file(username: str) -> Path:
+    return _DATA_DIR / f"notes_{username}.json"
 
 
-def _load_notes() -> dict:
-    if not NOTES_FILE.exists():
+def _load_notes(username: str) -> dict:
+    f = _notes_file(username)
+    if not f.exists():
         return {}
-    with open(NOTES_FILE, encoding="utf-8") as f:
-        return json.load(f)
+    with open(f, encoding="utf-8") as fp:
+        return json.load(fp)
 
 
-def _save_notes(notes: dict) -> None:
-    NOTES_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(NOTES_FILE, "w", encoding="utf-8") as f:
-        json.dump(notes, f, ensure_ascii=False, indent=2)
+def _save_notes(notes: dict, username: str) -> None:
+    with open(_notes_file(username), "w", encoding="utf-8") as fp:
+        json.dump(notes, fp, ensure_ascii=False, indent=2)
 
 
 class NoteBody(BaseModel):
@@ -454,25 +455,22 @@ class NoteBody(BaseModel):
 
 
 @router.get("/portfolio/notes/{stock_code}")
-def get_note(stock_code: str):
-    """종목 메모 조회."""
-    notes = _load_notes()
-    return {"note": notes.get(stock_code, "")}
+def get_note(stock_code: str, username: str = Depends(get_current_user)):
+    return {"note": _load_notes(username).get(stock_code, "")}
 
 
 @router.put("/portfolio/notes/{stock_code}")
-def save_note(stock_code: str, body: NoteBody):
-    """종목 메모 저장."""
-    notes = _load_notes()
+def save_note(stock_code: str, body: NoteBody, username: str = Depends(get_current_user)):
+    notes = _load_notes(username)
     notes[stock_code] = body.note
-    _save_notes(notes)
+    _save_notes(notes, username)
     return {"ok": True}
 
 
 @router.get("/portfolio/alerts")
-def get_portfolio_alerts():
+def get_portfolio_alerts(username: str = Depends(get_current_user)):
     """포트폴리오 종목별 최근 7일 공시 건수 (배지용)."""
-    items = _load()
+    items = _load(username)
     if not items:
         return {"alerts": {}}
 

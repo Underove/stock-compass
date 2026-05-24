@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     openai_api_key: str = ""
 
+    jwt_secret: str = "change-me-in-production"
+
     host: str = "0.0.0.0"
     port: int = 8000
     debug: bool = True

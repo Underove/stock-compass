@@ -1,17 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 import { BackendStatusCard } from "../components/BackendStatusCard";
 import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
-import { fetchAlerts, fetchMarketIndices, markAlertsRead } from "../lib/api";
+import { fetchAlerts, fetchMarketIndices, markAlertsRead, initAuth } from "../lib/api";
 import type { PriceAlert } from "../lib/api";
 import type { MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1;
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") router.replace("/login");
+    if (status === "authenticated") initAuth();
+  }, [status, router]);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>(1);
   const [indices, setIndices] = useState<Record<string, MarketIndex>>({});
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
@@ -48,6 +57,14 @@ export default function Home() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+        <div style={{ fontSize: 13, color: "var(--label2)" }}>로딩 중…</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: "var(--bg)" }}>
 
@@ -83,10 +100,19 @@ export default function Home() {
           )}
         </div>
 
-        {/* 알림 + 백엔드 상태 */}
+        {/* 알림 + 유저 + 백엔드 상태 */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
           <AlertBell alerts={alerts} show={showAlerts} onToggle={() => setShowAlerts(v => !v)} />
           <BackendStatusCard />
+          {session?.user?.image && (
+            <img
+              src={session.user.image}
+              alt="프로필"
+              title={`${session.user.name ?? ""}\n로그아웃`}
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              style={{ width: 28, height: 28, borderRadius: "50%", cursor: "pointer", border: "1.5px solid var(--sep)" }}
+            />
+          )}
         </div>
       </header>
       {showAlerts && alerts.length > 0 && (

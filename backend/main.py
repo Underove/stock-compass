@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 logging.getLogger("chromadb.telemetry.product.posthog").setLevel(logging.CRITICAL)
 
+from app.api import auth as auth_api  # noqa: E402
 from app.api import analyze as analyze_api  # noqa: E402
 from app.api import ask as ask_api  # noqa: E402
 from app.api import dart as dart_api  # noqa: E402
@@ -64,6 +65,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_api.router, prefix="/api", tags=["auth"])
 app.include_router(analyze_api.router, prefix="/api", tags=["analyze"])
 app.include_router(realtime_api.router, prefix="/api", tags=["realtime"])
 app.include_router(technical_api.router, prefix="/api", tags=["technical"])

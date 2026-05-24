@@ -26,10 +26,38 @@ import type {
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
 
+let _token: string | null = null;
+
+export async function initAuth() {
+  try {
+    const res = await fetch("/api/token");
+    if (res.ok) {
+      const data = await res.json();
+      _token = data.token;
+    }
+  } catch { /* 무시 */ }
+}
+
+function authHeaders(extra?: Record<string, string>): Record<string, string> {
+  return {
+    ...(extra ?? {}),
+    ...(_token ? { Authorization: `Bearer ${_token}` } : {}),
+  };
+}
+
+async function getJSON<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `요청 실패 (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
 async function postJSON<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify(body),
   });
   if (!res.ok) {
@@ -87,15 +115,6 @@ export async function listUploads(): Promise<UploadSummary[]> {
 }
 
 // ─── 포트폴리오 ───────────────────────────────────────────────────────────────
-
-async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `요청 실패 (HTTP ${res.status})`);
-  }
-  return res.json();
-}
 
 export async function listPortfolio(): Promise<PortfolioItem[]> {
   const data = await getJSON<{ items: PortfolioItem[] }>("/api/portfolio");

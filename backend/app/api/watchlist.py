@@ -2,25 +2,32 @@
 import json
 from pathlib import Path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+
+from app.api.auth import get_current_user
 
 router = APIRouter()
 
-_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "watchlist.json"
-_FILE.parent.mkdir(parents=True, exist_ok=True)
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _load() -> list[dict]:
-    if not _FILE.exists():
+def _file(username: str) -> Path:
+    return _DATA_DIR / f"watchlist_{username}.json"
+
+
+def _load(username: str) -> list[dict]:
+    f = _file(username)
+    if not f.exists():
         return []
-    with open(_FILE, encoding="utf-8") as f:
-        return json.load(f)
+    with open(f, encoding="utf-8") as fp:
+        return json.load(fp)
 
 
-def _save(items: list[dict]) -> None:
-    with open(_FILE, "w", encoding="utf-8") as f:
-        json.dump(items, f, ensure_ascii=False, indent=2)
+def _save(items: list[dict], username: str) -> None:
+    with open(_file(username), "w", encoding="utf-8") as fp:
+        json.dump(items, fp, ensure_ascii=False, indent=2)
 
 
 class WatchlistItem(BaseModel):
@@ -29,20 +36,20 @@ class WatchlistItem(BaseModel):
 
 
 @router.get("/watchlist")
-def list_watchlist():
-    return {"items": _load()}
+def list_watchlist(username: str = Depends(get_current_user)):
+    return {"items": _load(username)}
 
 
 @router.post("/watchlist")
-def add_watchlist(item: WatchlistItem):
-    items = _load()
+def add_watchlist(item: WatchlistItem, username: str = Depends(get_current_user)):
+    items = _load(username)
     if not any(i["stock_code"] == item.stock_code for i in items):
         items.append(item.model_dump())
-        _save(items)
+        _save(items, username)
     return {"ok": True}
 
 
 @router.delete("/watchlist/{stock_code}")
-def remove_watchlist(stock_code: str):
-    _save([i for i in _load() if i["stock_code"] != stock_code])
+def remove_watchlist(stock_code: str, username: str = Depends(get_current_user)):
+    _save([i for i in _load(username) if i["stock_code"] != stock_code], username)
     return {"ok": True}
