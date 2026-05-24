@@ -25,5 +25,4 @@ pykrx>=1.0.45
 apscheduler>=3.10.0
 
 # 인증
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+PyJWT>=2.8.0
