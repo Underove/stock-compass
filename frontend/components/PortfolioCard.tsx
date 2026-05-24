@@ -21,28 +21,28 @@ import { StockDetailModal } from "./StockDetailModal";
 
 type Tab = "stocks" | "watchlist" | "allocation";
 
+const AVATAR_COLORS: [string, string][] = [
+  ["#FF6B6B", "#fff"], ["#FF9F43", "#fff"], ["#FECA57", "#1a1a2e"], ["#48DBFB", "#1a1a2e"],
+  ["#1DD1A1", "#fff"], ["#54A0FF", "#fff"], ["#5F27CD", "#fff"], ["#EE5A24", "#fff"],
+  ["#009432", "#fff"], ["#0652DD", "#fff"], ["#833471", "#fff"], ["#EA2027", "#fff"],
+];
+function stockColor(code: string): [string, string] {
+  let h = 0;
+  for (let i = 0; i < code.length; i++) h = (h * 31 + code.charCodeAt(i)) & 0xffffffff;
+  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+}
 function StockLogo({ code, name, isEditing }: { code: string; name: string; isEditing: boolean }) {
-  const [failed, setFailed] = useState(false);
-  const logoUrl = `https://static.toss.im/png-icons/securities/icod-krx-${code}.png`;
+  const [bg, fg] = isEditing ? ["rgba(0,122,255,0.1)", "var(--primary)"] : stockColor(code);
   return (
     <div style={{
-      width: 40, height: 40, borderRadius: 12, overflow: "hidden",
-      background: isEditing ? "rgba(0,122,255,0.1)" : "var(--surface2)",
+      width: 40, height: 40, borderRadius: 12,
+      background: bg,
       display: "flex", alignItems: "center", justifyContent: "center",
-      transition: "all 0.15s", flexShrink: 0,
+      flexShrink: 0, transition: "all 0.15s",
     }}>
-      {!failed ? (
-        <img
-          src={logoUrl}
-          alt={name}
-          onError={() => setFailed(true)}
-          style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 12 }}
-        />
-      ) : (
-        <span style={{ fontSize: 16, fontWeight: 800, color: isEditing ? "var(--primary)" : "var(--label2)" }}>
-          {name.slice(0, 1)}
-        </span>
-      )}
+      <span style={{ fontSize: 15, fontWeight: 800, color: fg, letterSpacing: "-0.02em" }}>
+        {name.slice(0, 1)}
+      </span>
     </div>
   );
 }
