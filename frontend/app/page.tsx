@@ -17,9 +17,11 @@ export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  const [authReady, setAuthReady] = useState(false);
+
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
-    if (status === "authenticated") initAuth();
+    if (status === "authenticated") initAuth().then(() => setAuthReady(true));
   }, [status, router]);
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>(1);
   const [indices, setIndices] = useState<Record<string, MarketIndex>>({});
@@ -57,7 +59,7 @@ export default function Home() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  if (status === "loading" || status === "unauthenticated") {
+  if (status === "loading" || status === "unauthenticated" || !authReady) {
     return (
       <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
         <div style={{ fontSize: 13, color: "var(--label2)" }}>로딩 중…</div>
