@@ -540,16 +540,8 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
         style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12, cursor: "pointer" }}
         onClick={onClick}
       >
-        {/* 로고 + 알림 배지 */}
-        <div style={{ position: "relative", flexShrink: 0 }}>
-          <StockLogo code={item.stock_code} name={item.corp_name} isEditing={isEditing} />
-
-          {alertCount > 0 && (
-            <div style={{ position: "absolute", top: -3, right: -3, minWidth: 15, height: 15, borderRadius: 8, background: "var(--red)", border: "2px solid var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: "white", padding: "0 2px" }}>
-              {alertCount > 9 ? "9+" : alertCount}
-            </div>
-          )}
-        </div>
+        {/* 로고 */}
+        <StockLogo code={item.stock_code} name={item.corp_name} isEditing={isEditing} />
 
         {/* 이름 + 보유 정보 */}
         <div style={{ flex: 1, minWidth: 0 }}>
