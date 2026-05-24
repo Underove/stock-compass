@@ -1,0 +1,25 @@
+# 웹 프레임워크
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+
+# 환경설정
+python-dotenv==1.0.1
+pydantic==2.9.2
+pydantic-settings==2.6.0
+
+# HTTP 클라이언트
+httpx==0.27.2
+
+# PDF 파싱
+pdfplumber==0.11.4
+
+# 벡터 DB + 임베딩
+chromadb==0.5.20
+google-genai==0.3.0
+
+# 주식 시세 (한국거래소)
+pykrx>=1.0.45
+
+# 스케줄러
+apscheduler>=3.10.0

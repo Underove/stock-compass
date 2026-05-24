@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+venv/
+.venv/
+env/
+.env
+.env.local
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Chroma 로컬 데이터
+backend/data/chroma/
+backend/data/uploads/
+
+# 스케줄러 런타임 캐시 (서버에서 자동 생성)
+backend/data/briefing_cache.json
+backend/data/alerts_log.json
+backend/data/premarket_news_cache.json
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+build/
+.vercel
+
+# 환경변수
+.env*
+!.env.example
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# 로그
+*.log
+logs/

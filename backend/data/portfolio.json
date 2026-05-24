@@ -1,0 +1,32 @@
+[
+  {
+    "stock_code": "005930",
+    "corp_name": "삼성전자",
+    "buy_price": 130000,
+    "quantity": 14,
+    "target_price": null,
+    "stop_loss": null
+  },
+  {
+    "stock_code": "012330",
+    "corp_name": "현대모비스",
+    "buy_price": 300000,
+    "quantity": 10
+  },
+  {
+    "stock_code": "005380",
+    "corp_name": "현대자동차",
+    "buy_price": 300000,
+    "quantity": 5,
+    "target_price": null,
+    "stop_loss": null
+  },
+  {
+    "stock_code": "000660",
+    "corp_name": "SK하이닉스",
+    "buy_price": 1000000,
+    "quantity": 5,
+    "target_price": null,
+    "stop_loss": null
+  }
+]
