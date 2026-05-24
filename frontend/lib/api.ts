@@ -126,7 +126,7 @@ export async function addPortfolioItem(item: PortfolioItem): Promise<void> {
 }
 
 export async function removePortfolioItem(stock_code: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/portfolio/${stock_code}`, { method: "DELETE" });
+  const res = await fetch(`${API_BASE}/api/portfolio/${stock_code}`, { method: "DELETE", headers: authHeaders() });
   if (!res.ok) throw new Error("삭제 실패");
 }
 
@@ -139,7 +139,7 @@ export async function updatePortfolioItem(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/api/portfolio/${stock_code}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ buy_price, quantity, target_price: target_price ?? null, stop_loss: stop_loss ?? null }),
   });
   if (!res.ok) throw new Error("수정 실패");
@@ -163,7 +163,7 @@ export async function addWatchlistItem(item: WatchlistItem): Promise<void> {
 }
 
 export async function removeWatchlistItem(stock_code: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/watchlist/${stock_code}`, { method: "DELETE" });
+  const res = await fetch(`${API_BASE}/api/watchlist/${stock_code}`, { method: "DELETE", headers: authHeaders() });
   if (!res.ok) throw new Error("삭제 실패");
 }
 
@@ -290,7 +290,7 @@ export async function fetchPortfolioBriefingCached(): Promise<import("./types").
 export async function saveNote(stock_code: string, note: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/portfolio/notes/${stock_code}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ note }),
   });
   if (!res.ok) throw new Error("메모 저장 실패");
