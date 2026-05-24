@@ -775,9 +775,13 @@ function DonutChart({ slices }: { slices: { label: string; pct: number; color: s
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      {paths.map((p, i) => (
-        <path key={i} d={p.d} fill={p.color} opacity={0.88} />
-      ))}
+      {slices.length === 1 ? (
+        <circle cx={cx} cy={cy} r={r} fill={slices[0].color} opacity={0.88} />
+      ) : (
+        paths.map((p, i) => (
+          <path key={i} d={p.d} fill={p.color} opacity={0.88} />
+        ))
+      )}
       <circle cx={cx} cy={cy} r={r * 0.58} fill="var(--surface)" />
     </svg>
   );
