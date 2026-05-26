@@ -1,6 +1,7 @@
 """KIS (한국투자증권) OAuth 토큰 + 실시간 WebSocket 체결가 스트리밍."""
 import json
 import time
+from pathlib import Path
 
 import httpx
 
@@ -21,6 +22,36 @@ WS_URL = (
 _token_cache: dict = {"token": "", "expires_at": 0.0}
 _approval_cache: dict = {"key": "", "expires_at": 0.0}
 
+# 토큰 파일: 서버 재시작해도 유효한 토큰 재사용
+_TOKEN_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "kis_token.json"
+
+
+def _load_token_file() -> None:
+    """파일에서 토큰 읽어 메모리 캐시에 올림."""
+    try:
+        if _TOKEN_FILE.exists():
+            data = json.loads(_TOKEN_FILE.read_text())
+            if data.get("expires_at", 0) > time.time() + 60:
+                _token_cache["token"] = data["token"]
+                _token_cache["expires_at"] = data["expires_at"]
+    except Exception:
+        pass
+
+
+def _save_token_file() -> None:
+    """메모리 캐시 → 파일 저장."""
+    try:
+        _TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _TOKEN_FILE.write_text(json.dumps({
+            "token": _token_cache["token"],
+            "expires_at": _token_cache["expires_at"],
+        }))
+    except Exception:
+        pass
+
+
+_load_token_file()  # 모듈 로드 시 파일에서 복원
+
 
 def get_access_token() -> str:
     now = time.time()
@@ -39,6 +70,7 @@ def get_access_token() -> str:
         data = r.json()
     _token_cache["token"] = data["access_token"]
     _token_cache["expires_at"] = now + int(data.get("expires_in", 86400))
+    _save_token_file()
     return _token_cache["token"]
 
 
