@@ -72,3 +72,8 @@ def test_compare_missing_stock_returns_null_metrics(client):
     assert unknown["corp_name"] is None
     assert unknown["metrics"]["per"] is None
     assert unknown["metrics"]["market_cap"] is None
+
+
+def test_compare_invalid_period(client):
+    r = client.get("/api/compare?codes=005930,000660&period=invalid")
+    assert r.status_code == 400
