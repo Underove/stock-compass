@@ -7,9 +7,8 @@ import { useRouter } from "next/navigation";
 import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
 import { ScreenerCard } from "../components/ScreenerCard";
-import { fetchAlerts, fetchMarketIndices, markAlertsRead, initAuth } from "../lib/api";
-import type { PriceAlert } from "../lib/api";
-import type { MarketIndex, MarketStatus } from "../lib/types";
+import { fetchAlerts, fetchAlertWatch, markAlertsRead, deleteAlert, addAlertWatch, removeAlertWatch, searchStock, fetchMarketIndices, initAuth } from "../lib/api";
+import type { Alert, WatchStock, MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1 | 2;
 
@@ -45,7 +44,8 @@ export default function Home() {
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>(1);
   const [indices, setIndices] = useState<Record<string, MarketIndex>>({});
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
-  const [alerts, setAlerts] = useState<PriceAlert[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [watchStocks, setWatchStocks] = useState<WatchStock[]>([]);
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [portfolioVersion, setPortfolioVersion] = useState(0);
@@ -77,7 +77,11 @@ export default function Home() {
         if (!cancelled) setAlerts(data);
       } catch { /* 무시 */ }
     }
+    async function loadWatch() {
+      try { setWatchStocks(await fetchAlertWatch()); } catch {}
+    }
     loadAlerts();
+    loadWatch();
     const id = setInterval(loadAlerts, 2 * 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, []);
@@ -115,18 +119,21 @@ export default function Home() {
           {marketStatus && <MarketStatusBadge status={marketStatus} />}
         </div>
 
-        {/* 시장 지수 */}
-        <div className="market-badges" style={{ display: "flex", gap: 6, flex: 1, justifyContent: "center", alignItems: "center" }}>
-          {Object.values(indices).map((idx, i) => (
-            <MarketBadge key={idx.name} index={idx} className={`market-badge market-badge--${i}`} />
-          ))}
-          {Object.keys(indices).length === 0 && !indicesLoaded && (
-            <div style={{ fontSize: 12, color: "var(--label3)" }}>시장 조회 중…</div>
-          )}
-        </div>
-
-        {/* 알림 + 유저 + 백엔드 상태 */}
+        {/* 우측: 지수 + 구분선 + 아이콘 */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
+          {/* 지수 배지 — 로딩 중엔 스켈레톤, 실패하면 미표시 */}
+          {!indicesLoaded && (
+            <>
+              <div className="index-skeleton market-index-item" />
+              <div className="index-skeleton market-index-item" />
+            </>
+          )}
+          {indicesLoaded && Object.values(indices).map((idx) => (
+            <MarketBadge key={idx.name} index={idx} />
+          ))}
+          {indicesLoaded && Object.keys(indices).length > 0 && (
+            <div className="market-index-sep" style={{ width: 1, height: 18, background: "var(--sep)", flexShrink: 0 }} />
+          )}
           <AlertBell alerts={alerts} show={showAlerts} onToggle={() => setShowAlerts(v => !v)} />
           <button
             onClick={toggleTheme}
@@ -188,8 +195,44 @@ export default function Home() {
           )}
         </div>
       </header>
-      {showAlerts && alerts.length > 0 && (
-        <AlertDropdown alerts={alerts} onClose={() => setShowAlerts(false)} onReadAll={async () => { const ids = alerts.map(a => a.id); await markAlertsRead(ids); setAlerts([]); setShowAlerts(false); }} />
+
+      {/* 모바일 전용 지수 스트립 — 헤더 바로 아래 */}
+      <div className="mobile-ticker-strip" style={{ justifyContent: "flex-start" }}>
+        {!indicesLoaded && (
+          <>
+            <div className="index-skeleton" style={{ width: 110 }} />
+            <div className="index-skeleton" style={{ width: 110 }} />
+          </>
+        )}
+        {indicesLoaded && Object.values(indices).map((idx) => (
+          <MarketBadge key={idx.name} index={idx} compact />
+        ))}
+      </div>
+
+      {showAlerts && (
+        <AlertDropdown
+          alerts={alerts}
+          watchStocks={watchStocks}
+          onClose={() => setShowAlerts(false)}
+          onReadAll={async () => {
+            const ids = alerts.map(a => a.id);
+            await markAlertsRead(ids);
+            setAlerts([]);
+            setShowAlerts(false);
+          }}
+          onDelete={async (id) => {
+            await deleteAlert(id);
+            setAlerts(prev => prev.filter(a => a.id !== id));
+          }}
+          onAddWatch={async (stock_code, corp_name) => {
+            await addAlertWatch(stock_code, corp_name);
+            setWatchStocks(prev => prev.some(w => w.stock_code === stock_code) ? prev : [...prev, { stock_code, corp_name }]);
+          }}
+          onRemoveWatch={async (stock_code) => {
+            await removeAlertWatch(stock_code);
+            setWatchStocks(prev => prev.filter(w => w.stock_code !== stock_code));
+          }}
+        />
       )}
 
       {/* 메인 대시보드 그리드 */}
@@ -255,9 +298,10 @@ export default function Home() {
 }
 
 const MARKET_STATUS_STYLE: Record<string, { color: string; bg: string; dot: string }> = {
-  open:   { color: "#34C759", bg: "rgba(52,199,89,0.1)",   dot: "#34C759" },
-  pre:    { color: "#FF9500", bg: "rgba(255,149,0,0.1)",   dot: "#FF9500" },
-  closed: { color: "var(--label3)", bg: "var(--surface2)", dot: "#AEAEB2" },
+  open:   { color: "#34C759",        bg: "rgba(52,199,89,0.1)",   dot: "#34C759" },
+  pre:    { color: "#FF9500",        bg: "rgba(255,149,0,0.1)",   dot: "#FF9500" },
+  after:  { color: "#FF9500",        bg: "rgba(255,149,0,0.1)",   dot: "#FF9500" },
+  closed: { color: "var(--label3)",  bg: "var(--surface2)",       dot: "#AEAEB2" },
 };
 
 function MarketStatusBadge({ status }: { status: MarketStatus }) {
@@ -278,22 +322,32 @@ function MarketStatusBadge({ status }: { status: MarketStatus }) {
   );
 }
 
-function MarketBadge({ index, className }: { index: MarketIndex; className?: string }) {
+function MarketBadge({ index, compact }: { index: MarketIndex; compact?: boolean }) {
   const up = index.change_pct >= 0;
   const color = up ? "var(--red)" : "var(--primary)";
-  const sign = up ? "+" : "";
+  const bg    = up ? "rgba(255,59,48,0.08)" : "rgba(0,122,255,0.08)";
+  const sign  = up ? "+" : "−";
   return (
-    <div className={className} style={{
-      display: "flex", alignItems: "center", gap: 6,
-      background: "var(--surface2)",
-      borderRadius: 20, padding: "4px 10px",
-    }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: "var(--label2)" }}>{index.name}</span>
-      <span style={{ fontSize: 12, fontWeight: 800, color, letterSpacing: "-0.03em" }}>
+    <div
+      className={compact ? undefined : "market-index-item"}
+      style={{
+        display: "flex", alignItems: "center", gap: 6,
+        background: "var(--surface2)",
+        borderRadius: 9, padding: compact ? "3px 10px" : "4px 10px",
+        border: "0.5px solid var(--sep)",
+      }}
+    >
+      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--label2)", letterSpacing: "0" }}>
+        {index.name}
+      </span>
+      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}>
         {index.value.toLocaleString("ko-KR")}
       </span>
-      <span style={{ fontSize: 11, fontWeight: 700, color }}>
-        {sign}{index.change_pct.toFixed(2)}%
+      <span style={{
+        fontSize: 11, fontWeight: 700, color,
+        background: bg, borderRadius: 5, padding: "1px 5px",
+      }}>
+        {sign}{Math.abs(index.change_pct).toFixed(2)}%
       </span>
     </div>
   );
@@ -314,7 +368,7 @@ function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
 }
 
 function AlertBell({ alerts, show, onToggle }: {
-  alerts: PriceAlert[];
+  alerts: Alert[];
   show: boolean;
   onToggle: () => void;
 }) {
@@ -345,45 +399,144 @@ function AlertBell({ alerts, show, onToggle }: {
   );
 }
 
-function AlertDropdown({ alerts, onClose, onReadAll }: {
-  alerts: PriceAlert[];
+function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAddWatch, onRemoveWatch }: {
+  alerts: Alert[];
+  watchStocks: WatchStock[];
   onClose: () => void;
   onReadAll: () => void;
+  onDelete: (id: string) => void;
+  onAddWatch: (stock_code: string, corp_name: string) => void;
+  onRemoveWatch: (stock_code: string) => void;
 }) {
+  const [watchQuery, setWatchQuery] = useState("");
+  const [watchResults, setWatchResults] = useState<{ stock_code: string; corp_name: string }[]>([]);
+
+  useEffect(() => {
+    if (!watchQuery.trim()) { setWatchResults([]); return; }
+    const t = setTimeout(async () => {
+      try { setWatchResults((await searchStock(watchQuery)).slice(0, 4)); }
+      catch { setWatchResults([]); }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [watchQuery]);
+
+  const ALERT_COLOR: Record<string, string> = {
+    dart: "var(--primary)",
+    volume_spike: "var(--orange)",
+    rsi_overbought: "#BF5AF2",
+    rsi_oversold: "#BF5AF2",
+    golden_cross: "#BF5AF2",
+    dead_cross: "#BF5AF2",
+    target: "var(--green)",
+    stop_loss: "var(--red)",
+  };
+  const ALERT_LABEL: Record<string, string> = {
+    dart: "공시",
+    volume_spike: "거래량",
+    rsi_overbought: "RSI 과매수",
+    rsi_oversold: "RSI 과매도",
+    golden_cross: "골든크로스",
+    dead_cross: "데드크로스",
+    target: "목표가",
+    stop_loss: "손절가",
+  };
+
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 19 }} />
       <div style={{
         position: "fixed", top: 56, right: 12, zIndex: 20,
         background: "var(--surface)", borderRadius: 16,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.15)", width: 320,
+        boxShadow: "var(--shadow-lg)", width: 340,
         overflow: "hidden", border: "0.5px solid var(--sep)",
+        maxHeight: "80dvh", display: "flex", flexDirection: "column",
       }}>
-        <div style={{ padding: "13px 16px 11px", borderBottom: "0.5px solid var(--sep)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>가격 알림 {alerts.length}건</span>
+        {/* 헤더 */}
+        <div style={{ padding: "13px 16px 11px", borderBottom: "0.5px solid var(--sep)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>알림 {alerts.length}건</span>
           <button onClick={onReadAll} style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}>모두 읽음</button>
         </div>
-        <div style={{ maxHeight: 320, overflowY: "auto" }}>
-          {alerts.map((a, i) => (
-            <div key={a.id}>
-              {i > 0 && <div style={{ height: "0.5px", background: "var(--sep)", marginLeft: 16 }} />}
-              <div style={{ padding: "12px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                <div style={{
-                  width: 8, height: 8, borderRadius: "50%", marginTop: 5, flexShrink: 0,
-                  background: a.type === "target" ? "var(--red)" : "var(--primary)",
-                }} />
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: a.type === "target" ? "var(--red)" : "var(--primary)" }}>
-                    {a.type === "target" ? "목표가 도달" : "손절가 도달"}
+
+        {/* 모니터링 종목 */}
+        <div style={{ padding: "10px 16px 8px", borderBottom: "0.5px solid var(--sep)", flexShrink: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--label3)", marginBottom: 6 }}>모니터링 종목</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+            {watchStocks.map(w => (
+              <div key={w.stock_code} style={{
+                display: "flex", alignItems: "center", gap: 4,
+                background: "var(--surface2)", borderRadius: 8,
+                padding: "3px 8px", fontSize: 12, fontWeight: 600, color: "var(--label)",
+              }}>
+                {w.corp_name}
+                <button onClick={() => onRemoveWatch(w.stock_code)} style={{ fontSize: 11, color: "var(--label3)", padding: 0, lineHeight: 1 }}>×</button>
+              </div>
+            ))}
+          </div>
+          <div style={{ position: "relative" }}>
+            <input
+              value={watchQuery}
+              onChange={e => setWatchQuery(e.target.value)}
+              placeholder="+ 종목 추가"
+              style={{
+                width: "100%", padding: "6px 10px", borderRadius: 8,
+                border: "0.5px solid var(--sep)", background: "var(--surface2)",
+                fontSize: 12, color: "var(--label)",
+              }}
+            />
+            {watchResults.length > 0 && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 10,
+                background: "var(--surface)", borderRadius: 10,
+                boxShadow: "var(--shadow-md)", border: "0.5px solid var(--sep)",
+                overflow: "hidden",
+              }}>
+                {watchResults.map(r => (
+                  <button key={r.stock_code} onClick={() => {
+                    onAddWatch(r.stock_code, r.corp_name);
+                    setWatchQuery("");
+                    setWatchResults([]);
+                  }} style={{
+                    width: "100%", padding: "8px 12px", textAlign: "left",
+                    fontSize: 13, color: "var(--label)", borderBottom: "0.5px solid var(--sep)",
+                  }}>
+                    <span style={{ fontWeight: 700 }}>{r.corp_name}</span>
+                    <span style={{ fontSize: 11, color: "var(--label3)", marginLeft: 6 }}>{r.stock_code}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 알림 목록 */}
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          {alerts.length === 0 && (
+            <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--label3)", fontSize: 13 }}>새 알림 없음</div>
+          )}
+          {alerts.map((a, i) => {
+            const color = ALERT_COLOR[a.type] ?? "var(--label2)";
+            const label = ALERT_LABEL[a.type] ?? a.type;
+            return (
+              <div key={a.id}>
+                {i > 0 && <div style={{ height: "0.5px", background: "var(--sep)", marginLeft: 16 }} />}
+                <div style={{ padding: "10px 12px 10px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 2 }}>{label}</div>
+                    <div style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.4 }}>{a.message}</div>
+                    <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 3 }}>
+                      {new Date(a.created_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 13, color: "var(--label)", marginTop: 2, lineHeight: 1.5 }}>{a.message}</div>
-                  <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 3 }}>
-                    {new Date(a.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
-                  </div>
+                  <button
+                    onClick={() => onDelete(a.id)}
+                    style={{ fontSize: 14, color: "var(--label3)", padding: "2px 4px", flexShrink: 0, lineHeight: 1 }}
+                    aria-label="알림 삭제"
+                  >×</button>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </>
