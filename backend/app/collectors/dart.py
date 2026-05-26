@@ -4,6 +4,12 @@ import json
 import re
 import zipfile
 from datetime import datetime, timedelta, timezone
+
+_KST = timezone(timedelta(hours=9))
+
+
+def _now_kst() -> datetime:
+    return datetime.now(_KST)
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -110,7 +116,7 @@ def fetch_recent_disclosures(
 ) -> list[dict]:
     """corp_code 기준 최근 공시 목록 가져오기."""
     key = _require_key()
-    end = datetime.now(timezone.utc)
+    end = _now_kst()
     start = end - timedelta(days=days)
     res = httpx.get(
         f"{DART_BASE_URL}/list.json",
@@ -138,7 +144,7 @@ def fetch_disclosure_counts_all(days: int = 30) -> dict[str, int]:
     """최근 N일간 전체 공시를 페이지네이션으로 수집, 종목코드별 건수 반환.
     DART /list.json을 corp_code 없이 호출하면 전 종목 공시가 한번에 내려옴."""
     key = _require_key()
-    end = datetime.now(timezone.utc)
+    end = _now_kst()
     start = end - timedelta(days=days)
     counts: dict[str, int] = {}
     page = 1

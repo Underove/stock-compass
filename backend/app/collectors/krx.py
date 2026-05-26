@@ -1,12 +1,18 @@
 """pykrx 기반 한국 주식 시세 수집기."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from pykrx import stock as krx_stock
+
+_KST = timezone(timedelta(hours=9))
+
+
+def _now_kst() -> datetime:
+    return datetime.now(_KST)
 
 
 def _trading_date(offset_days: int = 0) -> str:
     """영업일 기준 날짜 문자열 반환 (주말 자동 조정)."""
-    d = datetime.now() - timedelta(days=offset_days)
+    d = _now_kst() - timedelta(days=offset_days)
     # 토요일 → -1, 일요일 → -2
     if d.weekday() == 5:
         d -= timedelta(days=1)
@@ -19,7 +25,7 @@ def get_current_price(stock_code: str) -> dict:
     """오늘 기준 현재가·등락률·거래량 조회."""
     today = _trading_date()
     df = krx_stock.get_market_ohlcv_by_date(
-        (datetime.now() - timedelta(days=5)).strftime("%Y%m%d"),
+        (_now_kst() - timedelta(days=5)).strftime("%Y%m%d"),
         today,
         stock_code,
     )
@@ -47,7 +53,7 @@ def get_current_price(stock_code: str) -> dict:
 
 def get_chart_data(stock_code: str, days: int = 90) -> list[dict]:
     """최근 N 영업일 OHLCV 캔들 데이터 반환."""
-    end = datetime.now()
+    end = _now_kst()
     start = end - timedelta(days=days + 40)  # 주말·공휴일 여유
     df = krx_stock.get_market_ohlcv_by_date(
         start.strftime("%Y%m%d"),

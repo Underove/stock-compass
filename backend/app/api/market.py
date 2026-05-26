@@ -10,52 +10,69 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-_TICKERS = {"KOSPI": "1001", "KOSDAQ": "2001"}
+_NAVER_CODES = {"KOSPI": "KOSPI", "KOSDAQ": "KOSDAQ"}
+_NAVER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Referer": "https://finance.naver.com/",
+}
+
+
+_KST = datetime.timezone(datetime.timedelta(hours=9))
+
+
+def _now_kst() -> datetime.datetime:
+    return datetime.datetime.now(_KST)
 
 
 def _get_market_status() -> dict:
     """한국 주식시장 개폐장 상태 (KST 기준)."""
-    kst = datetime.timezone(datetime.timedelta(hours=9))
-    now = datetime.datetime.now(kst)
+    now = _now_kst()
     weekday = now.weekday()  # 0=월, 6=일
-    h, m = now.hour, now.minute
-    minutes = h * 60 + m
+    minutes = now.hour * 60 + now.minute
 
     if weekday >= 5:
         return {"status": "closed", "label": "주말 휴장"}
+    if minutes < 8 * 60:
+        return {"status": "closed", "label": "장 마감"}
     if minutes < 9 * 60:
         return {"status": "pre", "label": "장 개장 전"}
-    if minutes <= 15 * 60 + 30:
+    if minutes < 15 * 60 + 30:
         return {"status": "open", "label": "장 운영 중"}
+    if minutes < 18 * 60:
+        return {"status": "after", "label": "시간외 거래"}
     return {"status": "closed", "label": "장 마감"}
 
 
 @router.get("/market/indices")
 def get_market_indices():
-    """KOSPI·KOSDAQ 지수값 + 장 상태 반환."""
-    from pykrx import stock
-
-    end = datetime.date.today()
-    start = end - datetime.timedelta(days=14)  # 주말·공휴일 대비 충분히
+    """KOSPI·KOSDAQ 지수값 + 장 상태 반환 (네이버 증권 API)."""
     indices: dict = {}
 
-    for name, ticker in _TICKERS.items():
+    for name, code in _NAVER_CODES.items():
         try:
-            df = stock.get_index_ohlcv_by_date(
-                start.strftime("%Y%m%d"), end.strftime("%Y%m%d"), ticker
+            r = httpx.get(
+                f"https://m.stock.naver.com/api/index/{code}/basic",
+                headers=_NAVER_HEADERS,
+                timeout=5,
             )
-            if df is None or df.empty:
-                continue
-            df = df.sort_index()
-            close = float(df.iloc[-1]["종가"])
-            prev_close = float(df.iloc[-2]["종가"]) if len(df) >= 2 else close
-            change = close - prev_close
-            change_pct = (change / prev_close * 100) if prev_close else 0.0
+            r.raise_for_status()
+            d = r.json()
+
+            close_str = str(d.get("closePrice", "0")).replace(",", "")
+            close = float(close_str)
+            change_str = str(d.get("compareToPreviousClosePrice", "0")).replace(",", "")
+            change_abs = float(change_str)
+            ratio_str = str(d.get("fluctuationsRatio", "0")).replace(",", "")
+            ratio = float(ratio_str)
+
+            trend = (d.get("compareToPreviousPrice") or {}).get("name", "RISING")
+            sign = -1 if trend in ("FALLING", "DECLINE") else 1
+
             indices[name] = {
                 "name": name,
                 "value": round(close, 2),
-                "change": round(change, 2),
-                "change_pct": round(change_pct, 2),
+                "change": round(sign * change_abs, 2),
+                "change_pct": round(sign * ratio, 2),
             }
         except Exception as e:
             logger.warning("지수 조회 실패 (%s): %s", name, e)

@@ -200,7 +200,11 @@ def fetch_all_fundamentals() -> list[dict]:
             sector = _kis_sector_to_app(sector_raw)
             corp_name = corp_name_map.get(code) or info["name"] or code
 
-            if sector in ("반도체", "기타") and any(kw in corp_name for kw in ("에너지솔루션", "배터리", "이차전지", "LFP", "양극재")):
+            if any(kw in corp_name for kw in (
+                "SDI", "에너지솔루션", "배터리", "이차전지", "2차전지", "LFP",
+                "양극재", "음극재", "전해질", "분리막", "퓨처엠", "엘앤에프",
+                "코스모신소재", "에코프로비엠", "에코프로머티", "에코프로HN",
+            )):
                 sector = "2차전지·전기차"
 
             momentum = _compute_momentum_20d(code)
@@ -269,9 +273,10 @@ def compute_ta_for_top_n(n: int = 2000) -> list[dict]:
             if ta.get("error"):
                 continue
             results.append({
-                "stock_code": code,
-                "rsi":        ta.get("rsi"),
-                "ma_status":  ta.get("cross_5_20"),
+                "stock_code":   code,
+                "rsi":          ta.get("rsi"),
+                "ma_status":    ta.get("cross_5_20"),
+                "volume_ratio": ta.get("volume_ratio"),
             })
         except Exception as e:
             logger.debug("[스크리너] TA 계산 실패 (%s): %s", code, e)
@@ -280,3 +285,54 @@ def compute_ta_for_top_n(n: int = 2000) -> list[dict]:
 
     logger.info("[스크리너] TA 배치 완료: %d종목", len(results))
     return results
+
+
+def compute_foreign_signals(n: int = 3000) -> list[dict]:
+    """시총 상위 n개 종목의 5일 외인·기관 순매수 합계 수집.
+    반환: list of {stock_code, foreign_net_buy}
+    pykrx get_market_net_purchases_of_equities_by_ticker 사용 (시장별 1 call).
+    """
+    from datetime import datetime, timedelta, timezone
+    from pykrx import stock as krx_stock
+    from app.db.trade_db import get_top_market_cap_codes
+
+    _KST = timezone(timedelta(hours=9))
+    codes_set = set(get_top_market_cap_codes(n))
+
+    today = datetime.now(_KST)
+    # 주말 보정
+    while today.weekday() >= 5:
+        today -= timedelta(days=1)
+    end_str   = today.strftime("%Y%m%d")
+    start_str = (today - timedelta(days=11)).strftime("%Y%m%d")  # ~7 영업일 확보
+
+    logger.info("[시장시그널] 외인 순매수 배치 시작 (%s~%s)", start_str, end_str)
+
+    foreign_map: dict[str, int] = {}
+    for market in ("KOSPI", "KOSDAQ"):
+        for investor in ("외국인", "기관합계"):
+            try:
+                df = krx_stock.get_market_net_purchases_of_equities_by_ticker(
+                    start_str, end_str, market, investor
+                )
+                if df is None or df.empty:
+                    continue
+                # 순매수 컬럼 탐색 (순매수거래량 or 순매수)
+                net_col = next(
+                    (c for c in df.columns if "순매수" in str(c) and "대금" not in str(c)),
+                    None,
+                )
+                if net_col is None:
+                    continue
+                for ticker in df.index:
+                    code = str(ticker).zfill(6)
+                    if code not in codes_set:
+                        continue
+                    val = int(df.loc[ticker, net_col])
+                    foreign_map[code] = foreign_map.get(code, 0) + val
+            except Exception as e:
+                logger.warning("[시장시그널] %s/%s 조회 실패: %s", market, investor, e)
+        time.sleep(0.3)
+
+    logger.info("[시장시그널] 외인·기관 순매수 완료: %d종목", len(foreign_map))
+    return [{"stock_code": code, "foreign_net_buy": val} for code, val in foreign_map.items()]

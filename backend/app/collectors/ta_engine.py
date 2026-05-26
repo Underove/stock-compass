@@ -111,6 +111,15 @@ def analyze(stock_code: str) -> dict:
         if high_52w > low_52w else 50.0
     )
 
+    # ── 거래량 급등비율 (최근 5일 평균 / 직전 20일 평균) ──────────────────────────
+    volume = df["volume"]
+    vol_ratio = None
+    if len(volume) >= 25:
+        recent_avg  = float(volume.tail(5).mean())
+        baseline    = float(volume.iloc[-25:-5].mean())
+        if baseline > 0:
+            vol_ratio = round(recent_avg / baseline, 2)
+
     return {
         "current_price": current,
         # 이동평균
@@ -121,6 +130,8 @@ def analyze(stock_code: str) -> dict:
         "cross_20_60":  cross_20_60,
         # RSI
         "rsi":          _safe(rsi.iloc[-1], 1),
+        # 거래량
+        "volume_ratio": vol_ratio,
         # MACD
         "macd":         _safe(macd_line.iloc[-1],   2),
         "macd_signal":  _safe(signal_line.iloc[-1], 2),

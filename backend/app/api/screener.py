@@ -101,20 +101,23 @@ def similar_stocks(
         normed = _norm(vals + [t_val])
         return normed[:-1], normed[-1]   # (pool_normed, target_normed)
 
-    per_n,  t_per_n  = col("per",          0.0)   # 재무: PER
-    pbr_n,  t_pbr_n  = col("pbr",          0.0)   # 재무: PBR
-    mcap_n, t_mcap_n = col("market_cap",   0.0)   # 규모: 시가총액
-    rsi_n,  t_rsi_n  = col("rsi",         50.0)   # 기술: RSI
-    mom_n,  t_mom_n  = col("momentum_20d", 0.0)   # 기술: 20일 모멘텀
-    disc_n, t_disc_n = col("disclosure_30d", 0.0) # 공시 활동
+    per_n,  t_per_n  = col("per",            0.0)  # 재무: PER
+    pbr_n,  t_pbr_n  = col("pbr",            0.0)  # 재무: PBR
+    mcap_n, t_mcap_n = col("market_cap",     0.0)  # 규모: 시가총액
+    rsi_n,  t_rsi_n  = col("rsi",           50.0)  # 기술: RSI
+    mom_n,  t_mom_n  = col("momentum_20d",   0.0)  # 기술: 20일 모멘텀
+    disc_n, t_disc_n = col("disclosure_30d", 0.0)  # 공시 활동
+    vol_n,  t_vol_n  = col("volume_ratio",   1.0)  # 최근 이슈: 거래량 급등
+    fgn_n,  t_fgn_n  = col("foreign_net_buy", 0.0) # 최근 이슈: 외인·기관 순매수
 
     # 4) MA 방향 (같은 방향이면 보너스)
     t_ma = target.get("ma_status") or "none"
     t_bullish = t_ma in ("golden", "above")
 
     # 5) 가중 유클리드 거리 계산
-    # 재무(PER·PBR): 40%, 규모(시총): 15%, 기술(RSI·모멘텀): 35%, 공시: 10%
-    W = {"per": 0.25, "pbr": 0.15, "mcap": 0.15, "rsi": 0.20, "mom": 0.15, "disc": 0.10}
+    # 재무(PER·PBR): 35%, 규모(시총): 12%, 기술(RSI·모멘텀): 31%, 공시: 10%, 최근이슈(거래량·외인): 12%
+    W = {"per": 0.20, "pbr": 0.15, "mcap": 0.12, "rsi": 0.18, "mom": 0.13,
+         "disc": 0.10, "vol": 0.07, "fgn": 0.05}
 
     scored: list[tuple[float, dict]] = []
     for i, row in enumerate(pool):
@@ -124,7 +127,9 @@ def similar_stocks(
             W["mcap"] * (mcap_n[i] - t_mcap_n) ** 2 +
             W["rsi"]  * (rsi_n[i]  - t_rsi_n)  ** 2 +
             W["mom"]  * (mom_n[i]  - t_mom_n)  ** 2 +
-            W["disc"] * (disc_n[i] - t_disc_n) ** 2
+            W["disc"] * (disc_n[i] - t_disc_n) ** 2 +
+            W["vol"]  * (vol_n[i]  - t_vol_n)  ** 2 +
+            W["fgn"]  * (fgn_n[i]  - t_fgn_n)  ** 2
         )
         # MA 방향 일치 보너스
         row_ma = row.get("ma_status") or "none"

@@ -194,6 +194,41 @@ textarea:focus {
 
 .mobile-tab-bar { display: none; }
 
+/* 지수 스트립: 기본은 보임, 데스크톱에서 숨김 */
+.mobile-ticker-strip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  background: var(--header-bg);
+  border-bottom: 0.5px solid var(--sep);
+  flex-shrink: 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.index-skeleton {
+  width: 90px;
+  height: 16px;
+  border-radius: 6px;
+  background: var(--surface3);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* 데스크톱에서 스트립 숨김 */
+@media (min-width: 769px) {
+  .mobile-ticker-strip {
+    display: none;
+  }
+}
+
 /* ─── 모바일 반응형 (≤ 768px) ───────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
@@ -250,9 +285,32 @@ textarea:focus {
     height: 22px;
   }
 
-  /* 헤더 시장 지수 — 작은 화면에서 숨김 */
-  .market-badges {
+  /* 헤더 지수 — 모바일에서 숨기고 스트립으로 대체 */
+  .market-index-item {
     display: none !important;
+  }
+  .market-index-sep {
+    display: none !important;
+  }
+
+  /* 모바일 지수 스트립 */
+  .mobile-ticker-strip {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    height: 36px;
+    padding: 0 16px;
+    background: var(--header-bg);
+    border-bottom: 0.5px solid var(--sep);
+    flex-shrink: 0;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* 스트립 높이만큼 패널 높이 보정 */
+  .dashboard-panel {
+    min-height: calc(100dvh - 52px - 36px - 56px) !important;
   }
 
   /* 작은 아이콘 버튼 탭 타겟 보정 — 시각적 크기는 유지하되 터치 영역 확장 */
@@ -263,15 +321,5 @@ textarea:focus {
     content: "";
     position: absolute;
     inset: -6px;
-  }
-}
-
-/* 중간 화면(481–768px)에서는 배지 2개까지만 표시 */
-@media (min-width: 481px) and (max-width: 768px) {
-  .market-badges {
-    display: flex !important;
-  }
-  .market-badge:nth-child(n+3) {
-    display: none;
   }
 }

@@ -9,7 +9,7 @@ from app.collectors.krx import get_current_price
 from app.collectors.web_search import news_to_context, search_news
 from app.db.chroma_client import get_trusted_collection, get_user_uploads_collection
 from app.llm.gemini import generate_answer
-from app.rag.qa import build_context, describe_source
+from app.rag.qa import build_context
 
 router = APIRouter()
 
@@ -76,7 +76,7 @@ def analyze_portfolio(body: AnalyzeRequest | None = None):
     for item in items:
         p = prices.get(item["stock_code"])
         if p:
-            pct = round((p["current_price"] - item["buy_price"]) / item["buy_price"] * 100, 2)
+            pct = round((p["current_price"] - item["buy_price"]) / item["buy_price"] * 100, 2) if item["buy_price"] else 0
             sign = "+" if pct >= 0 else ""
             portfolio_lines.append(
                 f"- {item['corp_name']} ({item['stock_code']}): "
