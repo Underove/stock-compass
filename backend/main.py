@@ -24,6 +24,7 @@ from app.api import watchlist as watchlist_api  # noqa: E402
 from app.api import trades as trades_api  # noqa: E402
 from app.api import profile as profile_api  # noqa: E402
 from app.api import screener as screener_api  # noqa: E402
+from app.api import compare as compare_api  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db.trade_db import init_db  # noqa: E402
 from app.scheduler.jobs import (  # noqa: E402
@@ -110,6 +111,7 @@ app.include_router(notifications_api.router, prefix="/api", tags=["notifications
 app.include_router(trades_api.router, prefix="/api", tags=["trades"])
 app.include_router(profile_api.router, prefix="/api", tags=["profile"])
 app.include_router(screener_api.router, prefix="/api", tags=["screener"])
+app.include_router(compare_api.router, prefix="/api", tags=["compare"])
 
 
 @app.get("/")
