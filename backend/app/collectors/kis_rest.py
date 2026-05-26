@@ -50,15 +50,34 @@ def get_current_price_kis(stock_code: str) -> dict:
     out = r.json().get("output", {})
 
     kst = datetime.now(_KST)
+    session = _session_from_kst(kst)
+
+    regular_price = int(out.get("STCK_PRPR") or 0)
+    after_price = int(out.get("OVTM_UNTP_PRPR") or 0)
+    ref_price = int(out.get("STCK_SDPR") or 0)  # 기준가(전일종가 대용)
+
+    if session == "after" and after_price > 0:
+        current_price = after_price
+        change_amount = int(out.get("OVTM_UNTP_PRDY_VRSS") or 0)
+        change_pct = float(out.get("OVTM_UNTP_PRDY_CTRT") or 0)
+    elif regular_price > 0:
+        current_price = regular_price
+        change_amount = int(out.get("PRDY_VRSS") or 0)
+        change_pct = float(out.get("PRDY_CTRT") or 0)
+    else:
+        current_price = ref_price
+        change_amount = int(out.get("PRDY_VRSS") or 0)
+        change_pct = float(out.get("PRDY_CTRT") or 0)
+
     return {
         "stock_code": stock_code,
-        "current_price": int(out.get("STCK_PRPR") or 0),
-        "change_pct": float(out.get("PRDY_CTRT") or 0),
-        "change_amount": int(out.get("PRDY_VRSS") or 0),
+        "current_price": current_price,
+        "change_pct": change_pct,
+        "change_amount": change_amount,
         "open": int(out.get("STCK_OPRC") or 0),
         "high": int(out.get("STCK_HGPR") or 0),
         "low": int(out.get("STCK_LWPR") or 0),
         "volume": int(out.get("ACML_VOL") or 0),
         "date": kst.strftime("%Y-%m-%d"),
-        "session": _session_from_kst(kst),
+        "session": session,
     }
