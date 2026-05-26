@@ -107,15 +107,7 @@ export default function Home() {
       }}>
         {/* 로고 */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 8,
-            background: "var(--primary)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-              <path d="M2 12L7 7L11 11L16 5L22 12" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+          <img src="/compass1.png" alt="주식나침반" style={{ width: 28, height: 28, borderRadius: 7, display: "block" }} />
           <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.04em" }}>주식나침반</span>
         </div>
 
