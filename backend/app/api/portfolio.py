@@ -13,14 +13,30 @@ from app.config import settings
 
 
 def _get_price(stock_code: str) -> dict:
-    """KIS REST 우선, 실패 시 pykrx fallback."""
+    """KIS REST 우선, 실패하거나 current_price=0이면 pykrx fallback."""
     if settings.kis_app_key and settings.kis_app_secret:
         try:
-            return get_current_price_kis(stock_code)
+            result = get_current_price_kis(stock_code)
+            if result.get("current_price", 0) > 0:
+                return result
         except Exception:
             pass
+    from datetime import datetime, timedelta, timezone
+    kst = datetime.now(timezone(timedelta(hours=9)))
     data = get_current_price(stock_code)
-    data.setdefault("session", "open")
+    total = kst.hour * 60 + kst.minute
+    wd = kst.weekday()
+    if wd >= 5:
+        session = "closed"
+    elif 8 * 60 <= total < 9 * 60:
+        session = "pre"
+    elif 9 * 60 <= total < 15 * 60 + 30:
+        session = "open"
+    elif 15 * 60 + 30 <= total < 18 * 60:
+        session = "after"
+    else:
+        session = "closed"
+    data["session"] = session
     return data
 from app.collectors.ta_engine import analyze as ta_analyze, ta_text_summary
 from app.llm.gemini import generate_answer, parse_json_response
