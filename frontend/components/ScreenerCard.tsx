@@ -6,6 +6,7 @@ import { screenStocks } from "../lib/api";
 import type { ScreenerItem, ScreenerParams } from "../lib/types";
 import type { PortfolioItem } from "../lib/types";
 import { StockDetailModal } from "./StockDetailModal";
+import { CompareModal } from "./CompareModal";
 
 const SECTORS = [
   "반도체", "2차전지·전기차", "바이오·제약", "자동차",
@@ -77,6 +78,15 @@ export function ScreenerCard() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareCode, setCompareCode] = useState("");
+  const [compareName, setCompareName] = useState("");
+
+  function openCompare(code: string, name: string) {
+    setCompareCode(code);
+    setCompareName(name);
+    setCompareOpen(true);
+  }
   const latestReq = React.useRef(0);
 
   function buildParams(): ScreenerParams {
@@ -347,6 +357,19 @@ export function ScreenerCard() {
                             PER {item.per}
                           </span>
                         )}
+                        <button
+                          onClick={e => { e.stopPropagation(); openCompare(item.stock_code, item.corp_name); }}
+                          style={{
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            background: "rgba(0,122,255,0.08)",
+                            color: "var(--primary)",
+                            fontSize: 11, fontWeight: 700,
+                            border: "none", cursor: "pointer",
+                          }}
+                        >
+                          비교
+                        </button>
                       </div>
                     </div>
                   );
@@ -367,6 +390,13 @@ export function ScreenerCard() {
         <StockDetailModal
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
+        />
+      )}
+      {compareOpen && (
+        <CompareModal
+          initialCode={compareCode}
+          initialName={compareName}
+          onClose={() => setCompareOpen(false)}
         />
       )}
     </>

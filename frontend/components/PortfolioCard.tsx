@@ -19,6 +19,7 @@ import { useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { RealtimePrice } from "../hooks/useRealtimePrice";
 import type { PortfolioItem, SearchResult, StockPrice, WatchlistItem } from "../lib/types";
 import { StockDetailModal } from "./StockDetailModal";
+import { CompareModal } from "./CompareModal";
 import TradeJournal from "./TradeJournal";
 
 type Tab = "stocks" | "watchlist" | "allocation" | "journal";
@@ -506,11 +507,12 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
 
 // ─── 종목 행 ──────────────────────────────────────────────────────────────────
 
-function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePrice, isEditing, sparkPoints }: {
+function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePrice, isEditing, sparkPoints, onCompare }: {
   item: PortfolioItem; onClick: () => void; onEdit: () => void;
   onPriceLoaded: (code: string, price: StockPrice) => void;
   alertCount: number; realtimePrice?: RealtimePrice; isEditing: boolean;
   sparkPoints?: number[];
+  onCompare?: () => void;
 }) {
   const [price, setPrice] = useState<StockPrice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -629,6 +631,23 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
             거래
           </button>
         </div>
+        {onCompare && (
+          <div style={{ flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+            <button
+              onClick={onCompare}
+              style={{
+                padding: "6px 11px", borderRadius: 9,
+                background: "var(--surface2)",
+                color: "var(--label2)",
+                fontSize: 12, fontWeight: 700,
+                minWidth: 44, minHeight: 32,
+                border: "none", cursor: "pointer",
+              }}
+            >
+              비교
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1015,6 +1034,9 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
   const [watchlistAdd, setWatchlistAdd] = useState<WatchlistItem | null>(null);
   const [watchlistSelected, setWatchlistSelected] = useState<WatchlistItem | null>(null);
   const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareCode, setCompareCode] = useState("");
+  const [compareName, setCompareName] = useState("");
 
   const stockCodes = useMemo(() => items.map(i => i.stock_code), [items]);
   const realtimePrices = useRealtimePrice(stockCodes);
@@ -1159,6 +1181,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
                     realtimePrice={realtimePrices[item.stock_code]}
                     isEditing={editingCode === item.stock_code}
                     sparkPoints={sparklines[item.stock_code]}
+                    onCompare={() => { setCompareCode(item.stock_code); setCompareName(item.corp_name); setCompareOpen(true); }}
                   />
                   {editingCode === item.stock_code && (
                     <TradePanel
@@ -1206,6 +1229,13 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
         <StockDetailModal
           item={{ stock_code: watchlistSelected.stock_code, corp_name: watchlistSelected.corp_name, buy_price: 0, quantity: 0 }}
           onClose={() => setWatchlistSelected(null)}
+        />
+      )}
+      {compareOpen && (
+        <CompareModal
+          initialCode={compareCode}
+          initialName={compareName}
+          onClose={() => setCompareOpen(false)}
         />
       )}
     </div>

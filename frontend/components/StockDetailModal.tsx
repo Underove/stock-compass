@@ -6,6 +6,7 @@ import { addWatchlistItem, fetchChartData, fetchCommentary, fetchDisclosures, fe
 import { isAfterHours, isMarketOpen, isPreMarket, useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, SimilarItem, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
 import { StockChart } from "./StockChart";
+import { CompareModal } from "./CompareModal";
 
 type Period = "1M" | "3M" | "6M";
 type Tab = "price" | "technical" | "ai";
@@ -41,6 +42,7 @@ type Props = {
 
 export function StockDetailModal({ item, onClose, onEdit }: Props) {
   const [currentItem, setCurrentItem] = useState(item);
+  const [compareOpen, setCompareOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("price");
 
   const [price, setPrice] = useState<StockPrice | null>(null);
@@ -199,7 +201,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
     ? ((price.current_price - currentItem.buy_price) / currentItem.buy_price) * 100
     : null;
 
-  const todayStr = new Date().toLocaleDateString("sv-SE"); // "YYYY-MM-DD"
+  const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10); // KST "YYYY-MM-DD"
   const isTradingHours = isMarketOpen() || isAfterHours() || isPreMarket();
   const liveCandle: Candle | undefined =
     price && isTradingHours && isFinite(price.open) && price.open > 0
@@ -297,6 +299,18 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 <svg width="14" height="14" viewBox="0 0 24 24" fill={watchlistAdded ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                 </svg>
+              </button>
+              <button
+                onClick={() => setCompareOpen(true)}
+                style={{
+                  height: 32, borderRadius: 16, padding: "0 12px",
+                  background: "var(--surface2)",
+                  fontSize: 12, fontWeight: 700,
+                  color: "var(--label2)", flexShrink: 0,
+                  border: "none", cursor: "pointer",
+                }}
+              >
+                비교
               </button>
               <button
                 onClick={onClose}
@@ -889,6 +903,13 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
           )}
         </div>
       </div>
+      {compareOpen && (
+        <CompareModal
+          initialCode={currentItem.stock_code}
+          initialName={currentItem.corp_name}
+          onClose={() => setCompareOpen(false)}
+        />
+      )}
     </div>
   );
 }
