@@ -48,6 +48,7 @@ export default function Home() {
   const [showAlerts, setShowAlerts] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [portfolioVersion, setPortfolioVersion] = useState(0);
+  const [indicesLoaded, setIndicesLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -59,6 +60,7 @@ export default function Home() {
           setMarketStatus(data.market_status);
         }
       } catch { /* 시장 조회 실패 무시 */ }
+      finally { if (!cancelled) setIndicesLoaded(true); }
     }
     load();
     const id = setInterval(load, 60_000);
@@ -117,7 +119,7 @@ export default function Home() {
           {Object.values(indices).map((idx, i) => (
             <MarketBadge key={idx.name} index={idx} className={`market-badge market-badge--${i}`} />
           ))}
-          {Object.keys(indices).length === 0 && (
+          {Object.keys(indices).length === 0 && !indicesLoaded && (
             <div style={{ fontSize: 12, color: "var(--label3)" }}>시장 조회 중…</div>
           )}
         </div>

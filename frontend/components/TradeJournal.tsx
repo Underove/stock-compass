@@ -85,38 +85,35 @@ const BADGE: Record<string, { label: string; bg: string; color: string }> = {
 
 function TradeRow({ trade, onClick }: { trade: Trade; onClick: () => void }) {
   const b = BADGE[trade.trade_type];
-  const date = trade.created_at.slice(0, 10);   // YYYY-MM-DD
-  const time = trade.created_at.slice(11, 16);  // HH:MM
+  const dt = trade.created_at;
+  const mmdd = dt.slice(5, 10).replace("-", "/");   // MM/DD
+  const time = dt.slice(11, 16);                    // HH:MM
   return (
     <button
       onClick={onClick}
       style={{
         display: "flex", alignItems: "center", gap: 10,
         width: "100%", background: "none", border: "none", cursor: "pointer",
-        padding: "11px 0", borderBottom: "1px solid var(--border)",
+        padding: "12px 0", borderBottom: "0.5px solid var(--sep)",
         textAlign: "left",
       }}
     >
-      {/* 날짜 */}
-      <div style={{ flexShrink: 0, width: 52, textAlign: "center" }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--label1)" }}>{date.slice(5)}</div>
-        <div style={{ fontSize: 10, color: "var(--label3)", marginTop: 1 }}>{time}</div>
-      </div>
+      {/* 거래 유형 뱃지 */}
+      <span style={{
+        flexShrink: 0, fontSize: 10, fontWeight: 700,
+        padding: "3px 7px", borderRadius: 7,
+        background: b.bg, color: b.color,
+        letterSpacing: "-0.01em",
+      }}>{b.label}</span>
 
-      {/* 뱃지 + 종목명 */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{
-            flexShrink: 0, fontSize: 10, fontWeight: 700,
-            padding: "2px 6px", borderRadius: 5,
-            background: b.bg, color: b.color,
-          }}>{b.label}</span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--label1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {trade.corp_name}
-          </span>
+      {/* 종목명 + 서브정보 */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--label1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 2 }}>
+          {trade.corp_name}
         </div>
         <div style={{ fontSize: 11, color: "var(--label3)" }}>
           {trade.quantity.toLocaleString()}주 · {trade.price.toLocaleString()}원
+          <span style={{ marginLeft: 8, opacity: 0.65 }}>{mmdd} {time}</span>
         </div>
       </div>
 
@@ -218,7 +215,7 @@ export default function TradeJournal({ portfolio }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       {/* Graph Section */}
-      <div style={{ background: "var(--surface3)", borderRadius: 14, padding: "16px" }}>
+      <div style={{ background: "var(--surface)", borderRadius: 16, padding: "16px", boxShadow: "0 1px 8px rgba(0,0,0,0.06)", border: "0.5px solid var(--sep)" }}>
         {/* Toggle + Period */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ display: "flex", gap: 4, background: "var(--surface)", borderRadius: 8, padding: 3 }}>

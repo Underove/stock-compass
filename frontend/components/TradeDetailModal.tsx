@@ -121,30 +121,30 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
       }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: "2px 8px",
-                borderRadius: 6, background: badge.bg, color: badge.color,
-              }}>{badge.label}</span>
-              <span style={{ fontSize: 13, color: "var(--label2)" }}>{date}</span>
-            </div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--label1)" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "var(--label1)", marginBottom: 4 }}>
               {trade.corp_name}
-              <span style={{ fontSize: 12, color: "var(--label3)", marginLeft: 6 }}>
+              <span style={{ fontSize: 13, color: "var(--label3)", marginLeft: 7, fontWeight: 500 }}>
                 {trade.stock_code}
               </span>
             </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{
+                fontSize: 11, fontWeight: 700, padding: "2px 8px",
+                borderRadius: 7, background: badge.bg, color: badge.color,
+              }}>{badge.label}</span>
+              <span style={{ fontSize: 12, color: "var(--label3)" }}>{date}</span>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
             <button
               onClick={() => { setEditMode(!editMode); setConfirmDelete(false); }}
               style={{
-                background: editMode ? "var(--primary)" : "var(--surface3)",
+                background: editMode ? "var(--primary)" : "rgba(118,118,128,0.12)",
                 border: "none", cursor: "pointer",
                 color: editMode ? "#fff" : "var(--label2)",
-                fontSize: 12, fontWeight: 600, padding: "5px 10px",
-                borderRadius: 8,
+                fontSize: 12, fontWeight: 600, padding: "6px 12px",
+                borderRadius: 9,
               }}
             >
               {editMode ? "취소" : "수정"}
@@ -152,8 +152,10 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
             <button
               onClick={onClose}
               style={{
-                background: "none", border: "none", cursor: "pointer",
-                color: "var(--label3)", fontSize: 20, padding: "0 4px",
+                background: "rgba(118,118,128,0.12)", border: "none", cursor: "pointer",
+                color: "var(--label3)", fontSize: 16, padding: "0",
+                width: 30, height: 30, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
               }}
             >✕</button>
           </div>
@@ -231,9 +233,9 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
                   ? [{ label: "현재가", value: `${currentPrice.toLocaleString()}원` }]
                   : []),
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: "var(--surface3)", borderRadius: 10, padding: "10px 14px" }}>
-                  <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--label1)" }}>{value}</div>
+                <div key={label} style={{ background: "rgba(118,118,128,0.08)", borderRadius: 12, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--label1)", letterSpacing: "-0.03em" }}>{value}</div>
                 </div>
               ))}
             </div>
@@ -306,42 +308,47 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
 
         {/* Delete */}
         {!editMode && (
-          <div style={{ borderTop: "0.5px solid var(--sep)", paddingTop: 12 }}>
+          <div style={{ borderTop: "0.5px solid var(--sep)", paddingTop: 14 }}>
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
                 style={{
-                  width: "100%", padding: "9px", background: "transparent",
-                  border: "1px solid var(--danger)", color: "var(--danger)",
-                  borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  width: "100%", padding: "10px", background: "rgba(255,59,48,0.07)",
+                  border: "none", color: "var(--danger)",
+                  borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: "pointer",
                 }}
               >
                 이 거래 삭제
               </button>
             ) : (
-              <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  style={{
-                    flex: 1, padding: "9px", background: "var(--surface3)",
-                    border: "none", color: "var(--label2)",
-                    borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer",
-                  }}
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  style={{
-                    flex: 1, padding: "9px", background: "var(--danger)",
-                    border: "none", color: "#fff",
-                    borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
-                    opacity: deleting ? 0.7 : 1,
-                  }}
-                >
-                  {deleting ? "삭제 중…" : "삭제 확인"}
-                </button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--label1)", textAlign: "center" }}>
+                  이 거래를 삭제할까요?
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    style={{
+                      flex: 1, padding: "10px", background: "rgba(118,118,128,0.1)",
+                      border: "none", color: "var(--label2)",
+                      borderRadius: 12, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                    }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    style={{
+                      flex: 1, padding: "10px", background: "var(--danger)",
+                      border: "none", color: "#fff",
+                      borderRadius: 12, fontSize: 13, fontWeight: 700, cursor: "pointer",
+                      opacity: deleting ? 0.7 : 1,
+                    }}
+                  >
+                    {deleting ? "삭제 중…" : "삭제"}
+                  </button>
+                </div>
               </div>
             )}
           </div>
