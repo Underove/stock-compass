@@ -22,6 +22,8 @@ from app.api import upload as upload_api  # noqa: E402
 from app.api import notifications as notifications_api  # noqa: E402
 from app.api import watchlist as watchlist_api  # noqa: E402
 from app.api import trades as trades_api  # noqa: E402
+from app.api import profile as profile_api  # noqa: E402
+from app.api import screener as screener_api  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.db.trade_db import init_db  # noqa: E402
 from app.scheduler.jobs import (  # noqa: E402
@@ -85,6 +87,8 @@ app.include_router(market_api.router, prefix="/api", tags=["market"])
 app.include_router(watchlist_api.router, prefix="/api", tags=["watchlist"])
 app.include_router(notifications_api.router, prefix="/api", tags=["notifications"])
 app.include_router(trades_api.router, prefix="/api", tags=["trades"])
+app.include_router(profile_api.router, prefix="/api", tags=["profile"])
+app.include_router(screener_api.router, prefix="/api", tags=["screener"])
 
 
 @app.get("/")
