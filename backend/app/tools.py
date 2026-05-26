@@ -113,6 +113,42 @@ TOOL_DECLARATIONS = [
             "required": ["corp_name"],
         },
     ),
+    types.FunctionDeclaration(
+        name="screen_stocks",
+        description="섹터·RSI·MA·PER 조건으로 종목을 스크리닝한다. "
+                    "'반도체 RSI 과매도', '저PER 골든크로스', '바이오 소형주' 같은 요청 시 호출.",
+        parameters={
+            "type": "object",
+            "properties": {
+                "sector": {
+                    "type": "string",
+                    "description": "앱 섹터명. 예: 반도체, 바이오·제약, IT·플랫폼, 자동차, 금융·보험, 화학·소재, 조선·방산, 게임·엔터, 소비재·유통, 2차전지·전기차",
+                },
+                "rsi_max": {
+                    "type": "number",
+                    "description": "RSI 상한값. 과매도 필터 시 30 사용",
+                },
+                "rsi_min": {
+                    "type": "number",
+                    "description": "RSI 하한값. 과매수 필터 시 70 사용",
+                },
+                "ma_status": {
+                    "type": "string",
+                    "enum": ["golden", "dead", "above", "below"],
+                    "description": "MA5/20 상태. golden=골든크로스, dead=데드크로스",
+                },
+                "per_max": {
+                    "type": "number",
+                    "description": "PER 상한값. 저PER 필터 시 사용",
+                },
+                "market_cap_max": {
+                    "type": "number",
+                    "description": "시가총액 상한 (억 원). 소형주 필터 시 사용",
+                },
+            },
+            "required": [],
+        },
+    ),
 ]
 
 GEMINI_TOOLS = [types.Tool(function_declarations=TOOL_DECLARATIONS)]
@@ -185,6 +221,33 @@ def execute_tool(name: str, args: dict, username: str) -> dict:
                 return {"error": "corp_name 필수"}
             disclosures = _dart_disclosures(corp_name)
             return {"items": disclosures, "count": len(disclosures)}
+
+        if name == "screen_stocks":
+            from app.db.trade_db import query_screener
+            results = query_screener(
+                sector=args.get("sector"),
+                per_max=args.get("per_max"),
+                rsi_min=args.get("rsi_min"),
+                rsi_max=args.get("rsi_max"),
+                ma_status=args.get("ma_status"),
+                market_cap_max=args.get("market_cap_max"),
+                limit=10,
+            )
+            return {
+                "count": len(results),
+                "items": [
+                    {
+                        "stock_code":  r["stock_code"],
+                        "corp_name":   r["corp_name"],
+                        "sector":      r["sector"],
+                        "market_cap":  r["market_cap"],
+                        "per":         r["per"],
+                        "rsi":         r["rsi"],
+                        "ma_status":   r["ma_status"],
+                    }
+                    for r in results
+                ],
+            }
 
         return {"error": f"알 수 없는 도구: {name}"}
 
