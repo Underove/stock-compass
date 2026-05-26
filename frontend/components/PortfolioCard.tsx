@@ -107,43 +107,47 @@ function SummaryCard({ items, prices }: { items: PortfolioItem[]; prices: Record
     const p = prices[i.stock_code];
     return s + (p ? p.current_price * i.quantity : i.buy_price * i.quantity);
   }, 0);
-  const loadedCount = Object.keys(prices).length;
   const totalPnl = totalCurrent - totalInvested;
   const totalPnlPct = totalInvested > 0 ? (totalPnl / totalInvested) * 100 : 0;
+  const todayPnl = items.reduce((s, i) => {
+    const p = prices[i.stock_code];
+    if (!p || !isFinite(p.open) || p.open === 0) return s;
+    return s + (p.current_price - p.open) * i.quantity;
+  }, 0);
   const isProfit = totalPnl >= 0;
-  const accentColor = isProfit ? "var(--red)" : "var(--primary)";
+  const isTodayProfit = todayPnl >= 0;
+
+  function fmtShort(n: number) {
+    const abs = Math.abs(n);
+    if (abs >= 1e8) return `${(n / 1e8).toFixed(1)}억`;
+    return `${Math.round(n / 1e4).toLocaleString("ko-KR")}만`;
+  }
+
+  const cellStyle: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 };
+  const labelStyle: React.CSSProperties = { fontSize: 10, color: "var(--label3)", fontWeight: 500 };
 
   return (
-    <div style={{ margin: "12px 16px 4px", background: "var(--surface)", borderRadius: 20, boxShadow: "var(--shadow)" }}>
-      <div style={{ padding: "14px 18px 16px" }}>
-        {/* 총 평가금액 */}
-        <div style={{ fontSize: 11, color: "var(--label3)", fontWeight: 500, marginBottom: 4 }}>
-          총 평가금액
-          {loadedCount < items.length && (
-            <span style={{ marginLeft: 5, color: "var(--label3)", fontSize: 10 }}>({loadedCount}/{items.length} 로딩)</span>
-          )}
+    <div style={{ margin: "12px 16px 4px", background: "var(--surface)", borderRadius: 16, boxShadow: "var(--shadow)" }}>
+      <div style={{ display: "flex", padding: "12px 8px" }}>
+        <div style={cellStyle}>
+          <span style={labelStyle}>총 평가</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}>
+            {fmtShort(totalCurrent)}
+          </span>
         </div>
-        <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.06em", lineHeight: 1, marginBottom: 14 }}>
-          {fmt(totalCurrent)}<span style={{ fontSize: 15, fontWeight: 500, color: "var(--label3)", marginLeft: 3 }}>원</span>
+        <div style={{ width: "0.5px", background: "var(--sep)", alignSelf: "stretch" }} />
+        <div style={cellStyle}>
+          <span style={labelStyle}>수익률</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: isProfit ? "var(--red)" : "var(--primary)", letterSpacing: "-0.03em" }}>
+            {totalPnlPct > 0 ? "+" : ""}{totalPnlPct.toFixed(2)}%
+          </span>
         </div>
-        {/* 수익 정보 행 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 12, borderTop: "0.5px solid var(--sep)" }}>
-          <div>
-            <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 2 }}>투자원금</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{fmt(totalInvested)}원</div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: accentColor }}>
-              {totalPnl > 0 ? "+" : ""}{fmt(totalPnl)}원
-            </div>
-            <div style={{
-              fontSize: 16, fontWeight: 800, color: accentColor,
-              background: isProfit ? "rgba(255,59,48,0.09)" : "rgba(0,122,255,0.09)",
-              borderRadius: 10, padding: "5px 12px", letterSpacing: "-0.02em",
-            }}>
-              {pctSign(totalPnlPct)}
-            </div>
-          </div>
+        <div style={{ width: "0.5px", background: "var(--sep)", alignSelf: "stretch" }} />
+        <div style={cellStyle}>
+          <span style={labelStyle}>오늘 손익</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: isTodayProfit ? "var(--red)" : "var(--primary)", letterSpacing: "-0.03em" }}>
+            {todayPnl > 0 ? "+" : ""}{fmtShort(todayPnl)}
+          </span>
         </div>
       </div>
     </div>
