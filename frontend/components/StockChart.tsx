@@ -8,6 +8,7 @@ type Props = {
   candles: Candle[];
   height?: number;
   buyPrice?: number;
+  liveCandle?: Candle;
 };
 
 function calcMA(candles: Candle[], period: number): { time: string; value: number }[] {
@@ -20,10 +21,12 @@ function calcMA(candles: Candle[], period: number): { time: string; value: numbe
   return result;
 }
 
-export function StockChart({ candles, height = 260, buyPrice }: Props) {
+export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const chartRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const candleSeriesRef = useRef<any>(null);
 
   useEffect(() => {
     if (!containerRef.current || candles.length === 0) return;
@@ -106,6 +109,7 @@ export function StockChart({ candles, height = 260, buyPrice }: Props) {
         close: c.close,
       }));
       candleSeries.setData(candleData);
+      candleSeriesRef.current = candleSeries;
 
       // ── 매수단가 기준선 ──
       if (buyPrice && buyPrice > 0) {
@@ -187,6 +191,18 @@ export function StockChart({ candles, height = 260, buyPrice }: Props) {
       }
     };
   }, [candles, height, buyPrice]);
+
+  useEffect(() => {
+    if (!liveCandle || !candleSeriesRef.current) return;
+    if (!isFinite(liveCandle.open) || !isFinite(liveCandle.close)) return;
+    candleSeriesRef.current.update({
+      time: liveCandle.time as `${number}-${number}-${number}`,
+      open: liveCandle.open,
+      high: liveCandle.high,
+      low: liveCandle.low,
+      close: liveCandle.close,
+    });
+  }, [liveCandle]);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
