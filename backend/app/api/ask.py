@@ -1,45 +1,58 @@
-from fastapi import APIRouter, Depends, HTTPException
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.auth import get_current_user
+from app.db.trade_db import get_profile, update_ai_memo
+from app.llm.gemini import generate_answer
 from app.rag.qa import answer_with_context
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
-_PORTFOLIO_KEYWORDS = (
-    "포트폴리오", "포폴", "내 주식", "보유", "수익률", "손익",
-    "전반", "현황", "내 종목", "내가 가진", "내가 보유", "요약해",
-    "어때", "어떠", "평가", "총액", "얼마야", "얼마나",
-)
+_RISK_LABEL = {"aggressive": "공격적", "neutral": "중립", "defensive": "방어적"}
+_HORIZON_LABEL = {"short": "단기", "mid": "중기", "long": "장기"}
 
 
-def _is_portfolio_question(q: str) -> bool:
-    return any(kw in q for kw in _PORTFOLIO_KEYWORDS)
+def _build_profile_context(profile: dict) -> str | None:
+    """투자 성향 dict → LLM 주입용 텍스트. 기본값(neutral/mid/빈 섹터)이면 None."""
+    risk = profile.get("risk_level", "neutral")
+    horizon = profile.get("horizon", "mid")
+    sectors = profile.get("sectors") or []
+    memo = profile.get("ai_memo", "")
 
-
-def _build_portfolio_context(username: str) -> str | None:
-    try:
-        from app.api.portfolio import _get_price, _load
-        items = _load(username)
-        if not items:
-            return None
-        lines = []
-        for item in items[:10]:
-            try:
-                p = _get_price(item["stock_code"])
-                cp = p["current_price"]
-                pnl_pct = ((cp - item["buy_price"]) / item["buy_price"] * 100) if item["buy_price"] else 0
-                pnl_amt = (cp - item["buy_price"]) * item["quantity"]
-                lines.append(
-                    f"- {item['corp_name']}({item['stock_code']}): "
-                    f"현재가 {cp:,}원, 매수단가 {item['buy_price']:,}원, "
-                    f"수량 {item['quantity']}주, 평가손익 {pnl_pct:+.1f}% ({pnl_amt:+,.0f}원)"
-                )
-            except Exception:
-                lines.append(f"- {item['corp_name']}: 시세 조회 불가")
-        return "[사용자 보유 포트폴리오]\n" + "\n".join(lines)
-    except Exception:
+    is_default = (risk == "neutral" and horizon == "mid" and not sectors and not memo)
+    if is_default:
         return None
+
+    lines = [
+        f"리스크: {_RISK_LABEL.get(risk, risk)} / 기간: {_HORIZON_LABEL.get(horizon, horizon)}",
+    ]
+    if sectors:
+        lines.append(f"선호 섹터: {', '.join(sectors)}")
+    if memo:
+        lines.append(f"AI 메모: {memo}")
+    return "[사용자 투자 성향]\n" + "\n".join(lines)
+
+
+def _update_memo_background(username: str, question: str, answer: str) -> None:
+    """채팅 후 비동기로 AI 메모 갱신. 실패해도 채팅에 영향 없음."""
+    try:
+        profile = get_profile(username)
+        current_memo = profile.get("ai_memo", "")
+        prompt = (
+            f"사용자의 투자 성향 메모를 업데이트해주세요. 1~2문장으로만 작성. 별표(*) 금지.\n\n"
+            f"현재 메모: {current_memo or '(없음)'}\n\n"
+            f"최근 질문: {question}\n"
+            f"최근 답변 요약: {answer[:300]}\n\n"
+            f"업데이트된 메모 (1~2문장만):"
+        )
+        new_memo = generate_answer(prompt, temperature=0.5)
+        if new_memo and len(new_memo) < 400:
+            update_ai_memo(username, new_memo.strip())
+    except Exception as e:
+        logger.debug("AI 메모 업데이트 실패 (무시): %s", e)
 
 
 class AskRequest(BaseModel):
@@ -66,18 +79,24 @@ class AskResponse(BaseModel):
 
 
 @router.post("/ask", response_model=AskResponse)
-def ask(req: AskRequest, username: str = Depends(get_current_user)) -> AskResponse:
+def ask(req: AskRequest, bg: BackgroundTasks, username: str = Depends(get_current_user)) -> AskResponse:
     if not req.question.strip():
         raise HTTPException(400, "질문을 입력해주세요")
 
-    portfolio_ctx: str | None = None
-    if _is_portfolio_question(req.question):
-        portfolio_ctx = _build_portfolio_context(username)
+    profile = get_profile(username)
+    profile_ctx = _build_profile_context(profile)
 
     try:
-        result = answer_with_context(req.question, n_chunks=req.n_chunks, portfolio_context=portfolio_ctx)
+        result = answer_with_context(
+            req.question,
+            n_chunks=req.n_chunks,
+            username=username,
+            profile_context=profile_ctx,
+        )
     except Exception as e:
         raise HTTPException(500, f"답변 생성 실패: {type(e).__name__}: {e}")
+
+    bg.add_task(_update_memo_background, username, req.question, result["answer"])
 
     return AskResponse(
         question=req.question,

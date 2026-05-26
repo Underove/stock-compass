@@ -1,14 +1,18 @@
 from app.collectors.dart import ensure_companies_from_text
-from app.collectors.web_search import news_to_context, search_news
 from app.db.chroma_client import get_trusted_collection, get_user_uploads_collection
-from app.llm.gemini import generate_answer
+from app.llm.gemini import generate_with_tools
 
 SYSTEM_INSTRUCTION = """당신은 한국 주식 정보를 분석하는 AI 비서입니다.
 
 자료 출처:
 - "DART 공시" 또는 "DART 공시 본문": 금융감독원 공식 공시. 사실(fact)로 취급.
 - "사용자 업로드": 사용자가 올린 투자 자료·리포트·서적. 내용을 분석 근거로 활용하되 출처 명시.
-- "사용자 포트폴리오": 사용자가 실제 보유한 종목·수량·매수단가·현재가·손익. 사실로 취급.
+- 도구(Function) 조회 결과: 실시간 시세·포트폴리오·뉴스·기술지표·공시. 사실로 취급.
+
+수치 그라운딩 규칙 (필수):
+- 가격·수익률·재무 수치는 반드시 도구 조회 결과 또는 [참고 자료]에서 인용. 직접 수치를 추측하거나 생성하지 않음.
+- 도구 호출이 실패하거나 결과에 error 필드가 있으면 "현재 조회할 수 없습니다"로 명시. 추측 금지.
+- 출처 없는 미래 수익 예측·보장 표현 금지.
 
 답변 규칙:
 1. [참고 자료]의 내용을 근거로 분석. 근거 사용 시 [자료 N] 형식으로 본문에 표기.
@@ -19,7 +23,6 @@ SYSTEM_INSTRUCTION = """당신은 한국 주식 정보를 분석하는 AI 비서
 6. 별표(*) 금지. 소제목(##) 금지. 평문과 번호 목록만 허용.
 7. 종목·섹터 분석은 근거 기반으로 자유롭게 제시. 미래 수익 보장 표현 금지.
 8. 종목 추천·분석 요청에는 보유 데이터(공시, 시세, 업로드 자료)를 최대한 활용해 구체적으로 답변.
-9. 포트폴리오 질문 시 [사용자 포트폴리오] 데이터를 기반으로 수익률·손익·현황을 구체적으로 분석.
 
 답변 형식:
 - 첫 문장에 핵심 결론 또는 요점을 먼저 제시.
@@ -67,17 +70,23 @@ def _query_collection(collection, question: str, n: int) -> tuple[list[str], lis
     )
 
 
-def answer_with_context(question: str, n_chunks: int = 5, portfolio_context: str | None = None) -> dict:
-    """trusted 우선 쿼터 + user_uploads 보조로 검색 → 거리순 정렬 → LLM 답변.
+def answer_with_context(
+    question: str,
+    n_chunks: int = 5,
+    username: str | None = None,
+    profile_context: str | None = None,
+) -> dict:
+    """trusted 우선 쿼터 + user_uploads 보조로 검색 → 거리순 정렬 → tool-calling LLM 답변.
 
     질문에 새 회사명이 있으면 검색 전에 자동 sync.
-    portfolio_context가 있으면 포트폴리오 데이터를 프롬프트에 주입.
+    profile_context가 있으면 사용자 투자 성향을 프롬프트에 주입.
+    포트폴리오·뉴스는 이제 도구(Function Calling)로 AI가 필요 시 조회.
     """
     newly_synced: list[dict] = []
     try:
         _, newly_synced = ensure_companies_from_text(question, max_new_syncs=2)
     except Exception:
-        pass  # 자동 sync 실패는 답변을 막지 않음
+        pass
 
     user_chunks, user_meta, user_dist = _query_collection(
         get_user_uploads_collection(), question, n_chunks
@@ -86,13 +95,6 @@ def answer_with_context(question: str, n_chunks: int = 5, portfolio_context: str
         get_trusted_collection(), question, n_chunks
     )
 
-    if not user_chunks and not trusted_chunks and not portfolio_context:
-        return {
-            "answer": "아직 분석 가능한 자료가 없습니다. PDF를 업로드하거나 DART 공시를 수집해주세요.",
-            "sources": [],
-        }
-
-    # 쿼터: trusted를 더 많이 (3:2) — 채팅은 보통 사실 확인용
     if trusted_chunks and user_chunks:
         trusted_take = min((n_chunks * 2 + 2) // 3, len(trusted_chunks))
         user_take = min(n_chunks - trusted_take, len(user_chunks))
@@ -112,16 +114,21 @@ def answer_with_context(question: str, n_chunks: int = 5, portfolio_context: str
     metadatas = [picked_meta[i] or {} for i in order]
     distances = [picked_dist[i] for i in order]
 
-    # 웹 뉴스 검색 (네이버 API 키 있을 때만)
-    news_items = search_news(f"{question} 주식", display=3)
-    news_ctx = news_to_context(news_items, label_prefix="웹 뉴스")
+    rag_ctx = build_context(chunks, metadatas) if chunks else ""
 
-    rag_ctx = build_context(chunks, metadatas)
-    parts = [p for p in [portfolio_context, rag_ctx, news_ctx] if p]
-    full_ctx = "\n\n---\n\n".join(parts)
+    parts = [p for p in [profile_context, rag_ctx] if p]
+    full_ctx = "\n\n---\n\n".join(parts) if parts else ""
 
-    prompt = f"[참고 자료]\n{full_ctx}\n\n[질문]\n{question}"
-    answer = generate_answer(prompt, system_instruction=SYSTEM_INSTRUCTION)
+    if full_ctx:
+        prompt = f"[참고 자료]\n{full_ctx}\n\n[질문]\n{question}"
+    else:
+        prompt = f"[질문]\n{question}"
+
+    answer = generate_with_tools(
+        prompt,
+        system_instruction=SYSTEM_INSTRUCTION,
+        username=username,
+    )
 
     sources = [
         {
