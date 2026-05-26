@@ -110,13 +110,14 @@ def _get_monitored_stocks(user_email: str) -> list[dict]:
 
 ### 신규 `job_check_technical_alerts()` — 16:50 KST
 ```
-- screener_snapshot에서 rsi, cross_5_20 조회
-- 없으면 ta_engine.analyze()로 직접 계산 (폴백)
+- screener_snapshot에서 rsi, ma_status 조회
+  (ma_status는 ta_engine의 cross_5_20을 저장한 컬럼: "golden"|"dead"|"above"|"below"|"none")
+- 없으면 ta_engine.analyze()로 직접 계산 (폴백, cross_5_20 필드 사용)
 - 조건 체크:
-    rsi >= 70  → rsi_overbought, meta: {"rsi": 73.2}
-    rsi <= 30  → rsi_oversold,   meta: {"rsi": 28.1}
-    cross_5_20 == "golden" → golden_cross
-    cross_5_20 == "dead"   → dead_cross
+    rsi >= 70               → rsi_overbought, meta: {"rsi": 73.2}
+    rsi <= 30               → rsi_oversold,   meta: {"rsi": 28.1}
+    ma_status == "golden"   → golden_cross
+    ma_status == "dead"     → dead_cross
 - 각 조건 하루 1회 중복 방지
 ```
 
@@ -255,10 +256,11 @@ deleteAlert(id: string): Promise<void>  // DELETE /api/notifications/alerts/{id}
 
 | 파일 | 변경 |
 |------|------|
-| `backend/app/db/trade_db.py` | alert 테이블 생성 + CRUD 함수 8개 추가 |
-| `backend/app/scheduler/jobs.py` | 기존 job 수정 + 신규 job 3개 추가 |
+| `backend/app/db/trade_db.py` | alert 테이블 생성 + CRUD 함수 9개 추가 |
+| `backend/app/scheduler/jobs.py` | 기존 job 수정 + 신규 job 3개 + cleanup 호출 |
 | `backend/main.py` | 신규 job 3개 스케줄러 등록 |
-| `backend/app/api/notifications.py` | 인증 추가 + watch API 3개 추가 |
+| `backend/app/api/notifications.py` | 인증 추가 + 개별 삭제 + watch API 3개 |
+| `backend/app/api/portfolio.py` | `/api/portfolio/alerts` — JSON → DB 기반으로 변경 |
 | `frontend/lib/types.ts` | Alert 타입 교체, WatchStock 추가 |
-| `frontend/lib/api.ts` | PriceAlert → Alert, watch API 함수 추가 |
-| `frontend/app/page.tsx` | AlertDropdown 개편, 모니터링 종목 관리 UI |
+| `frontend/lib/api.ts` | PriceAlert → Alert, deleteAlert, watch API 함수 추가 |
+| `frontend/app/page.tsx` | AlertDropdown 개편, 모니터링 종목 관리 UI, 개별 삭제 버튼 |
