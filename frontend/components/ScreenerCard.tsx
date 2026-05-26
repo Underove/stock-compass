@@ -287,7 +287,7 @@ export function ScreenerCard() {
                   const rsiLabel = item.rsi == null ? null
                     : item.rsi < 30 ? { text: "저평가", color: "var(--primary)", bg: "rgba(0,122,255,0.10)" }
                     : item.rsi > 70 ? { text: "과열", color: "var(--red)", bg: "rgba(255,59,48,0.10)" }
-                    : null;
+                    : { text: "중립", color: "#C9A000", bg: "rgba(255,200,0,0.12)" };
                   const maLabel = item.ma_status === "golden" ? { text: "상승신호", color: "var(--red)", bg: "rgba(255,59,48,0.10)" }
                     : item.ma_status === "dead" ? { text: "하락신호", color: "var(--primary)", bg: "rgba(0,122,255,0.10)" }
                     : item.ma_status === "above" ? { text: "상승흐름", color: "var(--red)", bg: "rgba(255,59,48,0.07)" }
@@ -303,25 +303,15 @@ export function ScreenerCard() {
                         quantity: 0,
                       })}
                       style={{
-                        padding: "11px 12px",
+                        padding: "10px 12px",
                         borderRadius: 12,
                         background: "var(--surface3)",
                         display: "flex",
                         alignItems: "center",
-                        gap: 10,
+                        justifyContent: "space-between",
                         cursor: "pointer",
                       }}
                     >
-                      {/* 아바타 */}
-                      <div style={{
-                        width: 36, height: 36, borderRadius: 10,
-                        background: "var(--surface)", flexShrink: 0,
-                        display: "flex", alignItems: "center", justifyContent: "center",
-                        fontSize: 14, fontWeight: 800, color: "var(--label2)",
-                      }}>
-                        {item.corp_name.slice(0, 1)}
-                      </div>
-
                       {/* 이름 + 서브 */}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: "var(--label)", marginBottom: 3 }}>
