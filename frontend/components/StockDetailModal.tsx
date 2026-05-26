@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
-import { isAfterHours, isMarketOpen, isPreMarket } from "../hooks/useRealtimePrice";
+import { isAfterHours, isMarketOpen, isPreMarket, useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
 import { StockChart } from "./StockChart";
 
@@ -72,26 +72,52 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
   const [editStopLoss, setEditStopLoss] = useState(item.stop_loss?.toString() ?? "");
   const [saving, setSaving] = useState(false);
 
+  // ── 가격: REST 초기 로드 + 장외 60초 폴링 ─────────────────────────────────
   const loadPrice = useCallback(async () => {
     try {
       const p = await fetchStockPrice(currentItem.stock_code);
       setPrice(p);
-    } catch { /* 장외시간 등 */ }
+    } catch { /* ignore */ }
     finally { setLoadingPrice(false); }
   }, [currentItem.stock_code]);
 
   useEffect(() => {
     loadPrice();
-    const id = setInterval(loadPrice, 30_000);
+    // 장중에는 WebSocket이 처리, REST는 open/high/low 동기화용으로만
+    const interval = isMarketOpen() ? 60_000 : 60_000;
+    const id = setInterval(loadPrice, interval);
     return () => clearInterval(id);
   }, [loadPrice]);
 
+  // ── 가격: WebSocket 실시간 tick (정규장 한정) ──────────────────────────────
+  const rtPrices = useRealtimePrice([currentItem.stock_code]);
+  useEffect(() => {
+    const rt = rtPrices[currentItem.stock_code];
+    if (!rt) return;
+    setPrice(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        current_price: rt.current_price,
+        change_pct: rt.change_pct,
+        change_amount: rt.change_amount,
+        volume: rt.volume,
+        high: Math.max(prev.high || 0, rt.current_price),
+        low: prev.low > 0 ? Math.min(prev.low, rt.current_price) : rt.current_price,
+        session: "open" as const,
+      };
+    });
+    setLoadingPrice(false);
+  }, [rtPrices, currentItem.stock_code]);
+
+  // ── 차트 ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     setLoadingChart(true);
     fetchChartData(currentItem.stock_code, PERIOD_DAYS[period])
       .then(setCandles).catch(() => {}).finally(() => setLoadingChart(false));
   }, [currentItem.stock_code, period]);
 
+  // ── 시황 해설: 최초 로드 + 정규장 중 3분마다 갱신 ─────────────────────────
   const loadCommentary = useCallback(async () => {
     setLoadingCommentary(true);
     try {
@@ -104,14 +130,25 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
   useEffect(() => {
     loadCommentary();
+    if (!isMarketOpen()) return;
+    const id = setInterval(loadCommentary, 3 * 60_000);
+    return () => clearInterval(id);
   }, [loadCommentary]);
 
-  useEffect(() => {
+  // ── 기술지표: 최초 로드 + 정규장 중 5분마다 갱신 ──────────────────────────
+  const loadTechnical = useCallback(async () => {
     setLoadingTechnical(true);
     fetchTechnical(currentItem.stock_code)
       .then(setTechnical).catch(() => setTechnical(null))
       .finally(() => setLoadingTechnical(false));
   }, [currentItem.stock_code]);
+
+  useEffect(() => {
+    loadTechnical();
+    if (!isMarketOpen()) return;
+    const id = setInterval(loadTechnical, 5 * 60_000);
+    return () => clearInterval(id);
+  }, [loadTechnical]);
 
   useEffect(() => {
     setLoadingDisclosures(true);
