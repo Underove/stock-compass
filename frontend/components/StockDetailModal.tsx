@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
+import { fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, getSimilarStocks, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
 import { isAfterHours, isMarketOpen, isPreMarket, useRealtimePrice } from "../hooks/useRealtimePrice";
-import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
+import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, SimilarItem, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
 import { StockChart } from "./StockChart";
 
 type Period = "1M" | "3M" | "6M";
@@ -71,6 +71,14 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
   const [editTargetPrice, setEditTargetPrice] = useState(item.target_price?.toString() ?? "");
   const [editStopLoss, setEditStopLoss] = useState(item.stop_loss?.toString() ?? "");
   const [saving, setSaving] = useState(false);
+
+  const [similarItems, setSimilarItems] = useState<SimilarItem[]>([]);
+
+  useEffect(() => {
+    getSimilarStocks(currentItem.stock_code)
+      .then(setSimilarItems)
+      .catch(() => {});
+  }, [currentItem.stock_code]);
 
   // ── 가격: REST 초기 로드 + 장외 60초 폴링 ─────────────────────────────────
   const loadPrice = useCallback(async () => {
@@ -783,6 +791,40 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* 유사종목 */}
+          {similarItems.length > 0 && (
+            <div style={{ padding: "0 16px 16px" }}>
+              <p style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, margin: "0 0 8px" }}>
+                유사종목
+              </p>
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }}>
+                {similarItems.map(sim => (
+                  <button
+                    key={sim.stock_code}
+                    onClick={() => {
+                      setSimilarItems([]);
+                      setCurrentItem({ stock_code: sim.stock_code, corp_name: sim.corp_name, buy_price: 0, quantity: 0 });
+                    }}
+                    style={{
+                      flexShrink: 0,
+                      padding: "8px 12px",
+                      borderRadius: 12,
+                      background: "var(--surface3)",
+                      border: "1px solid var(--sep)",
+                      display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start",
+                    }}
+                  >
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "var(--label)" }}>{sim.corp_name}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: "var(--label2)" }}>
+                      {sim.sector}
+                      {sim.per != null ? ` · PER ${sim.per}` : ""}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
