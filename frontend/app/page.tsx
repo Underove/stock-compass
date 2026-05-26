@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
-import { BackendStatusCard } from "../components/BackendStatusCard";
 import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
 import { fetchAlerts, fetchMarketIndices, markAlertsRead, initAuth } from "../lib/api";
@@ -115,7 +114,6 @@ export default function Home() {
         {/* 알림 + 유저 + 백엔드 상태 */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
           <AlertBell alerts={alerts} show={showAlerts} onToggle={() => setShowAlerts(v => !v)} />
-          <BackendStatusCard />
           {session?.user?.image && (
             <div style={{ position: "relative" }}>
               <img
