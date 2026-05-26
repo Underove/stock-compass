@@ -80,7 +80,10 @@ function ReturnChart({ data }: { data: CompareResponse }) {
     if (!containerRef.current) return;
     const s0 = data.stocks[0].price_series;
     const s1 = data.stocks[1].price_series;
-    if (s0.length === 0 && s1.length === 0) return;
+    if (s0.length === 0 && s1.length === 0) {
+      if (chartRef.current) { chartRef.current.remove(); chartRef.current = null; }
+      return;
+    }
 
     let mounted = true;
 
@@ -214,7 +217,7 @@ function StockSlot({
               {slot ? slot.name : "종목 선택"}
             </div>
             {slot && (
-              <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 1, fontFamily: "monospace" }}>
+              <div style={{ fontSize: 11, color: "var(--label2)", marginTop: 1, fontFamily: "monospace" }}>
                 {slot.code}
               </div>
             )}
@@ -290,6 +293,7 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
   const [period, setPeriod] = useState<"1m" | "3m" | "6m" | "1y">("3m");
   const [data, setData] = useState<CompareResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [searchSlot, setSearchSlot] = useState<"A" | "B" | null>(null);
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -299,11 +303,18 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
   useEffect(() => {
     if (!stockA || !stockB) return;
     setLoading(true);
+    setFetchError(false);
     fetchCompare(stockA.code, stockB.code, period)
       .then(setData)
-      .catch(() => setData(null))
+      .catch(() => { setData(null); setFetchError(true); })
       .finally(() => setLoading(false));
   }, [stockA, stockB, period]);
+
+  // searchSlot 변경 시 검색 상태 초기화
+  useEffect(() => {
+    setQuery("");
+    setSearchResults([]);
+  }, [searchSlot]);
 
   // 검색어 300ms 디바운스
   useEffect(() => {
@@ -325,8 +336,6 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
     if (searchSlot === "A") setStockA(slot);
     else setStockB(slot);
     setSearchSlot(null);
-    setQuery("");
-    setSearchResults([]);
   }
 
   return (
@@ -523,7 +532,7 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
           )}
 
           {/* 에러 상태 */}
-          {!loading && !data && stockA && stockB && (
+          {!loading && fetchError && stockA && stockB && (
             <div style={{ padding: "24px 20px", textAlign: "center", fontSize: 13, color: "var(--label3)" }}>
               데이터를 불러오지 못했습니다
             </div>
