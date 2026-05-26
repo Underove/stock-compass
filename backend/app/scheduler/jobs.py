@@ -173,6 +173,50 @@ def job_check_price_alerts() -> None:
         logger.error("[스케줄러] 알림 체크 실패: %s", e)
 
 
+def job_check_dart_alerts() -> None:
+    """보유/관심/모니터링 종목 신규 공시 체크 (평일 16:40 KST)."""
+    import time
+    now = _now_kst()
+    if now.weekday() >= 5:
+        return
+    logger.info("[스케줄러] 공시 알림 체크")
+    try:
+        from app.collectors.dart import download_corp_codes, fetch_recent_disclosures
+        today_str = now.strftime("%Y%m%d")
+        corp_list = download_corp_codes()
+        stock_to_corp = {c["stock_code"]: c["corp_code"] for c in corp_list}
+
+        # 전체 유저 × 모니터링 종목 수집 → 종목별 대상 유저 매핑
+        stock_users: dict[str, list[str]] = {}  # stock_code → [username, ...]
+        for username in _get_all_usernames():
+            for item in _get_monitored_stocks(username):
+                stock_users.setdefault(item["stock_code"], []).append(username)
+
+        for stock_code, usernames in stock_users.items():
+            corp_code = stock_to_corp.get(stock_code)
+            if not corp_code:
+                continue
+            try:
+                disclosures = fetch_recent_disclosures(corp_code, days=1, max_count=10)
+                for d in disclosures:
+                    if d.get("rcept_dt", "") != today_str:
+                        continue
+                    rcept_no = d.get("rcept_no", "")
+                    alert_id = f"{stock_code}_dart_{rcept_no}"
+                    report_nm = d.get("report_nm", "공시")
+                    corp_name = d.get("corp_name", stock_code)
+                    message = f"{corp_name} 신규 공시: {report_nm}"
+                    meta = {"rcept_no": rcept_no, "report_nm": report_nm, "rcept_dt": d.get("rcept_dt", "")}
+                    for username in usernames:
+                        insert_alert(username, alert_id, "dart", stock_code, corp_name, message, meta)
+            except Exception as e:
+                logger.warning("[스케줄러] 공시 조회 실패 (%s): %s", stock_code, e)
+            time.sleep(0.3)
+        logger.info("[스케줄러] 공시 알림 체크 완료")
+    except Exception as e:
+        logger.error("[스케줄러] 공시 알림 체크 실패: %s", e)
+
+
 # ─── 개장 전 뉴스 요약 ────────────────────────────────────────────────────────
 
 def load_news_cache() -> dict | None:
