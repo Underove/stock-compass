@@ -4,7 +4,7 @@ import json
 import logging
 import math
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.auth import get_current_user
@@ -32,16 +32,8 @@ class ScreenerRequest(BaseModel):
     ma_status:      str | None   = None
 
 
-class SaveFilterRequest(BaseModel):
-    name:           str
-    sector:         str | None   = None
-    market_cap_min: int | None   = None
-    market_cap_max: int | None   = None
-    per_max:        float | None = None
-    pbr_max:        float | None = None
-    rsi_min:        float | None = None
-    rsi_max:        float | None = None
-    ma_status:      str | None   = None
+class SaveFilterRequest(ScreenerRequest):
+    name: str
 
 
 # ─── 엔드포인트 ──────────────────────────────────────────────────────────────
@@ -72,10 +64,10 @@ def similar_stocks(
     _username: str = Depends(get_current_user),
 ):
     """타겟 종목과 유사한 5개 반환."""
-    all_rows = query_screener(limit=5000)  # 전체 스냅샷
+    all_rows = query_screener(limit=5000)  # collector caps at 300 rows; 5000 is a safe upper bound
     target = next((r for r in all_rows if r["stock_code"] == stock_code), None)
     if not target:
-        return []
+        raise HTTPException(status_code=404, detail="종목 없음")
 
     # 같은 섹터로 1차 필터
     same_sector = [r for r in all_rows if r["sector"] == target["sector"] and r["stock_code"] != stock_code]
