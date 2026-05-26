@@ -42,12 +42,12 @@ function chip(active: boolean): React.CSSProperties {
     padding: "5px 12px",
     borderRadius: 100,
     fontSize: 11,
-    fontWeight: active ? 700 : 500,
-    background: active ? "var(--primary)" : "var(--surface3)",
-    color: active ? "#fff" : "var(--label2)",
-    border: "none",
+    fontWeight: active ? 700 : 600,
+    background: active ? "var(--primary)" : "var(--surface)",
+    color: active ? "#fff" : "var(--label)",
+    border: active ? "1.5px solid transparent" : "1.5px solid var(--sep)",
     cursor: "pointer",
-    transition: "background 0.12s, color 0.12s",
+    transition: "background 0.12s, color 0.12s, border-color 0.12s",
     whiteSpace: "nowrap",
   };
 }
