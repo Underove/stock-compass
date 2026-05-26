@@ -130,25 +130,15 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
   useEffect(() => {
     loadCommentary();
-    if (!isMarketOpen()) return;
-    const id = setInterval(loadCommentary, 3 * 60_000);
-    return () => clearInterval(id);
   }, [loadCommentary]);
 
-  // ── 기술지표: 최초 로드 + 정규장 중 5분마다 갱신 ──────────────────────────
-  const loadTechnical = useCallback(async () => {
+  // ── 기술지표: 최초 로드만 ────────────────────────────────────────────────
+  useEffect(() => {
     setLoadingTechnical(true);
     fetchTechnical(currentItem.stock_code)
       .then(setTechnical).catch(() => setTechnical(null))
       .finally(() => setLoadingTechnical(false));
   }, [currentItem.stock_code]);
-
-  useEffect(() => {
-    loadTechnical();
-    if (!isMarketOpen()) return;
-    const id = setInterval(loadTechnical, 5 * 60_000);
-    return () => clearInterval(id);
-  }, [loadTechnical]);
 
   useEffect(() => {
     setLoadingDisclosures(true);
