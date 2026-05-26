@@ -186,9 +186,37 @@ type SimilarItem = {
 
 ---
 
+## 필터 저장/즐겨찾기
+
+### 백엔드
+
+`saved_screener_filters` 테이블 (trade_db.py에 추가):
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | INTEGER PK AUTOINCREMENT | |
+| username | TEXT | 사용자 이메일 |
+| name | TEXT | 필터 이름 (사용자 입력) |
+| filter_json | TEXT | 필터 조건 JSON 직렬화 |
+| created_at | TEXT | 생성 일시 |
+
+API 추가 (screener.py):
+```
+GET  /api/screener/filters          → 내 저장 필터 목록
+POST /api/screener/filters          → 필터 저장 (body: { name, ...filter_params })
+DELETE /api/screener/filters/{id}   → 필터 삭제
+```
+
+### 프론트엔드 (ScreenerCard.tsx)
+
+- 필터 설정 후 "저장" 버튼 → 이름 입력 인라인 → 저장
+- 상단에 저장된 필터 칩 목록 → 탭하면 해당 조건 즉시 적용
+- 칩 길게 누르거나 X 버튼 → 삭제
+
+---
+
 ## 범위 외 (이번 구현에서 제외)
 
 - 실시간 필터 (입력할 때마다 자동 갱신) — 버튼 클릭 방식으로 충분
-- 필터 조건 저장/즐겨찾기
 - 시총 300위 이하 종목 TA 온디맨드 계산
 - 스크리너 결과 CSV 내보내기 (Sub-project H에서)
