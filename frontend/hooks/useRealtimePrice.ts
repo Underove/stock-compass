@@ -14,7 +14,7 @@ export type RealtimePrice = {
   volume: number;
 };
 
-function isMarketOpen(): boolean {
+export function isMarketOpen(): boolean {
   const now = new Date();
   // KST = UTC+9
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
