@@ -68,7 +68,8 @@ export function StockChart({ candles, height = 260, buyPrice }: Props) {
           barSpacing: 6,
           fixLeftEdge: true,
           fixRightEdge: true,
-          tickMarkFormatter: (time: number) => {
+          tickMarkFormatter: (time: number | { year: number; month: number; day: number }) => {
+            if (typeof time === "object") return `${time.month}/${time.day}`;
             const d = new Date(time * 1000);
             return `${d.getMonth() + 1}/${d.getDate()}`;
           },
