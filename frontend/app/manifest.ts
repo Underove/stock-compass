@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "주식나침반",
-    short_name: "주식나침반",
+    name: "NOVA",
+    short_name: "NOVA",
     description: "AI가 주식 정보를 교차검증해 신뢰도를 알려주는 안전한 투자 길잡이",
     start_url: "/",
     display: "standalone",
