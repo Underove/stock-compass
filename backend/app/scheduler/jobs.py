@@ -95,9 +95,13 @@ def job_check_price_alerts() -> None:
 
     logger.info("[스케줄러] 가격 알림 체크")
     try:
-        from app.api.portfolio import _load as load_portfolio
         from app.collectors.krx import get_current_price
-        items = load_portfolio()
+        items: list[dict] = []
+        for f in DATA_DIR.glob("portfolio_*.json"):
+            try:
+                items.extend(json.loads(f.read_text(encoding="utf-8")))
+            except Exception:
+                pass
         alerts = _load_alerts()
         existing_ids = {a["id"] for a in alerts}
         new_alerts: list[dict] = []
@@ -167,17 +171,24 @@ def job_premarket_news_summary() -> None:
     """개장 전 뉴스 요약 자동 생성 (08:50 KST)."""
     logger.info("[스케줄러] 개장 전 뉴스 요약 시작")
     try:
-        from app.api.portfolio import _load as load_portfolio
-        from app.api.watchlist import _load as load_watchlist
         from app.collectors.web_search import search_news
         from app.llm.gemini import generate_answer, parse_json_response
 
-        portfolio = load_portfolio()
-        watchlist = load_watchlist()
-        all_stocks = {
-            **{i["stock_code"]: i["corp_name"] for i in portfolio},
-            **{i["stock_code"]: i["corp_name"] for i in watchlist},
-        }
+        all_stocks: dict[str, str] = {}
+        for f in DATA_DIR.glob("portfolio_*.json"):
+            try:
+                items = json.loads(f.read_text(encoding="utf-8"))
+                for i in items:
+                    all_stocks[i["stock_code"]] = i["corp_name"]
+            except Exception:
+                pass
+        for f in DATA_DIR.glob("watchlist_*.json"):
+            try:
+                items = json.loads(f.read_text(encoding="utf-8"))
+                for i in items:
+                    all_stocks[i["stock_code"]] = i["corp_name"]
+            except Exception:
+                pass
         if not all_stocks:
             logger.info("[스케줄러] 종목 없음, 건너뜀")
             return
