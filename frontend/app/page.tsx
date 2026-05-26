@@ -115,7 +115,10 @@ export default function Home() {
         {/* 로고 + 장 상태 */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <img src="/nova.png" alt="NOVA" style={{ width: 36, height: 36, borderRadius: 9, display: "block" }} />
-          <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "0.08em" }}>N.O.V.A</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "0.08em", lineHeight: 1.1 }}>N.O.V.A</span>
+            <span style={{ fontSize: 10, fontWeight: 500, color: "var(--label3)", letterSpacing: "-0.01em", lineHeight: 1 }}>AI 기반 투자 인사이트 플랫폼</span>
+          </div>
           {marketStatus && <MarketStatusBadge status={marketStatus} />}
         </div>
 
