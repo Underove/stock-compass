@@ -1,10 +1,35 @@
 """KIS REST API — 현재가 + 재무지표 조회 (실전/모의 공용, pykrx 대체)."""
+import re
 from datetime import datetime, timedelta, timezone
 
 import httpx
 
 from app.collectors.kis_ws import get_access_token
 from app.config import settings
+
+_NAVER_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Accept-Language": "ko-KR,ko",
+}
+
+
+def get_dividend_yield_naver(stock_code: str) -> float | None:
+    """네이버 금융에서 배당수익률(%) 스크래핑. 실패 시 None."""
+    try:
+        r = httpx.get(
+            "https://finance.naver.com/item/main.nhn",
+            params={"code": stock_code},
+            headers=_NAVER_HEADERS,
+            follow_redirects=True,
+            timeout=8,
+        )
+        m = re.search(r'id="_dvr">([\d.]+)<', r.text)
+        if m:
+            val = float(m.group(1))
+            return val if val > 0 else None
+    except Exception:
+        pass
+    return None
 
 _KST = timezone(timedelta(hours=9))
 
@@ -98,7 +123,6 @@ def get_fundamental_kis(stock_code: str) -> dict:
 
     try:
         out = _inquire_price(stock_code)
-        # hts_avls 단위: 억원
         avls = out.get("hts_avls")
         market_cap = int(float(avls) * 1e8) if avls else None
         return {
@@ -106,7 +130,7 @@ def get_fundamental_kis(stock_code: str) -> dict:
             "pbr": pos(out.get("pbr")),
             "eps": pos(out.get("eps")),
             "bps": pos(out.get("bps")),
-            "div": None,  # KIS inquire-price에는 배당수익률 없음
+            "div": get_dividend_yield_naver(stock_code),
             "market_cap": market_cap,
         }
     except Exception:
