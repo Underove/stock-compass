@@ -376,7 +376,7 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
     result = {
         "briefing": raw,
         "sections": sections,
-        "generated_at": datetime.datetime.now().strftime("%m/%d %H:%M"),
+        "generated_at": datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).strftime("%m/%d %H:%M"),
         "portfolio_stats": portfolio_stats,
     }
     try:
@@ -435,8 +435,10 @@ def get_fundamental(stock_code: str):
     import datetime
     from pykrx import stock as pykrx_stock
 
-    today = datetime.date.today().strftime("%Y%m%d")
-    start = (datetime.date.today() - datetime.timedelta(days=14)).strftime("%Y%m%d")
+    _kst = datetime.timezone(datetime.timedelta(hours=9))
+    _today = datetime.datetime.now(_kst).date()
+    today = _today.strftime("%Y%m%d")
+    start = (_today - datetime.timedelta(days=14)).strftime("%Y%m%d")
 
     try:
         df_fund = pykrx_stock.get_market_fundamental_by_date(start, today, stock_code)
@@ -470,8 +472,10 @@ def get_trading_flow(stock_code: str, days: int = 5):
     import datetime
     from pykrx import stock as pykrx_stock
 
-    today = datetime.date.today().strftime("%Y%m%d")
-    start = (datetime.date.today() - datetime.timedelta(days=days * 3)).strftime("%Y%m%d")
+    _kst = datetime.timezone(datetime.timedelta(hours=9))
+    _today = datetime.datetime.now(_kst).date()
+    today = _today.strftime("%Y%m%d")
+    start = (_today - datetime.timedelta(days=days * 3)).strftime("%Y%m%d")
 
     try:
         df = pykrx_stock.get_market_trading_value_by_date(start, today, stock_code, detail=True)
@@ -504,8 +508,10 @@ def get_short_selling(stock_code: str, days: int = 5):
     import datetime
     from pykrx import stock as pykrx_stock
 
-    today = datetime.date.today().strftime("%Y%m%d")
-    start = (datetime.date.today() - datetime.timedelta(days=days * 3)).strftime("%Y%m%d")
+    _kst = datetime.timezone(datetime.timedelta(hours=9))
+    _today = datetime.datetime.now(_kst).date()
+    today = _today.strftime("%Y%m%d")
+    start = (_today - datetime.timedelta(days=days * 3)).strftime("%Y%m%d")
     try:
         df = pykrx_stock.get_stock_short_selling_volume_by_date(start, today, stock_code)
         if df is None or df.empty:
@@ -559,29 +565,11 @@ def save_note(stock_code: str, body: NoteBody, username: str = Depends(get_curre
 
 @router.get("/portfolio/alerts")
 def get_portfolio_alerts(username: str = Depends(get_current_user)):
-    """포트폴리오 종목별 최근 7일 공시 건수 (배지용)."""
+    """포트폴리오 종목별 미읽은 알림 건수 (배지용)."""
     items = _load(username)
     if not items:
         return {"alerts": {}}
-
-    try:
-        all_companies = download_corp_codes()
-    except Exception:
-        return {"alerts": {sc["stock_code"]: 0 for sc in items}}
-
-    corp_map = {c["stock_code"]: c for c in all_companies}
-
-    alerts: dict[str, int] = {}
-    for item in items:
-        sc = item["stock_code"]
-        company = corp_map.get(sc)
-        if not company:
-            alerts[sc] = 0
-            continue
-        try:
-            recent = fetch_recent_disclosures(company["corp_code"], days=7, max_count=5)
-            alerts[sc] = len(recent)
-        except Exception:
-            alerts[sc] = 0
-
-    return {"alerts": alerts}
+    stock_codes = [item["stock_code"] for item in items]
+    from app.db.trade_db import get_unread_alert_counts
+    counts = get_unread_alert_counts(username, stock_codes)
+    return {"alerts": {code: counts.get(code, 0) for code in stock_codes}}
