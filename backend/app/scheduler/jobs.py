@@ -217,6 +217,126 @@ def job_check_dart_alerts() -> None:
         logger.error("[스케줄러] 공시 알림 체크 실패: %s", e)
 
 
+def job_check_volume_alerts() -> None:
+    """거래량 급등 알림 (평일 16:45 KST, volume_ratio >= 2.0)."""
+    now = _now_kst()
+    if now.weekday() >= 5:
+        return
+    logger.info("[스케줄러] 거래량 알림 체크")
+    try:
+        from app.db.trade_db import _conn
+        date_str = now.strftime("%Y-%m-%d")
+
+        # screener_snapshot에서 volume_ratio 조회
+        with _conn() as con:
+            snap_rows = con.execute(
+                "SELECT stock_code, corp_name, volume_ratio FROM screener_snapshot WHERE volume_ratio IS NOT NULL"
+            ).fetchall()
+        snap = {r["stock_code"]: {"corp_name": r["corp_name"], "volume_ratio": r["volume_ratio"]} for r in snap_rows}
+
+        for username in _get_all_usernames():
+            for item in _get_monitored_stocks(username):
+                code = item["stock_code"]
+                row = snap.get(code)
+                vol_ratio: float | None = None
+
+                if row:
+                    vol_ratio = row["volume_ratio"]
+                else:
+                    # 폴백: ta_engine 직접 계산
+                    try:
+                        from app.collectors.ta_engine import analyze as ta_analyze
+                        ta = ta_analyze(code)
+                        vol_ratio = ta.get("volume_ratio")
+                    except Exception:
+                        pass
+
+                if vol_ratio is not None and vol_ratio >= 2.0:
+                    alert_id = f"{code}_volume_{date_str}"
+                    corp_name = (row or {}).get("corp_name", item["corp_name"])
+                    insert_alert(
+                        username, alert_id, "volume_spike", code, corp_name,
+                        f"{corp_name} 거래량 급등 (평균 대비 {vol_ratio:.1f}배)",
+                        {"volume_ratio": round(vol_ratio, 2)},
+                    )
+        logger.info("[스케줄러] 거래량 알림 체크 완료")
+    except Exception as e:
+        logger.error("[스케줄러] 거래량 알림 체크 실패: %s", e)
+
+
+def job_check_technical_alerts() -> None:
+    """RSI/MA 크로스 기술지표 알림 (평일 16:50 KST)."""
+    now = _now_kst()
+    if now.weekday() >= 5:
+        return
+    logger.info("[스케줄러] 기술지표 알림 체크")
+    try:
+        from app.db.trade_db import _conn
+        date_str = now.strftime("%Y-%m-%d")
+
+        with _conn() as con:
+            snap_rows = con.execute(
+                "SELECT stock_code, corp_name, rsi, ma_status FROM screener_snapshot WHERE has_ta=1"
+            ).fetchall()
+        snap = {
+            r["stock_code"]: {"corp_name": r["corp_name"], "rsi": r["rsi"], "ma_status": r["ma_status"]}
+            for r in snap_rows
+        }
+
+        for username in _get_all_usernames():
+            for item in _get_monitored_stocks(username):
+                code = item["stock_code"]
+                row = snap.get(code)
+                rsi: float | None = None
+                ma_status: str | None = None
+
+                if row:
+                    rsi = row["rsi"]
+                    ma_status = row["ma_status"]
+                else:
+                    try:
+                        from app.collectors.ta_engine import analyze as ta_analyze
+                        ta = ta_analyze(code)
+                        rsi = ta.get("rsi")
+                        ma_status = ta.get("cross_5_20")
+                    except Exception:
+                        pass
+
+                corp_name = (row or {}).get("corp_name", item["corp_name"])
+
+                if rsi is not None and rsi >= 70:
+                    insert_alert(
+                        username, f"{code}_rsi_overbought_{date_str}", "rsi_overbought",
+                        code, corp_name,
+                        f"{corp_name} RSI 과매수 진입 (RSI {rsi:.1f})",
+                        {"rsi": round(rsi, 1)},
+                    )
+                if rsi is not None and rsi <= 30:
+                    insert_alert(
+                        username, f"{code}_rsi_oversold_{date_str}", "rsi_oversold",
+                        code, corp_name,
+                        f"{corp_name} RSI 과매도 진입 (RSI {rsi:.1f})",
+                        {"rsi": round(rsi, 1)},
+                    )
+                if ma_status == "golden":
+                    insert_alert(
+                        username, f"{code}_golden_cross_{date_str}", "golden_cross",
+                        code, corp_name,
+                        f"{corp_name} 골든크로스 발생 (5MA↑20MA)",
+                        None,
+                    )
+                if ma_status == "dead":
+                    insert_alert(
+                        username, f"{code}_dead_cross_{date_str}", "dead_cross",
+                        code, corp_name,
+                        f"{corp_name} 데드크로스 발생 (5MA↓20MA)",
+                        None,
+                    )
+        logger.info("[스케줄러] 기술지표 알림 체크 완료")
+    except Exception as e:
+        logger.error("[스케줄러] 기술지표 알림 체크 실패: %s", e)
+
+
 # ─── 개장 전 뉴스 요약 ────────────────────────────────────────────────────────
 
 def load_news_cache() -> dict | None:
@@ -392,6 +512,12 @@ def job_refresh_screener_ta() -> None:
                 })
             upsert_screener_snapshot(merged)
             logger.info("[스케줄러] TA 배치 완료: %d종목", len(merged))
+        # 오래된 알림 정리
+        try:
+            from app.db.trade_db import cleanup_old_alerts
+            cleanup_old_alerts()
+        except Exception as e:
+            logger.warning("[스케줄러] 알림 정리 실패: %s", e)
     except Exception as e:
         logger.error("[스케줄러] TA 배치 실패: %s", e)
 
