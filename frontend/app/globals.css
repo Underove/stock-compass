@@ -21,8 +21,9 @@
   --header-bg: rgba(242, 242, 247, 0.88);
 }
 
+/* OS 다크모드 자동 감지 (수동 설정 없을 때) */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
     --bg: #000000;
     --surface: #1C1C1E;
     --surface2: rgba(118, 118, 128, 0.18);
@@ -42,6 +43,28 @@
     --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.28);
     --header-bg: rgba(28, 28, 30, 0.88);
   }
+}
+
+/* 수동 다크모드 */
+[data-theme="dark"] {
+  --bg: #000000;
+  --surface: #1C1C1E;
+  --surface2: rgba(118, 118, 128, 0.18);
+  --surface3: rgba(118, 118, 128, 0.26);
+  --primary: #0A84FF;
+  --primary-soft: rgba(10, 132, 255, 0.12);
+  --green: #30D158;
+  --orange: #FF9F0A;
+  --red: #FF453A;
+  --label: #FFFFFF;
+  --label2: #EBEBF5;
+  --label3: #6C6C70;
+  --sep: rgba(84, 84, 88, 0.65);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.20), 0 1px 6px rgba(0, 0, 0, 0.16);
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.30), 0 1px 3px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 6px 24px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55), 0 4px 12px rgba(0, 0, 0, 0.28);
+  --header-bg: rgba(28, 28, 30, 0.88);
 }
 
 html {

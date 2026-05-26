@@ -12,11 +12,30 @@ import type { MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1;
 
+function getInitialTheme(): "light" | "dark" | "system" {
+  if (typeof window === "undefined") return "system";
+  const t = localStorage.getItem("theme");
+  if (t === "dark" || t === "light") return t;
+  return "system";
+}
+
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   const [authReady, setAuthReady] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+
+  useEffect(() => {
+    setTheme(getInitialTheme());
+  }, []);
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("theme", next);
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") router.replace("/login");
@@ -114,6 +133,28 @@ export default function Home() {
         {/* 알림 + 유저 + 백엔드 상태 */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
           <AlertBell alerts={alerts} show={showAlerts} onToggle={() => setShowAlerts(v => !v)} />
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환"}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "transparent",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "var(--label3)",
+              transition: "color 0.15s",
+            }}
+          >
+            {theme === "dark" ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
           {session?.user?.image && (
             <div style={{ position: "relative" }}>
               <img
