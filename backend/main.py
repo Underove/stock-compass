@@ -33,7 +33,11 @@ from app.scheduler.jobs import (  # noqa: E402
     job_save_portfolio_snapshots,
     job_refresh_screener_fundamentals,
     job_refresh_screener_ta,
+    job_refresh_screener_market_signals,
     job_refresh_disclosure_counts,
+    job_check_dart_alerts,
+    job_check_volume_alerts,
+    job_check_technical_alerts,
 )
 
 KST = "Asia/Seoul"
@@ -55,10 +59,18 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(job_refresh_screener_fundamentals, CronTrigger(day_of_week="mon-fri", hour=16, minute=10, timezone=KST))
     # 스크리너 TA 배치 (평일 16:20 KST)
     scheduler.add_job(job_refresh_screener_ta, CronTrigger(day_of_week="mon-fri", hour=16, minute=20, timezone=KST))
+    # 거래량·외인 시장 시그널 배치 (평일 16:35 KST)
+    scheduler.add_job(job_refresh_screener_market_signals, CronTrigger(day_of_week="mon-fri", hour=16, minute=35, timezone=KST))
     # DART 공시 카운트 배치 (매일 18:30 KST)
     scheduler.add_job(job_refresh_disclosure_counts, CronTrigger(hour=18, minute=30, timezone=KST))
+    # 공시 알림 (평일 16:40 KST)
+    scheduler.add_job(job_check_dart_alerts, CronTrigger(day_of_week="mon-fri", hour=16, minute=40, timezone=KST))
+    # 거래량 급등 알림 (평일 16:45 KST)
+    scheduler.add_job(job_check_volume_alerts, CronTrigger(day_of_week="mon-fri", hour=16, minute=45, timezone=KST))
+    # 기술지표 알림 (평일 16:50 KST)
+    scheduler.add_job(job_check_technical_alerts, CronTrigger(day_of_week="mon-fri", hour=16, minute=50, timezone=KST))
     scheduler.start()
-    logging.getLogger(__name__).info("스케줄러 시작 — 브리핑 15:35 / 알림 5분 / 뉴스 08:50 / 스냅샷 15:32 / 스크리너 16:10·16:20 / 공시 18:30")
+    logging.getLogger(__name__).info("스케줄러 시작 — 브리핑 15:35 / 알림 5분 / 뉴스 08:50 / 스냅샷 15:32 / 스크리너 16:10·16:20·16:35 / 공시 18:30 / alert고도화 16:40·16:45·16:50")
     yield
     scheduler.shutdown(wait=False)
 
