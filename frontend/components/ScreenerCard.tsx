@@ -23,6 +23,18 @@ const MA_OPTIONS: { value: ScreenerParams["ma_status"]; label: string }[] = [
   { value: "below",    label: "단기 하락 중" },
 ];
 
+const PER_PRESETS = [
+  { label: "가치주  ≤10",  value: "10" },
+  { label: "저평가  ≤15",  value: "15" },
+  { label: "성장주  ≤30",  value: "30" },
+];
+
+const RSI_PRESETS = [
+  { label: "과매도  ≤30", min: "",   max: "30" },
+  { label: "중립  30–70", min: "30", max: "70" },
+  { label: "과매수  ≥70", min: "70", max: ""   },
+];
+
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
 
 export function ScreenerCard() {
@@ -207,55 +219,89 @@ export function ScreenerCard() {
           })}
         </div>
 
-        {/* 조건 행 */}
+        {/* 가치 지표 */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700 }}>가치 지표</span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-              <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>PER 이하 <span style={{ fontWeight: 400 }}>(낮을수록 저평가)</span></span>
-              <input
-                value={perMax}
-                onChange={e => setPerMax(e.target.value)}
-                placeholder="예: 15"
-                type="number"
-                style={{
-                  width: "100%", padding: "7px 10px", borderRadius: 10,
-                  background: "var(--surface3)", border: "1px solid var(--sep)",
-                  fontSize: 13, color: "var(--label)",
-                }}
-              />
-            </label>
+          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700 }}>PER <span style={{ fontWeight: 400 }}>(낮을수록 저평가)</span></span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {PER_PRESETS.map(p => {
+              const active = perMax === p.value;
+              return (
+                <button
+                  key={p.value}
+                  onClick={() => setPerMax(active ? "" : p.value)}
+                  style={{
+                    padding: "5px 12px", borderRadius: 100,
+                    fontSize: 11, fontWeight: active ? 700 : 600,
+                    background: "var(--surface)",
+                    color: active ? "var(--primary)" : "var(--label2)",
+                    border: active ? "1.5px solid var(--primary)" : "1.5px solid var(--sep)",
+                    transition: "all 0.14s",
+                  }}
+                >{p.label}</button>
+              );
+            })}
           </div>
-          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700, marginTop: 2, wordBreak: "keep-all" }}>RSI 구간 <span style={{ fontWeight: 400 }}>(30↓과매도 · 70↑과매수)</span></span>
+          <input
+            value={perMax}
+            onChange={e => setPerMax(e.target.value)}
+            placeholder="직접 입력 (예: 20)"
+            type="number"
+            style={{
+              width: "100%", padding: "7px 10px", borderRadius: 10,
+              background: "var(--surface3)", border: "1px solid var(--sep)",
+              fontSize: 13, color: "var(--label)",
+            }}
+          />
+        </div>
+
+        {/* RSI */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700 }}>RSI</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {RSI_PRESETS.map(p => {
+              const active = rsiMin === p.min && rsiMax === p.max;
+              return (
+                <button
+                  key={p.label}
+                  onClick={() => {
+                    if (active) { setRsiMin(""); setRsiMax(""); }
+                    else { setRsiMin(p.min); setRsiMax(p.max); }
+                  }}
+                  style={{
+                    padding: "5px 12px", borderRadius: 100,
+                    fontSize: 11, fontWeight: active ? 700 : 600,
+                    background: "var(--surface)",
+                    color: active ? "var(--primary)" : "var(--label2)",
+                    border: active ? "1.5px solid var(--primary)" : "1.5px solid var(--sep)",
+                    transition: "all 0.14s",
+                  }}
+                >{p.label}</button>
+              );
+            })}
+          </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-              <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>최소</span>
-              <input
-                value={rsiMin}
-                onChange={e => setRsiMin(e.target.value)}
-                placeholder="예: 0"
-                type="number"
-                style={{
-                  width: "100%", padding: "7px 10px", borderRadius: 10,
-                  background: "var(--surface3)", border: "1px solid var(--sep)",
-                  fontSize: 13, color: "var(--label)",
-                }}
-              />
-            </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-              <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>최대</span>
-              <input
-                value={rsiMax}
-                onChange={e => setRsiMax(e.target.value)}
-                placeholder="예: 30"
-                type="number"
-                style={{
-                  width: "100%", padding: "7px 10px", borderRadius: 10,
-                  background: "var(--surface3)", border: "1px solid var(--sep)",
-                  fontSize: 13, color: "var(--label)",
-                }}
-              />
-            </label>
+            <input
+              value={rsiMin}
+              onChange={e => setRsiMin(e.target.value)}
+              placeholder="최소"
+              type="number"
+              style={{
+                flex: 1, width: "100%", padding: "7px 10px", borderRadius: 10,
+                background: "var(--surface3)", border: "1px solid var(--sep)",
+                fontSize: 13, color: "var(--label)",
+              }}
+            />
+            <input
+              value={rsiMax}
+              onChange={e => setRsiMax(e.target.value)}
+              placeholder="최대"
+              type="number"
+              style={{
+                flex: 1, width: "100%", padding: "7px 10px", borderRadius: 10,
+                background: "var(--surface3)", border: "1px solid var(--sep)",
+                fontSize: 13, color: "var(--label)",
+              }}
+            />
           </div>
         </div>
 
