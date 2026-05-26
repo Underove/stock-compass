@@ -98,7 +98,7 @@ export type MarketIndex = {
 };
 
 export type MarketStatus = {
-  status: "open" | "closed" | "pre";
+  status: "open" | "closed" | "pre" | "after";
   label: string;
 };
 
@@ -325,4 +325,32 @@ export type SavedFilter = {
   name:       string;
   params:     ScreenerParams;
   created_at: string;
+};
+
+// ─── 알림 고도화 ──────────────────────────────────────────────────────────────
+
+export type AlertType =
+  | "target"
+  | "stop_loss"
+  | "dart"
+  | "volume_spike"
+  | "rsi_overbought"
+  | "rsi_oversold"
+  | "golden_cross"
+  | "dead_cross";
+
+export type Alert = {
+  id: string;
+  type: AlertType;
+  stock_code: string;
+  corp_name: string;
+  message: string;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+  read: boolean;
+};
+
+export type WatchStock = {
+  stock_code: string;
+  corp_name: string;
 };

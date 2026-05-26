@@ -1,4 +1,5 @@
 import type {
+  Alert,
   AnalysisResult,
   Candle,
   CompanySynced,
@@ -28,8 +29,11 @@ import type {
   UploadResult,
   UploadSummary,
   UserProfile,
+  WatchStock,
   WatchlistItem,
 } from "./types";
+
+export type { Alert as PriceAlert } from "./types"; // 하위 호환
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
@@ -250,18 +254,6 @@ export async function fetchNote(stock_code: string): Promise<string> {
 
 // ─── 알림·브리핑 캐시·뉴스 요약 ──────────────────────────────────────────────
 
-export type PriceAlert = {
-  id: string;
-  type: "target" | "stop_loss";
-  stock_code: string;
-  corp_name: string;
-  current_price: number;
-  trigger_price: number;
-  message: string;
-  created_at: string;
-  read: boolean;
-};
-
 export type PremarketNewsSections = {
   date: string;
   headline: string;
@@ -276,13 +268,36 @@ export type PremarketNews = {
   cached_date: string;
 };
 
-export async function fetchAlerts(): Promise<PriceAlert[]> {
-  const data = await getJSON<{ alerts: PriceAlert[] }>("/api/notifications/alerts");
+export async function fetchAlerts(): Promise<Alert[]> {
+  const data = await getJSON<{ alerts: Alert[] }>("/api/notifications/alerts");
   return data.alerts;
 }
 
 export async function markAlertsRead(ids: string[]): Promise<void> {
   await postJSON("/api/notifications/alerts/read", { ids });
+}
+
+export async function deleteAlert(id: string): Promise<void> {
+  await fetch(`${API_BASE}/api/notifications/alerts/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+}
+
+export async function fetchAlertWatch(): Promise<WatchStock[]> {
+  const data = await getJSON<{ items: WatchStock[] }>("/api/notifications/watch");
+  return data.items;
+}
+
+export async function addAlertWatch(stock_code: string, corp_name: string): Promise<void> {
+  await postJSON("/api/notifications/watch", { stock_code, corp_name });
+}
+
+export async function removeAlertWatch(stock_code: string): Promise<void> {
+  await fetch(`${API_BASE}/api/notifications/watch/${encodeURIComponent(stock_code)}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
 }
 
 export async function fetchPremarketNews(): Promise<PremarketNews | null> {
