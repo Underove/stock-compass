@@ -66,6 +66,8 @@ def init_db() -> None:
                 ma_status      TEXT,
                 has_ta         INTEGER NOT NULL DEFAULT 0,
                 disclosure_30d INTEGER NOT NULL DEFAULT 0,
+                volume_ratio   REAL,
+                foreign_net_buy INTEGER,
                 updated_at     TEXT    NOT NULL DEFAULT ''
             );
 
@@ -78,12 +80,38 @@ def init_db() -> None:
             );
             CREATE INDEX IF NOT EXISTS idx_saved_filters_user
                 ON saved_screener_filters(username);
+
+            CREATE TABLE IF NOT EXISTS alerts (
+                id          TEXT    PRIMARY KEY,
+                username    TEXT    NOT NULL,
+                type        TEXT    NOT NULL,
+                stock_code  TEXT    NOT NULL,
+                corp_name   TEXT    NOT NULL,
+                message     TEXT    NOT NULL,
+                meta        TEXT,
+                created_at  TEXT    NOT NULL,
+                read        INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE INDEX IF NOT EXISTS idx_alerts_user
+                ON alerts(username, read, created_at DESC);
+
+            CREATE TABLE IF NOT EXISTS alert_watch (
+                username    TEXT    NOT NULL,
+                stock_code  TEXT    NOT NULL,
+                corp_name   TEXT    NOT NULL,
+                PRIMARY KEY (username, stock_code)
+            );
         """)
-        # 기존 DB에 disclosure_30d 컬럼이 없으면 추가
-        try:
-            con.execute("ALTER TABLE screener_snapshot ADD COLUMN disclosure_30d INTEGER NOT NULL DEFAULT 0")
-        except Exception:
-            pass
+        # 기존 DB 마이그레이션 — 없으면 추가
+        for ddl in (
+            "ALTER TABLE screener_snapshot ADD COLUMN disclosure_30d INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE screener_snapshot ADD COLUMN volume_ratio REAL",
+            "ALTER TABLE screener_snapshot ADD COLUMN foreign_net_buy INTEGER",
+        ):
+            try:
+                con.execute(ddl)
+            except Exception:
+                pass
 
 
 def record_trade(
@@ -269,22 +297,41 @@ def update_ai_memo(username: str, memo: str) -> None:
 
 
 def upsert_screener_snapshot(rows: list[dict]) -> None:
-    """전 종목 스냅샷 배치 upsert. disclosure_30d는 기존 값 유지."""
+    """전 종목 스냅샷 배치 upsert. disclosure_30d/volume_ratio/foreign_net_buy는 기존 값 유지."""
     today = _kst_now()[:10]
     with _conn() as con:
         con.executemany(
             """INSERT INTO screener_snapshot
                (stock_code, corp_name, sector, market_cap, per, pbr,
-                momentum_20d, rsi, ma_status, has_ta, disclosure_30d, updated_at)
+                momentum_20d, rsi, ma_status, has_ta, disclosure_30d,
+                volume_ratio, foreign_net_buy, updated_at)
                VALUES (:stock_code, :corp_name, :sector, :market_cap, :per, :pbr,
-                       :momentum_20d, :rsi, :ma_status, :has_ta, :disclosure_30d, :updated_at)
+                       :momentum_20d, :rsi, :ma_status, :has_ta, :disclosure_30d,
+                       :volume_ratio, :foreign_net_buy, :updated_at)
                ON CONFLICT(stock_code) DO UPDATE SET
                  corp_name=excluded.corp_name, sector=excluded.sector,
                  market_cap=excluded.market_cap, per=excluded.per, pbr=excluded.pbr,
                  momentum_20d=excluded.momentum_20d, rsi=excluded.rsi,
                  ma_status=excluded.ma_status, has_ta=excluded.has_ta,
                  updated_at=excluded.updated_at""",
-            [{**r, "disclosure_30d": r.get("disclosure_30d", 0), "updated_at": today} for r in rows],
+            [{
+                **r,
+                "disclosure_30d":  r.get("disclosure_30d", 0),
+                "volume_ratio":    r.get("volume_ratio"),
+                "foreign_net_buy": r.get("foreign_net_buy"),
+                "updated_at":      today,
+            } for r in rows],
+        )
+
+
+def update_market_signals(signals: list[dict]) -> None:
+    """종목별 volume_ratio·foreign_net_buy 일괄 업데이트."""
+    with _conn() as con:
+        con.executemany(
+            """UPDATE screener_snapshot
+               SET volume_ratio=:volume_ratio, foreign_net_buy=:foreign_net_buy
+               WHERE stock_code=:stock_code""",
+            signals,
         )
 
 
@@ -388,3 +435,111 @@ def delete_filter(filter_id: int, username: str) -> bool:
             (filter_id, username),
         )
         return cur.rowcount > 0
+
+
+# ─── 알림 시스템 ──────────────────────────────────────────────────────────────
+
+def insert_alert(
+    username: str,
+    alert_id: str,
+    type_: str,
+    stock_code: str,
+    corp_name: str,
+    message: str,
+    meta: dict | None = None,
+) -> None:
+    """중복 alert_id는 무시 (INSERT OR IGNORE)."""
+    with _conn() as con:
+        con.execute(
+            """INSERT OR IGNORE INTO alerts
+               (id, username, type, stock_code, corp_name, message, meta, created_at, read)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)""",
+            (
+                alert_id, username, type_, stock_code, corp_name, message,
+                _json.dumps(meta, ensure_ascii=False) if meta else None,
+                _kst_now(),
+            ),
+        )
+
+
+def get_unread_alerts(username: str) -> list[dict]:
+    """읽지 않은 알림 최신순 반환."""
+    with _conn() as con:
+        rows = con.execute(
+            """SELECT id, type, stock_code, corp_name, message, meta, created_at
+               FROM alerts WHERE username=? AND read=0
+               ORDER BY created_at DESC""",
+            (username,),
+        ).fetchall()
+    result = []
+    for r in rows:
+        d = dict(r)
+        d["meta"] = _json.loads(d["meta"]) if d["meta"] else None
+        d["read"] = False
+        result.append(d)
+    return result
+
+
+def mark_alerts_read(username: str, ids: list[str]) -> None:
+    with _conn() as con:
+        con.executemany(
+            "UPDATE alerts SET read=1 WHERE id=? AND username=?",
+            [(alert_id, username) for alert_id in ids],
+        )
+
+
+def delete_alert(username: str, alert_id: str) -> bool:
+    with _conn() as con:
+        cur = con.execute(
+            "DELETE FROM alerts WHERE id=? AND username=?",
+            (alert_id, username),
+        )
+        return cur.rowcount > 0
+
+
+def cleanup_old_alerts() -> None:
+    """30일 이상 된 read=1 알림 삭제."""
+    cutoff = (datetime.now(timezone.utc) + timedelta(hours=9) - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%S")
+    with _conn() as con:
+        con.execute("DELETE FROM alerts WHERE read=1 AND created_at < ?", (cutoff,))
+
+
+def get_unread_alert_counts(username: str, stock_codes: list[str]) -> dict[str, int]:
+    """종목코드별 미읽은 알림 건수 (포트폴리오 뱃지용)."""
+    if not stock_codes:
+        return {}
+    placeholders = ",".join("?" * len(stock_codes))
+    with _conn() as con:
+        rows = con.execute(
+            f"""SELECT stock_code, COUNT(*) as cnt
+                FROM alerts WHERE username=? AND read=0
+                AND stock_code IN ({placeholders})
+                GROUP BY stock_code""",
+            [username, *stock_codes],
+        ).fetchall()
+    return {r["stock_code"]: r["cnt"] for r in rows}
+
+
+def get_alert_watch(username: str) -> list[dict]:
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT stock_code, corp_name FROM alert_watch WHERE username=? ORDER BY rowid",
+            (username,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_alert_watch(username: str, stock_code: str, corp_name: str) -> None:
+    with _conn() as con:
+        con.execute(
+            "INSERT OR IGNORE INTO alert_watch (username, stock_code, corp_name) VALUES (?, ?, ?)",
+            (username, stock_code, corp_name),
+        )
+
+
+def remove_alert_watch(username: str, stock_code: str) -> None:
+    with _conn() as con:
+        con.execute(
+            "DELETE FROM alert_watch WHERE username=? AND stock_code=?",
+            (username, stock_code),
+        )
