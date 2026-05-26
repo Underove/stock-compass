@@ -324,3 +324,20 @@ def job_refresh_screener_ta() -> None:
             logger.info("[스케줄러] TA 배치 완료: %d종목", len(merged))
     except Exception as e:
         logger.error("[스케줄러] TA 배치 실패: %s", e)
+
+
+def job_refresh_disclosure_counts() -> None:
+    """DART 전체 공시 건수 배치 업데이트 (매일 18:30 KST).
+    corp_code 없이 bulk 조회 → 종목코드별 30일 공시 카운트 저장."""
+    logger.info("[스케줄러] 공시 카운트 배치 시작")
+    try:
+        from app.collectors.dart import fetch_disclosure_counts_all
+        from app.db.trade_db import update_disclosure_counts
+        counts = fetch_disclosure_counts_all(days=30)
+        if counts:
+            update_disclosure_counts(counts)
+            logger.info("[스케줄러] 공시 카운트 완료: %d종목", len(counts))
+        else:
+            logger.warning("[스케줄러] 공시 카운트: 데이터 없음")
+    except Exception as e:
+        logger.error("[스케줄러] 공시 카운트 실패: %s", e)

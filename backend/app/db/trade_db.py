@@ -55,17 +55,18 @@ def init_db() -> None:
             );
 
             CREATE TABLE IF NOT EXISTS screener_snapshot (
-                stock_code  TEXT    PRIMARY KEY,
-                corp_name   TEXT    NOT NULL,
-                sector      TEXT,
-                market_cap  INTEGER,
-                per         REAL,
-                pbr         REAL,
-                momentum_20d REAL,
-                rsi         REAL,
-                ma_status   TEXT,
-                has_ta      INTEGER NOT NULL DEFAULT 0,
-                updated_at  TEXT    NOT NULL DEFAULT ''
+                stock_code     TEXT    PRIMARY KEY,
+                corp_name      TEXT    NOT NULL,
+                sector         TEXT,
+                market_cap     INTEGER,
+                per            REAL,
+                pbr            REAL,
+                momentum_20d   REAL,
+                rsi            REAL,
+                ma_status      TEXT,
+                has_ta         INTEGER NOT NULL DEFAULT 0,
+                disclosure_30d INTEGER NOT NULL DEFAULT 0,
+                updated_at     TEXT    NOT NULL DEFAULT ''
             );
 
             CREATE TABLE IF NOT EXISTS saved_screener_filters (
@@ -78,6 +79,11 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_saved_filters_user
                 ON saved_screener_filters(username);
         """)
+        # 기존 DB에 disclosure_30d 컬럼이 없으면 추가
+        try:
+            con.execute("ALTER TABLE screener_snapshot ADD COLUMN disclosure_30d INTEGER NOT NULL DEFAULT 0")
+        except Exception:
+            pass
 
 
 def record_trade(
@@ -263,16 +269,31 @@ def update_ai_memo(username: str, memo: str) -> None:
 
 
 def upsert_screener_snapshot(rows: list[dict]) -> None:
-    """전 종목 스냅샷 배치 upsert. rows: list of dicts with screener_snapshot columns."""
+    """전 종목 스냅샷 배치 upsert. disclosure_30d는 기존 값 유지."""
     today = _kst_now()[:10]
     with _conn() as con:
         con.executemany(
-            """INSERT OR REPLACE INTO screener_snapshot
+            """INSERT INTO screener_snapshot
                (stock_code, corp_name, sector, market_cap, per, pbr,
-                momentum_20d, rsi, ma_status, has_ta, updated_at)
+                momentum_20d, rsi, ma_status, has_ta, disclosure_30d, updated_at)
                VALUES (:stock_code, :corp_name, :sector, :market_cap, :per, :pbr,
-                       :momentum_20d, :rsi, :ma_status, :has_ta, :updated_at)""",
-            [{**r, "updated_at": today} for r in rows],
+                       :momentum_20d, :rsi, :ma_status, :has_ta, :disclosure_30d, :updated_at)
+               ON CONFLICT(stock_code) DO UPDATE SET
+                 corp_name=excluded.corp_name, sector=excluded.sector,
+                 market_cap=excluded.market_cap, per=excluded.per, pbr=excluded.pbr,
+                 momentum_20d=excluded.momentum_20d, rsi=excluded.rsi,
+                 ma_status=excluded.ma_status, has_ta=excluded.has_ta,
+                 updated_at=excluded.updated_at""",
+            [{**r, "disclosure_30d": r.get("disclosure_30d", 0), "updated_at": today} for r in rows],
+        )
+
+
+def update_disclosure_counts(counts: dict[str, int]) -> None:
+    """종목코드별 30일 공시 건수 일괄 업데이트."""
+    with _conn() as con:
+        con.executemany(
+            "UPDATE screener_snapshot SET disclosure_30d = ? WHERE stock_code = ?",
+            [(cnt, code) for code, cnt in counts.items()],
         )
 
 

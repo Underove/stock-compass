@@ -33,6 +33,7 @@ from app.scheduler.jobs import (  # noqa: E402
     job_save_portfolio_snapshots,
     job_refresh_screener_fundamentals,
     job_refresh_screener_ta,
+    job_refresh_disclosure_counts,
 )
 
 KST = "Asia/Seoul"
@@ -54,8 +55,10 @@ async def lifespan(app: FastAPI):
     scheduler.add_job(job_refresh_screener_fundamentals, CronTrigger(day_of_week="mon-fri", hour=16, minute=10, timezone=KST))
     # 스크리너 TA 배치 (평일 16:20 KST)
     scheduler.add_job(job_refresh_screener_ta, CronTrigger(day_of_week="mon-fri", hour=16, minute=20, timezone=KST))
+    # DART 공시 카운트 배치 (매일 18:30 KST)
+    scheduler.add_job(job_refresh_disclosure_counts, CronTrigger(hour=18, minute=30, timezone=KST))
     scheduler.start()
-    logging.getLogger(__name__).info("스케줄러 시작 — 브리핑 15:35 / 알림 5분 / 뉴스 08:50 / 스냅샷 15:32 / 스크리너 16:10·16:20")
+    logging.getLogger(__name__).info("스케줄러 시작 — 브리핑 15:35 / 알림 5분 / 뉴스 08:50 / 스냅샷 15:32 / 스크리너 16:10·16:20 / 공시 18:30")
     yield
     scheduler.shutdown(wait=False)
 

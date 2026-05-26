@@ -134,6 +134,47 @@ def fetch_recent_disclosures(
     return data.get("list", [])
 
 
+def fetch_disclosure_counts_all(days: int = 30) -> dict[str, int]:
+    """최근 N일간 전체 공시를 페이지네이션으로 수집, 종목코드별 건수 반환.
+    DART /list.json을 corp_code 없이 호출하면 전 종목 공시가 한번에 내려옴."""
+    key = _require_key()
+    end = datetime.now(timezone.utc)
+    start = end - timedelta(days=days)
+    counts: dict[str, int] = {}
+    page = 1
+    while True:
+        try:
+            res = httpx.get(
+                f"{DART_BASE_URL}/list.json",
+                params={
+                    "crtfc_key": key,
+                    "bgn_de": start.strftime("%Y%m%d"),
+                    "end_de": end.strftime("%Y%m%d"),
+                    "page_no": page,
+                    "page_count": 100,
+                },
+                timeout=30,
+            )
+            res.raise_for_status()
+            data = res.json()
+        except Exception:
+            break
+        if data.get("status") not in ("000",):
+            break
+        items = data.get("list", [])
+        if not items:
+            break
+        for item in items:
+            code = item.get("stock_code", "").strip()
+            if code:
+                counts[code] = counts.get(code, 0) + 1
+        total_count = int(data.get("total_count", 0))
+        if page * 100 >= total_count:
+            break
+        page += 1
+    return counts
+
+
 def _build_disclosure_doc(company: dict, d: dict) -> tuple[str, str, dict]:
     rcept_no = d.get("rcept_no", "")
     report_nm = d.get("report_nm", "")
