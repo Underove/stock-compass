@@ -96,9 +96,11 @@ def _kis_sector_to_app(sector_name: str) -> str:
     return "기타"
 
 
-def _naver_batch_market_cap(codes: list[str]) -> dict[str, int]:
-    """네이버 금융 polling API로 시가총액(억 원) 배치 조회. {code: 억원} 반환."""
-    result: dict[str, int] = {}
+def _naver_batch_info(codes: list[str]) -> dict[str, dict]:
+    """네이버 금융 polling API로 시가총액+거래소코드 배치 조회.
+    반환: {stock_code: {"market_cap": 억원, "exch": "KS"|"KQ", "name": 종목명}}
+    """
+    result: dict[str, dict] = {}
     batch_size = 100
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
@@ -115,35 +117,30 @@ def _naver_batch_market_cap(codes: list[str]) -> dict[str, int]:
             )
             if r.status_code != 200:
                 continue
-            data = r.json()
-            # polling API 응답: {"datas": [{"itemCode": "005930", "marketValueFullRaw": "1748037...", ...}]}
-            items = data.get("datas") or []
+            items = r.json().get("datas") or []
             if isinstance(items, dict):
                 items = list(items.values())
             for item in items:
-                code = str(item.get("itemCode") or item.get("code") or "").zfill(6)
-                # marketValueFullRaw는 문자열
+                code = str(item.get("itemCode") or "").zfill(6)
+                if not code:
+                    continue
                 raw_cap_str = item.get("marketValueFullRaw") or "0"
-                exchange = item.get("stockExchangeType", {})
-                if isinstance(exchange, dict):
-                    exch_code = exchange.get("code", "")
-                else:
-                    exch_code = ""
-                if code and raw_cap_str:
-                    try:
-                        raw_cap = int(str(raw_cap_str).replace(",", ""))
-                        result[code] = raw_cap // 100_000_000
-                    except (ValueError, TypeError):
-                        pass
+                exch = (item.get("stockExchangeType") or {}).get("code", "")
+                name = item.get("stockName", "")
+                try:
+                    cap = int(str(raw_cap_str).replace(",", "")) // 100_000_000
+                except (ValueError, TypeError):
+                    cap = 0
+                result[code] = {"market_cap": cap, "exch": exch, "name": name}
         except Exception as e:
-            logger.debug("[스크리너] 네이버 배치 시총 실패 (%d~): %s", i, e)
+            logger.debug("[스크리너] 네이버 배치 실패 (%d~): %s", i, e)
         time.sleep(0.1)
     return result
 
 
 def fetch_all_fundamentals() -> list[dict]:
     """전 종목 기본적 지표 + 섹터 수집. 반환: list of screener_snapshot 행 dict."""
-    from app.collectors.kis_rest import _inquire_price, get_fundamental_kis
+    from app.collectors.kis_rest import _inquire_price
 
     corps = _load_dart_codes()
     if not corps:
@@ -153,29 +150,29 @@ def fetch_all_fundamentals() -> list[dict]:
     all_codes = [c["stock_code"] for c in corps if c.get("stock_code")]
     corp_name_map = {c["stock_code"]: c["corp_name"] for c in corps if c.get("stock_code")}
 
-    logger.info("[스크리너] 네이버 배치 시총 조회: %d종목", len(all_codes))
-    cap_map = _naver_batch_market_cap(all_codes)
+    logger.info("[스크리너] 네이버 배치 정보 조회: %d종목", len(all_codes))
+    naver_info = _naver_batch_info(all_codes)
+    # KS=KOSPI→J, KQ=KOSDAQ→Q, 나머지→J fallback
+    exch_to_kis = {"KS": "J", "KQ": "Q"}
 
-    # 시총 상위 250 종목만 KIS로 정밀 조회
-    TOP_N = 250
-    top_codes = sorted(cap_map, key=lambda c: cap_map[c], reverse=True)[:TOP_N]
-    logger.info("[스크리너] KIS 기본적 지표 조회: %d종목", len(top_codes))
+    logger.info("[스크리너] KIS 기본적 지표 조회: %d종목 (KOSPI+KOSDAQ 전 종목)", len(naver_info))
 
     result: list[dict] = []
-    for i, code in enumerate(top_codes):
+    codes_list = list(naver_info.keys())
+    for i, code in enumerate(codes_list):
+        info = naver_info[code]
+        market_code = exch_to_kis.get(info["exch"], "J")
         try:
-            out = _inquire_price(code)
+            out = _inquire_price(code, market_code)
             per = _pos(out.get("per"))
             pbr = _pos(out.get("pbr"))
             avls = out.get("hts_avls")
-            # hts_avls는 이미 억원 단위
-            market_cap = int(float(avls)) if avls else cap_map.get(code, 0)
+            market_cap = int(float(avls)) if avls else info["market_cap"]
 
             sector_raw = out.get("bstp_kor_isnm") or ""
             sector = _kis_sector_to_app(sector_raw)
-            corp_name = corp_name_map.get(code, code)
+            corp_name = corp_name_map.get(code) or info["name"] or code
 
-            # 2차전지·전기차: KIS 별도 분류 없음 → 회사명 키워드로 보정
             if sector in ("반도체", "기타") and any(kw in corp_name for kw in ("에너지솔루션", "배터리", "이차전지", "LFP", "양극재")):
                 sector = "2차전지·전기차"
 
@@ -199,8 +196,8 @@ def fetch_all_fundamentals() -> list[dict]:
         # KIS 요청 레이트 리밋: 초당 ~15건
         if (i + 1) % 15 == 0:
             time.sleep(1)
-        if (i + 1) % 50 == 0:
-            logger.info("[스크리너] 진행: %d/%d", i + 1, len(top_codes))
+        if (i + 1) % 100 == 0:
+            logger.info("[스크리너] 진행: %d/%d (수집: %d)", i + 1, len(codes_list), len(result))
 
     logger.info("[스크리너] 기본적 지표 수집 완료: %d종목", len(result))
     return result
@@ -230,7 +227,7 @@ def _compute_momentum_20d(stock_code: str) -> float | None:
         return None
 
 
-def compute_ta_for_top_n(n: int = 300) -> list[dict]:
+def compute_ta_for_top_n(n: int = 2000) -> list[dict]:
     """시총 상위 n개 종목의 RSI·MA 상태 계산. 반환: list of {stock_code, rsi, ma_status}."""
     from app.collectors.ta_engine import analyze
     from app.db.trade_db import get_top_market_cap_codes

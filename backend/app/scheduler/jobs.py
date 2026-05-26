@@ -306,12 +306,12 @@ def job_refresh_screener_fundamentals() -> None:
 
 
 def job_refresh_screener_ta() -> None:
-    """시총 상위 300개 TA 계산 + screener_snapshot 업데이트 (평일 16:20 KST)."""
+    """전 종목 TA 계산 + screener_snapshot 업데이트 (평일 16:20 KST)."""
     logger.info("[스케줄러] 스크리너 TA 배치 계산 시작")
     try:
         from app.collectors.screener_collector import compute_ta_for_top_n
         from app.db.trade_db import upsert_screener_snapshot, query_screener
-        ta_rows = compute_ta_for_top_n(300)
+        ta_rows = compute_ta_for_top_n(3000)
         if ta_rows:
             existing = {r["stock_code"]: r for r in query_screener(limit=5000)}
             merged = []

@@ -53,8 +53,8 @@ def _session_from_kst(kst: datetime) -> str:
     return "closed"
 
 
-def _inquire_price(stock_code: str) -> dict:
-    """FHKST01010100 호출 → output dict 반환. (소문자 키)"""
+def _inquire_price(stock_code: str, market_code: str = "J") -> dict:
+    """FHKST01010100 호출 → output dict 반환. market_code: J=KOSPI, Q=KOSDAQ"""
     token = get_access_token()
     r = httpx.get(
         f"{_REST_BASE}/uapi/domestic-stock/v1/quotations/inquire-price",
@@ -65,7 +65,7 @@ def _inquire_price(stock_code: str) -> dict:
             "appsecret": settings.kis_app_secret,
             "tr_id": "FHKST01010100",
         },
-        params={"FID_COND_MRKT_DIV_CODE": "J", "FID_INPUT_ISCD": stock_code},
+        params={"FID_COND_MRKT_DIV_CODE": market_code, "FID_INPUT_ISCD": stock_code},
         timeout=10,
     )
     r.raise_for_status()
