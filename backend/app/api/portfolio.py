@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from app.api.auth import get_current_user
 from app.collectors.dart import download_corp_codes, fetch_recent_disclosures
 from app.collectors.krx import get_chart_data, get_current_price, search_ticker
-from app.collectors.kis_rest import get_current_price_kis
+from app.collectors.kis_rest import get_current_price_kis, get_fundamental_kis
 from app.config import settings
 
 
@@ -370,13 +370,24 @@ def get_disclosures(stock_code: str, days: int = 30):
 
 @router.get("/portfolio/fundamental/{stock_code}")
 def get_fundamental(stock_code: str):
-    """재무 지표 (PER/PBR/EPS/배당수익률/시가총액) — pykrx."""
+    """재무 지표 (PER/PBR/EPS/BPS/시가총액) — KIS 우선, pykrx 폴백."""
+    empty = {"per": None, "pbr": None, "eps": None, "div": None, "bps": None, "market_cap": None}
+
+    # KIS 우선
+    if settings.kis_app_key and settings.kis_app_secret:
+        try:
+            result = get_fundamental_kis(stock_code)
+            if any(v is not None for v in result.values()):
+                return result
+        except Exception:
+            pass
+
+    # pykrx 폴백
     import datetime
     from pykrx import stock as pykrx_stock
 
     today = datetime.date.today().strftime("%Y%m%d")
     start = (datetime.date.today() - datetime.timedelta(days=14)).strftime("%Y%m%d")
-    empty = {"per": None, "pbr": None, "eps": None, "div": None, "bps": None, "market_cap": None}
 
     try:
         df_fund = pykrx_stock.get_market_fundamental_by_date(start, today, stock_code)
