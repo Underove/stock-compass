@@ -919,8 +919,9 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
           {([["5일 평균", ta.ma5], ["20일 평균", ta.ma20], ["60일 평균", ta.ma60]] as [string, number | null][])
             .filter(([, v]) => v !== null)
             .map(([label, val], i, arr) => {
-              const above = cp > (val as number);
-              const diffPct = ((cp - (val as number)) / (val as number) * 100);
+              const v = val as number;
+              const above = cp > v;
+              const diffPct = (isFinite(v) && v > 0) ? ((cp - v) / v * 100) : null;
               return (
                 <div key={label}>
                   {i > 0 && <div style={{ height: "0.5px", background: "var(--sep)" }} />}
@@ -928,9 +929,9 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: above ? "var(--red)" : "var(--primary)", flexShrink: 0 }} />
                     <span style={{ fontSize: 13, color: "var(--label3)", minWidth: 72, fontWeight: 500 }}>{label}</span>
                     <span style={{ fontSize: 13, fontWeight: 700, color: "var(--label)", flex: 1 }}>{above ? "현재가 위" : "현재가 아래"}</span>
-                    <span style={{ fontSize: 12, color: "var(--label3)" }}>{fmt(val as number)}원</span>
+                    <span style={{ fontSize: 12, color: "var(--label3)" }}>{isFinite(v) ? `${fmt(v)}원` : "—"}</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: above ? "var(--red)" : "var(--primary)" }}>
-                      {diffPct > 0 ? "+" : ""}{diffPct.toFixed(1)}%
+                      {diffPct !== null ? `${diffPct > 0 ? "+" : ""}${diffPct.toFixed(1)}%` : "—"}
                     </span>
                   </div>
                 </div>
@@ -974,7 +975,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div style={{ background: "var(--bg)", borderRadius: 10, padding: "10px 12px" }}>
               <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 3 }}>추세선</div>
-              <div style={{ fontSize: 15, fontWeight: 700 }}>{ta.macd > 0 ? "+" : ""}{ta.macd.toFixed(1)}</div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>{isFinite(ta.macd) ? `${ta.macd > 0 ? "+" : ""}${ta.macd.toFixed(1)}` : "—"}</div>
             </div>
             <div style={{ background: "var(--bg)", borderRadius: 10, padding: "10px 12px" }}>
               <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 3 }}>압력 강도</div>
@@ -998,7 +999,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
                   {ta.bb_position > 70 ? "고평가 구간에 가까움" : ta.bb_position < 30 ? "저평가 구간에 가까움" : "중간 구간"}
                 </span>
               </div>
-              <span style={{ fontSize: 12, color: "var(--label3)" }}>{ta.bb_position.toFixed(0)}%</span>
+              <span style={{ fontSize: 12, color: "var(--label3)" }}>{isFinite(ta.bb_position) ? `${ta.bb_position.toFixed(0)}%` : "—"}</span>
             </div>
           )}
           <RangeBar pct={ta.bb_position ?? 50} />
