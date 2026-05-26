@@ -10,18 +10,65 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-# 앱 섹터 → KIS bstp_kor_isnm 키워드 매핑
-_KIS_SECTOR_KEYWORDS: dict[str, list[str]] = {
-    "반도체":        ["반도체", "디스플레이", "전자부품"],
-    "2차전지·전기차": ["이차전지", "2차전지", "전기차", "자동차부품"],
-    "바이오·제약":   ["제약", "바이오", "의료", "헬스케어"],
-    "자동차":        ["자동차", "운수장비"],
-    "IT·플랫폼":     ["소프트웨어", "인터넷", "통신", "IT서비스", "게임"],
-    "금융·보험":     ["은행", "보험", "증권", "금융"],
-    "게임·엔터":     ["게임", "엔터테인먼트", "미디어", "방송"],
-    "화학·소재":     ["화학", "정유", "소재", "철강", "비금속"],
-    "조선·방산":     ["조선", "방위산업", "기계", "항공"],
-    "소비재·유통":   ["유통", "음식료", "소비재", "섬유", "의류"],
+# KIS bstp_kor_isnm → 앱 섹터 매핑 (먼저 정확히 매칭, 그 다음 부분 매칭)
+# KIS bstp_kor_isnm 실제 반환값 기준 매핑
+_KIS_SECTOR_MAP: dict[str, str] = {
+    # 반도체·전자
+    "전기·전자":      "반도체",
+    "반도체":         "반도체",
+    "디스플레이":     "반도체",
+    "전자부품":       "반도체",
+    # 바이오·제약
+    "제약":           "바이오·제약",
+    "의약품":         "바이오·제약",
+    "의료·정밀기기":  "바이오·제약",
+    "바이오":         "바이오·제약",
+    # 자동차
+    "운송장비·부품":  "자동차",
+    "운수장비":       "자동차",
+    "자동차":         "자동차",
+    # 금융
+    "금융":           "금융·보험",
+    "금융업":         "금융·보험",
+    "은행":           "금융·보험",
+    "보험":           "금융·보험",
+    "증권":           "금융·보험",
+    # IT·플랫폼
+    "IT 서비스":      "IT·플랫폼",
+    "IT서비스":       "IT·플랫폼",
+    "소프트웨어":     "IT·플랫폼",
+    "서비스업":       "IT·플랫폼",
+    "통신업":         "IT·플랫폼",
+    "통신":           "IT·플랫폼",
+    "인터넷":         "IT·플랫폼",
+    # 게임·엔터
+    "게임":           "게임·엔터",
+    "엔터테인먼트":   "게임·엔터",
+    "미디어":         "게임·엔터",
+    "방송":           "게임·엔터",
+    # 화학·소재
+    "화학":           "화학·소재",
+    "정유":           "화학·소재",
+    "비금속광물":     "화학·소재",
+    "철강·금속":      "화학·소재",
+    "철강금속":       "화학·소재",
+    "소재":           "화학·소재",
+    # 조선·방산
+    "조선":           "조선·방산",
+    "방위산업":       "조선·방산",
+    "기계":           "조선·방산",
+    "항공":           "조선·방산",
+    "운수·창고":      "조선·방산",
+    # 소비재·유통
+    "유통업":         "소비재·유통",
+    "유통":           "소비재·유통",
+    "음식료품":       "소비재·유통",
+    "음식료":         "소비재·유통",
+    "섬유의복":       "소비재·유통",
+    "음료":           "소비재·유통",
+    # 2차전지·전기차 (KIS는 별도 분류 없음 → 회사명 키워드로 보정)
+    "2차전지":        "2차전지·전기차",
+    "이차전지":       "2차전지·전기차",
 }
 
 _DART_CORP_CODES = Path(__file__).resolve().parent.parent.parent / "data" / "dart" / "corp_codes.json"
@@ -39,9 +86,12 @@ def _kis_sector_to_app(sector_name: str) -> str:
     """KIS bstp_kor_isnm → 앱 섹터 문자열 매핑."""
     if not sector_name:
         return "기타"
-    name_lower = sector_name.lower()
-    for app_sector, keywords in _KIS_SECTOR_KEYWORDS.items():
-        if any(kw in sector_name for kw in keywords):
+    # 정확히 일치하는 키 우선
+    if sector_name in _KIS_SECTOR_MAP:
+        return _KIS_SECTOR_MAP[sector_name]
+    # 부분 포함 fallback
+    for key, app_sector in _KIS_SECTOR_MAP.items():
+        if key in sector_name:
             return app_sector
     return "기타"
 
@@ -66,20 +116,25 @@ def _naver_batch_market_cap(codes: list[str]) -> dict[str, int]:
             if r.status_code != 200:
                 continue
             data = r.json()
-            # polling API 응답: {"datas": {"005930": {"stockName": ..., "closePriceRaw": ..., "marketValueFullRaw": ...}}}
-            items = data.get("datas") or {}
-            if isinstance(items, list):
-                for item in items:
-                    code = str(item.get("itemCode") or item.get("code") or "").zfill(6)
-                    raw_cap = item.get("marketValueFullRaw") or 0
-                    if code and raw_cap:
-                        result[code] = int(raw_cap) // 100_000_000
-            elif isinstance(items, dict):
-                for code_key, item in items.items():
-                    code = str(code_key).zfill(6)
-                    raw_cap = item.get("marketValueFullRaw") or 0
-                    if raw_cap:
-                        result[code] = int(raw_cap) // 100_000_000
+            # polling API 응답: {"datas": [{"itemCode": "005930", "marketValueFullRaw": "1748037...", ...}]}
+            items = data.get("datas") or []
+            if isinstance(items, dict):
+                items = list(items.values())
+            for item in items:
+                code = str(item.get("itemCode") or item.get("code") or "").zfill(6)
+                # marketValueFullRaw는 문자열
+                raw_cap_str = item.get("marketValueFullRaw") or "0"
+                exchange = item.get("stockExchangeType", {})
+                if isinstance(exchange, dict):
+                    exch_code = exchange.get("code", "")
+                else:
+                    exch_code = ""
+                if code and raw_cap_str:
+                    try:
+                        raw_cap = int(str(raw_cap_str).replace(",", ""))
+                        result[code] = raw_cap // 100_000_000
+                    except (ValueError, TypeError):
+                        pass
         except Exception as e:
             logger.debug("[스크리너] 네이버 배치 시총 실패 (%d~): %s", i, e)
         time.sleep(0.1)
@@ -113,12 +168,16 @@ def fetch_all_fundamentals() -> list[dict]:
             per = _pos(out.get("per"))
             pbr = _pos(out.get("pbr"))
             avls = out.get("hts_avls")
-            market_cap = int(float(avls) * 1e8) // 100_000_000 if avls else cap_map.get(code, 0)
+            # hts_avls는 이미 억원 단위
+            market_cap = int(float(avls)) if avls else cap_map.get(code, 0)
 
             sector_raw = out.get("bstp_kor_isnm") or ""
             sector = _kis_sector_to_app(sector_raw)
+            corp_name = corp_name_map.get(code, code)
 
-            corp_name = out.get("hts_kor_isnm") or corp_name_map.get(code, code)
+            # 2차전지·전기차: KIS 별도 분류 없음 → 회사명 키워드로 보정
+            if sector in ("반도체", "기타") and any(kw in corp_name for kw in ("에너지솔루션", "배터리", "이차전지", "LFP", "양극재")):
+                sector = "2차전지·전기차"
 
             momentum = _compute_momentum_20d(code)
 

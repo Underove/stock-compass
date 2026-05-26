@@ -208,9 +208,11 @@ export default function Home() {
         </div>
 
         {/* ── 스크리너 ── */}
-        <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`} style={{ overflowY: "auto" }}>
+        <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`}>
           <PanelHeader title="종목 스크리너" subtitle="조건 필터링으로 종목 발굴" />
-          <ScreenerCard />
+          <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 32px" }}>
+            <ScreenerCard />
+          </div>
         </div>
 
       </div>

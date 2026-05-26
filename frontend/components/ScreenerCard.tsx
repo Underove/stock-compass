@@ -119,9 +119,8 @@ export function ScreenerCard() {
         padding: "16px 16px 20px",
         display: "flex", flexDirection: "column", gap: 16,
       }}>
-        {/* 헤더 */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.03em" }}>종목 스크리너</span>
+        {/* 필터 저장 버튼 */}
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button
             onClick={() => setShowSaveInput(v => !v)}
             style={{
