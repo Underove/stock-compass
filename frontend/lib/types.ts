@@ -251,6 +251,17 @@ export type PortfolioSnapshot = {
   total_invested: number;
 };
 
+// ─── 투자 성향 프로필 ─────────────────────────────────────────────────────────
+
+export type UserProfile = {
+  username: string;
+  risk_level: "aggressive" | "neutral" | "defensive";
+  horizon: "short" | "mid" | "long";
+  sectors: string[];
+  ai_memo: string;
+  updated_at: string;
+};
+
 export type TechnicalData = {
   current_price: number;
   ma5: number | null;
@@ -271,4 +282,46 @@ export type TechnicalData = {
   high_52w: number;
   low_52w: number;
   pos_in_52w_range: number;
+};
+
+// ─── 스크리너 ──────────────────────────────────────────────────────────────
+
+export type ScreenerParams = {
+  sector?:         string;
+  market_cap_min?: number;
+  market_cap_max?: number;
+  per_max?:        number;
+  pbr_max?:        number;
+  rsi_min?:        number;
+  rsi_max?:        number;
+  ma_status?:      "golden" | "dead" | "above" | "below";
+};
+
+export type ScreenerItem = {
+  stock_code:    string;
+  corp_name:     string;
+  sector:        string;
+  market_cap:    number;
+  per:           number | null;
+  pbr:           number | null;
+  momentum_20d:  number;
+  rsi:           number | null;
+  ma_status:     string | null;
+  has_ta:        number;
+};
+
+export type SimilarItem = {
+  stock_code:   string;
+  corp_name:    string;
+  sector:       string;
+  market_cap:   number;
+  per:          number | null;
+  momentum_20d: number;
+};
+
+export type SavedFilter = {
+  id:         number;
+  name:       string;
+  params:     ScreenerParams;
+  created_at: string;
 };

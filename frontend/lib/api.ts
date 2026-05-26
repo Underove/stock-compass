@@ -11,10 +11,14 @@ import type {
   PortfolioBriefing,
   PortfolioItem,
   PortfolioSnapshot,
+  SavedFilter,
+  ScreenerItem,
+  ScreenerParams,
   SearchMatch,
   SearchResult,
   ServiceInfo,
   ShortSellingData,
+  SimilarItem,
   Source,
   StockCommentary,
   StockPrice,
@@ -23,6 +27,7 @@ import type {
   TradingFlowItem,
   UploadResult,
   UploadSummary,
+  UserProfile,
   WatchlistItem,
 } from "./types";
 
@@ -346,4 +351,65 @@ export async function editTrade(
     body: JSON.stringify({ trade_type, quantity, price, buy_price: buy_price ?? null }),
   });
   if (!res.ok) throw new Error("수정 실패");
+}
+
+// ─── 투자 성향 프로필 ─────────────────────────────────────────────────────────
+
+export async function getProfile(): Promise<UserProfile> {
+  return getJSON<UserProfile>("/api/profile");
+}
+
+export async function updateProfile(
+  data: Partial<Pick<UserProfile, "risk_level" | "horizon" | "sectors">>,
+): Promise<UserProfile> {
+  const res = await fetch(`${API_BASE}/api/profile`, {
+    method: "PUT",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { detail?: string }).detail || `요청 실패 (HTTP ${res.status})`);
+  }
+  return res.json();
+}
+
+// ─── 스크리너 ──────────────────────────────────────────────────────────────
+
+export async function screenStocks(params: ScreenerParams): Promise<ScreenerItem[]> {
+  const res = await fetch(`${API_BASE}/api/screener`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`스크리닝 실패 (HTTP ${res.status})`);
+  return res.json();
+}
+
+export async function getSimilarStocks(stockCode: string): Promise<SimilarItem[]> {
+  return getJSON<SimilarItem[]>(`/api/screener/similar/${stockCode}`);
+}
+
+export async function getSavedFilters(): Promise<SavedFilter[]> {
+  return getJSON<SavedFilter[]>("/api/screener/filters");
+}
+
+export async function saveFilter(
+  name: string,
+  params: ScreenerParams,
+): Promise<{ id: number; name: string }> {
+  const res = await fetch(`${API_BASE}/api/screener/filters`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ name, ...params }),
+  });
+  if (!res.ok) throw new Error(`필터 저장 실패 (HTTP ${res.status})`);
+  return res.json();
+}
+
+export async function deleteFilter(id: number): Promise<void> {
+  await fetch(`${API_BASE}/api/screener/filters/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
 }
