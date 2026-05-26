@@ -19,8 +19,8 @@ const MA_OPTIONS: { value: ScreenerParams["ma_status"]; label: string }[] = [
   { value: undefined,  label: "전체" },
   { value: "golden",   label: "골든크로스" },
   { value: "dead",     label: "데드크로스" },
-  { value: "above",    label: "MA5>MA20" },
-  { value: "below",    label: "MA5<MA20" },
+  { value: "above",    label: "단기 상승 중" },
+  { value: "below",    label: "단기 하락 중" },
 ];
 
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
@@ -208,53 +208,61 @@ export function ScreenerCard() {
         </div>
 
         {/* 조건 행 */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 80 }}>
-            <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>PER 최대</span>
-            <input
-              value={perMax}
-              onChange={e => setPerMax(e.target.value)}
-              placeholder="예: 15"
-              type="number"
-              style={{
-                padding: "7px 10px", borderRadius: 10,
-                background: "var(--surface3)", border: "1px solid var(--sep)",
-                fontSize: 13, color: "var(--label)",
-              }}
-            />
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 70 }}>
-            <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>RSI 최소</span>
-            <input
-              value={rsiMin}
-              onChange={e => setRsiMin(e.target.value)}
-              placeholder="예: 30"
-              type="number"
-              style={{
-                padding: "7px 10px", borderRadius: 10,
-                background: "var(--surface3)", border: "1px solid var(--sep)",
-                fontSize: 13, color: "var(--label)",
-              }}
-            />
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, minWidth: 70 }}>
-            <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>RSI 최대</span>
-            <input
-              value={rsiMax}
-              onChange={e => setRsiMax(e.target.value)}
-              placeholder="예: 70"
-              type="number"
-              style={{
-                padding: "7px 10px", borderRadius: 10,
-                background: "var(--surface3)", border: "1px solid var(--sep)",
-                fontSize: 13, color: "var(--label)",
-              }}
-            />
-          </label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700 }}>가치 지표</span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+              <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>PER 이하 <span style={{ fontWeight: 400 }}>(낮을수록 저평가)</span></span>
+              <input
+                value={perMax}
+                onChange={e => setPerMax(e.target.value)}
+                placeholder="예: 15"
+                type="number"
+                style={{
+                  padding: "7px 10px", borderRadius: 10,
+                  background: "var(--surface3)", border: "1px solid var(--sep)",
+                  fontSize: 13, color: "var(--label)",
+                }}
+              />
+            </label>
+          </div>
+          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700, marginTop: 2 }}>RSI 구간 <span style={{ fontWeight: 400 }}>(30 이하 = 과매도, 70 이상 = 과매수)</span></span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+              <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>최소</span>
+              <input
+                value={rsiMin}
+                onChange={e => setRsiMin(e.target.value)}
+                placeholder="예: 0"
+                type="number"
+                style={{
+                  padding: "7px 10px", borderRadius: 10,
+                  background: "var(--surface3)", border: "1px solid var(--sep)",
+                  fontSize: 13, color: "var(--label)",
+                }}
+              />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+              <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>최대</span>
+              <input
+                value={rsiMax}
+                onChange={e => setRsiMax(e.target.value)}
+                placeholder="예: 30"
+                type="number"
+                style={{
+                  padding: "7px 10px", borderRadius: 10,
+                  background: "var(--surface3)", border: "1px solid var(--sep)",
+                  fontSize: 13, color: "var(--label)",
+                }}
+              />
+            </label>
+          </div>
         </div>
 
         {/* MA 상태 */}
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 700 }}>이동평균 추세</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {MA_OPTIONS.map(opt => {
             const active = maStatus === opt.value;
             return (
@@ -272,6 +280,7 @@ export function ScreenerCard() {
               >{opt.label}</button>
             );
           })}
+          </div>
         </div>
 
         {/* 스크리닝 버튼 */}
@@ -291,9 +300,10 @@ export function ScreenerCard() {
         {/* 결과 */}
         {searched && !loading && (
           results.length === 0 ? (
-            <p style={{ fontSize: 13, color: "var(--label2)", textAlign: "center", margin: "8px 0 0" }}>
-              조건에 맞는 종목이 없어요
-            </p>
+            <div style={{ textAlign: "center", margin: "8px 0 0" }}>
+              <p style={{ fontSize: 13, color: "var(--label2)", margin: "0 0 4px" }}>조건에 맞는 종목이 없어요</p>
+              <p style={{ fontSize: 11, color: "var(--label3)", margin: 0 }}>데이터는 평일 장 마감 후(16:20) 자동으로 채워져요</p>
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <p style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, margin: "0 0 6px" }}>

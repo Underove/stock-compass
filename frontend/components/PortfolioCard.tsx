@@ -89,8 +89,8 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
             key={t.key}
             onClick={() => onChange(t.key)}
             style={{
-              flex: 1, padding: "7px 4px",
-              fontSize: 13, fontWeight: active === t.key ? 700 : 500,
+              flex: 1, padding: "8px 4px",
+              fontSize: 12, fontWeight: active === t.key ? 700 : 500,
               color: active === t.key ? "white" : "var(--label2)",
               background: active === t.key ? "var(--primary)" : "transparent",
               borderRadius: 9,
@@ -131,7 +131,7 @@ function SummaryCard({ items, prices }: { items: PortfolioItem[]; prices: Record
   }
 
   const cellStyle: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 };
-  const labelStyle: React.CSSProperties = { fontSize: 10, color: "var(--label3)", fontWeight: 500 };
+  const labelStyle: React.CSSProperties = { fontSize: 11, color: "var(--label2)", fontWeight: 600 };
 
   return (
     <div style={{ margin: "12px 16px 4px", background: "var(--surface)", borderRadius: 16, boxShadow: "var(--shadow)" }}>
@@ -331,13 +331,13 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
           <>
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3 }}>매수 수량 (주)</div>
+                <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>매수 수량 (주)</div>
                 <CommaInput value={tradeQty} onChange={setTradeQty} placeholder="0"
                   autoFocus
                   style={{ width: "100%", background: "var(--bg)", borderRadius: 8, padding: "8px 10px", fontSize: 14, border: "none", outline: "none" }} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3 }}>매수 단가 (원)</div>
+                <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>매수 단가 (원)</div>
                 <CommaInput value={tradePrice} onChange={setTradePrice} placeholder="0"
                   style={{ width: "100%", background: "var(--bg)", borderRadius: 8, padding: "8px 10px", fontSize: 14, border: "none", outline: "none" }} />
               </div>
@@ -347,17 +347,17 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
                 <div style={{ fontSize: 10, color: "var(--primary)", fontWeight: 700, marginBottom: 8, letterSpacing: "0.04em" }}>매수 후 예상</div>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 6, marginBottom: 10 }}>
                   <div>
-                    <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 2 }}>기존 단가</div>
+                    <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 2 }}>기존 단가</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--label2)" }}>{fmt(item.buy_price)}원</div>
                   </div>
                   <div style={{ fontSize: 12, color: "var(--label3)", paddingBottom: 2 }}>→</div>
                   <div>
-                    <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 2 }}>새 평균단가</div>
+                    <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 2 }}>새 평균단가</div>
                     <div style={{ fontSize: 18, fontWeight: 800, color: "var(--primary)", letterSpacing: "-0.04em" }}>{fmt(newAvg)}원</div>
                   </div>
                   {avgDiff !== null && (
                     <div style={{ marginLeft: "auto", textAlign: "right", paddingBottom: 2 }}>
-                      <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 2 }}>단가 변동</div>
+                      <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 2 }}>단가 변동</div>
                       <div style={{ fontSize: 12, fontWeight: 700, color: avgDiff > 0 ? "var(--red)" : avgDiff < 0 ? "var(--primary)" : "var(--label3)" }}>
                         {avgDiff > 0 ? "+" : ""}{fmt(avgDiff)}원
                       </div>
@@ -366,15 +366,15 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
                 </div>
                 <div style={{ display: "flex", borderTop: "0.5px solid rgba(0,122,255,0.12)", paddingTop: 8 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 1 }}>총 수량</div>
+                    <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 1 }}>총 수량</div>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{fmt(item.quantity + buyQty)}주</div>
                   </div>
                   <div style={{ flex: 1, textAlign: "center" }}>
-                    <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 1 }}>추가 투자금</div>
+                    <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 1 }}>추가 투자금</div>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{fmt(buyQty * buyPrice)}원</div>
                   </div>
                   <div style={{ flex: 1, textAlign: "right" }}>
-                    <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 1 }}>총 투자금</div>
+                    <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 1 }}>총 투자금</div>
                     <div style={{ fontSize: 13, fontWeight: 700 }}>{fmt(newBuyTotal ?? 0)}원</div>
                   </div>
                 </div>
@@ -398,8 +398,8 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
           <>
             <div style={{ marginBottom: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-                <div style={{ fontSize: 10, color: "var(--label3)" }}>매도 수량 (주)</div>
-                <div style={{ fontSize: 10, color: "var(--label3)" }}>보유 {fmt(item.quantity)}주</div>
+                <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>매도 수량 (주)</div>
+                <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>보유 {fmt(item.quantity)}주</div>
               </div>
               <CommaInput value={tradeQty} onChange={setTradeQty} placeholder="0"
                 autoFocus
@@ -418,7 +418,7 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
                   <>
                     <div style={{ marginBottom: 10 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                        <span style={{ fontSize: 11, color: "var(--label3)" }}>매도 비중</span>
+                        <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>매도 비중</span>
                         <span style={{ fontSize: 11, fontWeight: 700, color: "var(--red)" }}>{sellPct.toFixed(0)}%</span>
                       </div>
                       <div style={{ height: 5, background: "var(--bg)", borderRadius: 3, overflow: "hidden" }}>
@@ -427,11 +427,11 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
                     </div>
                     <div style={{ display: "flex", borderTop: "0.5px solid rgba(255,59,48,0.1)", paddingTop: 8 }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 1 }}>매도 후 잔여</div>
+                        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 1 }}>매도 후 잔여</div>
                         <div style={{ fontSize: 16, fontWeight: 800 }}>{fmt(remainQty)}주</div>
                       </div>
                       <div style={{ flex: 1, textAlign: "right" }}>
-                        <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 1 }}>잔여 원금</div>
+                        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 1 }}>잔여 원금</div>
                         <div style={{ fontSize: 13, fontWeight: 700 }}>{fmt(remainQty * item.buy_price)}원</div>
                       </div>
                     </div>
@@ -439,7 +439,7 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
                 ) : (
                   <div style={{ textAlign: "center", padding: "6px 0 2px" }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "var(--red)" }}>모든 보유 주식 매도</div>
-                    <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 2 }}>포트폴리오에서 삭제됩니다</div>
+                    <div style={{ fontSize: 11, color: "var(--label2)", marginTop: 2 }}>포트폴리오에서 삭제됩니다</div>
                   </div>
                 )}
               </div>
@@ -472,13 +472,13 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
           <>
             <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3 }}>수량 (주)</div>
+                <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>수량 (주)</div>
                 <CommaInput value={editQty} onChange={setEditQty}
                   autoFocus
                   style={{ width: "100%", background: "var(--bg)", borderRadius: 8, padding: "8px 10px", fontSize: 14, border: "none", outline: "none" }} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3 }}>평균단가 (원)</div>
+                <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>평균단가 (원)</div>
                 <CommaInput value={editPrice} onChange={setEditPrice}
                   style={{ width: "100%", background: "var(--bg)", borderRadius: 8, padding: "8px 10px", fontSize: 14, border: "none", outline: "none" }} />
               </div>
@@ -554,7 +554,7 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
             {hitTarget && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--red)", background: "rgba(255,59,48,0.10)", borderRadius: 4, padding: "1px 5px" }}>목표</span>}
             {hitStop && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--primary)", background: "rgba(0,122,255,0.10)", borderRadius: 4, padding: "1px 5px" }}>손절</span>}
           </div>
-          <div style={{ fontSize: 11, color: "var(--label3)", letterSpacing: "-0.01em" }}>
+          <div style={{ fontSize: 11, color: "var(--label2)", letterSpacing: "-0.01em" }}>
             {fmt(item.quantity)}주 · {fmt(item.buy_price)}원
           </div>
           {evalPnl !== null && (
@@ -603,12 +603,12 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
           ) : currentPrice !== null ? (
             <>
               <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.035em" }}>{fmt(currentPrice)}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: evalPnlPct !== null ? pctColor(evalPnlPct) : "var(--label3)", marginTop: 1 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: evalPnlPct !== null ? pctColor(evalPnlPct) : "var(--label2)", marginTop: 1 }}>
                 {evalPnlPct !== null ? pctSign(evalPnlPct) : "—"}
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 11, color: "var(--label3)" }}>—</div>
+            <div style={{ fontSize: 11, color: "var(--label2)" }}>—</div>
           )}
         </div>
 
@@ -684,7 +684,7 @@ function WatchlistTab({ onAddToPortfolio, onSelectItem }: { onAddToPortfolio: (i
       <div style={{ padding: "12px 16px 0", flexShrink: 0 }}>
         <input type="text" value={query} onChange={e => setQuery(e.target.value)} placeholder="관심종목 추가…"
           style={{ width: "100%", background: "var(--surface)", borderRadius: 12, padding: "9px 14px", fontSize: 14, border: "0.5px solid var(--sep)", outline: "none", boxShadow: "var(--shadow-sm)" }} />
-        {searching && <div style={{ fontSize: 12, color: "var(--label3)", textAlign: "center", marginTop: 6 }}>검색 중…</div>}
+        {searching && <div style={{ fontSize: 12, color: "var(--label2)", textAlign: "center", marginTop: 6 }}>검색 중…</div>}
         {searchResults.length > 0 && (
           <div style={{ background: "var(--surface)", borderRadius: 12, overflow: "hidden", marginTop: 6, boxShadow: "var(--shadow)" }}>
             {searchResults.map((r, i) => (
@@ -714,7 +714,7 @@ function WatchlistTab({ onAddToPortfolio, onSelectItem }: { onAddToPortfolio: (i
           </div>
           <div style={{ textAlign: "center" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "var(--label)", marginBottom: 6 }}>관심 종목이 없어요</div>
-            <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7 }}>
+            <div style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.7 }}>
               위에서 종목을 검색해 추가하면<br />시세를 한눈에 확인할 수 있어요
             </div>
           </div>
@@ -879,19 +879,19 @@ function AllocationTab({ items, prices }: { items: PortfolioItem[]; prices: Reco
         boxShadow: "var(--shadow-sm)", marginBottom: 14,
       }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3, fontWeight: 500 }}>총 평가금액</div>
+          <div style={{ fontSize: 11, color: "var(--label2)", marginBottom: 3, fontWeight: 600 }}>총 평가금액</div>
           <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em" }}>{fmt(total)}원</div>
         </div>
         <div style={{ width: "0.5px", background: "var(--sep)", margin: "0 14px" }} />
         <div style={{ flex: 1, textAlign: "center" }}>
-          <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3, fontWeight: 500 }}>수익률</div>
+          <div style={{ fontSize: 11, color: "var(--label2)", marginBottom: 3, fontWeight: 600 }}>수익률</div>
           <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em", color: isProfitOverall ? "var(--red)" : "var(--primary)" }}>
             {totalPnlPct > 0 ? "+" : ""}{totalPnlPct.toFixed(2)}%
           </div>
         </div>
         <div style={{ width: "0.5px", background: "var(--sep)", margin: "0 14px" }} />
         <div style={{ flex: 1, textAlign: "right" }}>
-          <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3, fontWeight: 500 }}>손익</div>
+          <div style={{ fontSize: 11, color: "var(--label2)", marginBottom: 3, fontWeight: 600 }}>손익</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: isProfitOverall ? "var(--red)" : "var(--primary)" }}>
             {totalPnl > 0 ? "+" : ""}{fmt(totalPnl)}원
           </div>
@@ -952,7 +952,7 @@ function AllocationTab({ items, prices }: { items: PortfolioItem[]; prices: Reco
                     </div>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em" }}>{v.corp_name}</div>
-                      <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 1 }}>{fmt(v.quantity)}주</div>
+                      <div style={{ fontSize: 11, color: "var(--label2)", marginTop: 1 }}>{fmt(v.quantity)}주</div>
                     </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
@@ -969,7 +969,7 @@ function AllocationTab({ items, prices }: { items: PortfolioItem[]; prices: Reco
                   }} />
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <div style={{ fontSize: 11, color: "var(--label3)" }}>{fmt(v.currentValue)}원</div>
+                  <div style={{ fontSize: 11, color: "var(--label2)" }}>{fmt(v.currentValue)}원</div>
                   <div style={{ fontSize: 11, fontWeight: 700, color }}>{v.pnl > 0 ? "+" : ""}{fmt(v.pnl)}원</div>
                 </div>
               </div>
@@ -1114,7 +1114,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 16, fontWeight: 700, color: "var(--label)", marginBottom: 8 }}>보유 종목이 없어요</div>
-                <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7 }}>
+                <div style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.7 }}>
                   위 종목 추가 버튼으로<br />실시간 시세와 AI 분석을 시작해보세요
                 </div>
               </div>

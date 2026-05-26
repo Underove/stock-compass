@@ -208,8 +208,8 @@ export default function Home() {
         </div>
 
         {/* ── 스크리너 ── */}
-        <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`}>
-          <PanelHeader title="종목 스크리너" subtitle="섹터·RSI·PER·MA 필터링" />
+        <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`} style={{ overflowY: "auto" }}>
+          <PanelHeader title="종목 스크리너" subtitle="조건 필터링으로 종목 발굴" />
           <ScreenerCard />
         </div>
 

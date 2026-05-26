@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ask, fetchPortfolioBriefing, fetchPremarketNews } from "../lib/api";
 import type { PremarketNews } from "../lib/api";
 import type { ChatTurn, CompanySynced, PortfolioBriefing, PortfolioStats, Source } from "../lib/types";
+import { ProfileSettings } from "./ProfileSettings";
 import { UploadCard } from "./UploadCard";
 
 type Tab = "briefing" | "news" | "chat" | "factcheck";
@@ -13,6 +14,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [isAsking, setIsAsking] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   // 브리핑 상태
@@ -97,7 +99,10 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
   }
 
   return (
-    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
+
+      {/* 성향 설정 오버레이 */}
+      {showProfile && <ProfileSettings onClose={() => setShowProfile(false)} />}
 
       {/* 탭 바 — iOS 세그먼트 컨트롤 */}
       <div style={{
@@ -105,8 +110,10 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
         flexShrink: 0,
         background: "var(--bg)",
         borderBottom: "0.5px solid var(--sep)",
+        display: "flex", alignItems: "center", gap: 8,
       }}>
         <div style={{
+          flex: 1,
           display: "flex",
           background: "var(--surface3)",
           borderRadius: 11,
@@ -118,7 +125,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               onClick={() => setActiveTab(tab)}
               style={{
                 flex: 1,
-                padding: "6px 4px",
+                padding: "8px 4px",
                 fontSize: 12,
                 fontWeight: activeTab === tab ? 700 : 500,
                 color: activeTab === tab ? "white" : "var(--label2)",
@@ -133,6 +140,23 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
             </button>
           ))}
         </div>
+        <button
+          onClick={() => setShowProfile(true)}
+          title="투자 성향 설정"
+          style={{
+            width: 32, height: 32, borderRadius: 10,
+            background: "var(--surface)",
+            border: "0.5px solid var(--sep)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--label2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+        </button>
       </div>
 
       {/* ── AI 브리핑 탭 ── */}
@@ -145,7 +169,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               background: "var(--surface)", borderRadius: 20, padding: "24px 20px",
               boxShadow: "var(--shadow)", textAlign: "center",
             }}>
-              <div style={{ fontSize: 13, color: "var(--label3)", marginBottom: 6 }}>브리핑 로드 실패</div>
+              <div style={{ fontSize: 13, color: "var(--label2)", marginBottom: 6 }}>브리핑 로드 실패</div>
               <div style={{ fontSize: 13, color: "var(--red)", marginBottom: 16, fontWeight: 600 }}>{briefingError}</div>
               <button
                 onClick={() => loadBriefing()}
@@ -170,7 +194,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               </div>
               <div style={{ textAlign: "center" }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "var(--label)", marginBottom: 6 }}>포트폴리오가 비어있어요</div>
-                <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7 }}>
+                <div style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.7 }}>
                   종목을 추가하면 AI가 보유 현황을<br />분석해서 브리핑을 제공해요
                 </div>
               </div>
@@ -218,7 +242,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontSize: 16, color: "var(--label)", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 5 }}>무엇이든 물어보세요</div>
-                  <div style={{ fontSize: 12, color: "var(--label3)", lineHeight: 1.8 }}>
+                  <div style={{ fontSize: 12, color: "var(--label2)", lineHeight: 1.8 }}>
                     업로드한 자료 · 포트폴리오 · 공시 기반으로 답변
                   </div>
                 </div>
@@ -340,13 +364,13 @@ function StatsBar({ stats }: { stats: PortfolioStats }) {
       overflow: "hidden", marginBottom: 16,
     }}>
       <div style={{ flex: 1, padding: "10px 14px", textAlign: "center", borderRight: "0.5px solid var(--sep)" }}>
-        <div style={{ fontSize: 10, color: "var(--label3)", fontWeight: 500, marginBottom: 3 }}>평가손익</div>
+        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>평가손익</div>
         <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em", color }}>
           {stats.total_pnl_pct > 0 ? "+" : ""}{stats.total_pnl_pct.toFixed(2)}%
         </div>
       </div>
       <div style={{ flex: 1, padding: "10px 14px", textAlign: "center", borderRight: "0.5px solid var(--sep)" }}>
-        <div style={{ fontSize: 10, color: "var(--label3)", fontWeight: 500, marginBottom: 3 }}>최고</div>
+        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>최고</div>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--red)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {stats.best.corp_name}
         </div>
@@ -355,7 +379,7 @@ function StatsBar({ stats }: { stats: PortfolioStats }) {
         </div>
       </div>
       <div style={{ flex: 1, padding: "10px 14px", textAlign: "center" }}>
-        <div style={{ fontSize: 10, color: "var(--label3)", fontWeight: 500, marginBottom: 3 }}>최저</div>
+        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>최저</div>
         <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {stats.worst.corp_name}
         </div>
@@ -449,7 +473,7 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
                             </span>
                           )}
                           <span style={{
-                            fontSize: 10, fontWeight: 600, color: "var(--label3)",
+                            fontSize: 11, fontWeight: 600, color: "var(--label2)",
                             marginLeft: "auto",
                           }}>
                             {h.status}
@@ -648,7 +672,7 @@ function SourceBadges({ sources }: { sources: Source[] }) {
         onClick={() => setExpanded(v => !v)}
         style={{
           display: "flex", alignItems: "center", gap: 5,
-          fontSize: 11, color: "var(--label3)", fontWeight: 600, alignSelf: "flex-start",
+          fontSize: 11, color: "var(--label2)", fontWeight: 600, alignSelf: "flex-start",
         }}
       >
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -668,7 +692,7 @@ function SourceBadges({ sources }: { sources: Source[] }) {
           }}>
             {s.snippet}
           </div>
-          <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 3 }}>{s.label}</div>
+          <div style={{ fontSize: 11, color: "var(--label2)", marginTop: 3 }}>{s.label}</div>
         </div>
       ))}
     </div>

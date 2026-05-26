@@ -172,7 +172,7 @@ textarea:focus {
 .dashboard-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 58fr 42fr;
+  grid-template-columns: 40fr 30fr 30fr;
   gap: 1px;
   overflow: hidden;
   background: var(--sep);
