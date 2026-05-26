@@ -79,18 +79,26 @@ export default function Home() {
         justifyContent: "space-between",
         padding: "0 20px",
         height: 52,
-        background: "rgba(242,242,247,0.9)",
-        backdropFilter: "blur(24px)",
-        WebkitBackdropFilter: "blur(24px)",
+        background: "var(--header-bg)",
+        backdropFilter: "blur(28px)",
+        WebkitBackdropFilter: "blur(28px)",
         borderBottom: "0.5px solid var(--sep)",
         flexShrink: 0,
         zIndex: 10,
         gap: 16,
       }}>
         {/* 로고 */}
-        <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexShrink: 0 }}>
-          <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.05em" }}>주식나침반</span>
-          <span style={{ fontSize: 11, color: "var(--label3)", fontWeight: 500 }}>AI 팩트체크</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: "var(--primary)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+              <path d="M2 12L7 7L11 11L16 5L22 12" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.04em" }}>주식나침반</span>
         </div>
 
         {/* 시장 지수 + 상태 */}
@@ -205,14 +213,15 @@ function MarketStatusBadge({ status }: { status: MarketStatus }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 5,
-      background: s.bg, borderRadius: 10, padding: "5px 10px",
+      background: s.bg, borderRadius: 20, padding: "4px 10px",
+      border: `0.5px solid ${s.dot}30`,
     }}>
       <span style={{
-        width: 6, height: 6, borderRadius: "50%", background: s.dot,
-        boxShadow: status.status === "open" ? `0 0 0 2px ${s.dot}33` : "none",
+        width: 5, height: 5, borderRadius: "50%", background: s.dot,
+        boxShadow: status.status === "open" ? `0 0 0 2.5px ${s.dot}40` : "none",
         flexShrink: 0,
       }} />
-      <span style={{ fontSize: 11, fontWeight: 600, color: s.color }}>{status.label}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: s.color, letterSpacing: "-0.01em" }}>{status.label}</span>
     </div>
   );
 }
@@ -223,19 +232,15 @@ function MarketBadge({ index, className }: { index: MarketIndex; className?: str
   const sign = up ? "+" : "";
   return (
     <div className={className} style={{
-      display: "flex", alignItems: "center", gap: 5,
-      background: up ? "rgba(255,59,48,0.07)" : "rgba(0,122,255,0.07)",
-      borderRadius: 10, padding: "5px 10px",
+      display: "flex", alignItems: "center", gap: 6,
+      background: "var(--surface2)",
+      borderRadius: 20, padding: "4px 10px",
     }}>
       <span style={{ fontSize: 11, fontWeight: 600, color: "var(--label3)" }}>{index.name}</span>
-      <span style={{ fontSize: 13, fontWeight: 800, color, letterSpacing: "-0.03em" }}>
+      <span style={{ fontSize: 12, fontWeight: 800, color, letterSpacing: "-0.03em" }}>
         {index.value.toLocaleString("ko-KR")}
       </span>
-      <span style={{
-        fontSize: 10, fontWeight: 700, color,
-        background: up ? "rgba(255,59,48,0.1)" : "rgba(0,122,255,0.1)",
-        borderRadius: 5, padding: "1px 5px",
-      }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color }}>
         {sign}{index.change_pct.toFixed(2)}%
       </span>
     </div>
@@ -245,13 +250,13 @@ function MarketBadge({ index, className }: { index: MarketIndex; className?: str
 function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <div style={{
-      padding: "12px 20px 11px",
+      padding: "13px 20px 12px",
       borderBottom: "0.5px solid var(--sep)",
       flexShrink: 0,
-      display: "flex", alignItems: "baseline", gap: 10,
+      display: "flex", alignItems: "center", justifyContent: "space-between",
     }}>
       <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.04em" }}>{title}</div>
-      <div style={{ fontSize: 11, color: "var(--label3)", fontWeight: 500 }}>{subtitle}</div>
+      <div style={{ fontSize: 11, color: "var(--label3)", fontWeight: 500, letterSpacing: "0" }}>{subtitle}</div>
     </div>
   );
 }
@@ -273,11 +278,13 @@ function AlertBell({ alerts, show, onToggle }: {
       </svg>
       {count > 0 && (
         <div style={{
-          position: "absolute", top: 4, right: 4,
-          width: 16, height: 16, borderRadius: "50%",
-          background: "var(--orange)", color: "white",
+          position: "absolute", top: 3, right: 3,
+          minWidth: 15, height: 15, borderRadius: 8,
+          background: "var(--red)", color: "white",
           fontSize: 9, fontWeight: 800,
           display: "flex", alignItems: "center", justifyContent: "center",
+          padding: "0 3px",
+          border: "1.5px solid var(--bg)",
         }}>
           {count > 9 ? "9+" : count}
         </div>

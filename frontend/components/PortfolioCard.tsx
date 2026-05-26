@@ -80,22 +80,26 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
     { key: "allocation", label: "배분" },
   ];
   return (
-    <div style={{ display: "flex", borderBottom: "0.5px solid var(--sep)", flexShrink: 0 }}>
-      {tabs.map(t => (
-        <button
-          key={t.key}
-          onClick={() => onChange(t.key)}
-          style={{
-            flex: 1, padding: "10px 4px 11px",
-            fontSize: 13, fontWeight: active === t.key ? 700 : 500,
-            color: active === t.key ? "var(--primary)" : "var(--label3)",
-            borderBottom: `2.5px solid ${active === t.key ? "var(--primary)" : "transparent"}`,
-            transition: "all 0.15s", marginBottom: -1,
-          }}
-        >
-          {t.label}
-        </button>
-      ))}
+    <div style={{ padding: "10px 16px 8px", flexShrink: 0, background: "var(--bg)", borderBottom: "0.5px solid var(--sep)" }}>
+      <div style={{ display: "flex", background: "var(--surface2)", borderRadius: 11, padding: 2 }}>
+        {tabs.map(t => (
+          <button
+            key={t.key}
+            onClick={() => onChange(t.key)}
+            style={{
+              flex: 1, padding: "7px 4px",
+              fontSize: 13, fontWeight: active === t.key ? 700 : 500,
+              color: active === t.key ? "var(--label)" : "var(--label3)",
+              background: active === t.key ? "var(--surface)" : "transparent",
+              borderRadius: 9,
+              boxShadow: active === t.key ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+              transition: "all 0.18s",
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -529,10 +533,10 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
     : "var(--label3)";
 
   return (
-    <div style={{ position: "relative", background: isEditing ? "rgba(0,122,255,0.025)" : "transparent", transition: "background 0.15s" }}>
+    <div style={{ position: "relative", background: isEditing ? "var(--primary-soft)" : "transparent", transition: "background 0.15s" }}>
 
       <div
-        style={{ display: "flex", alignItems: "center", padding: "12px 16px", gap: 12, cursor: "pointer" }}
+        style={{ display: "flex", alignItems: "center", padding: "11px 16px", gap: 11, cursor: "pointer" }}
         onClick={onClick}
       >
         {/* 로고 */}
@@ -540,16 +544,16 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
 
         {/* 이름 + 보유 정보 */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
-            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em" }}>{item.corp_name}</span>
-            {isLive && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--green)", background: "rgba(52,199,89,0.12)", borderRadius: 4, padding: "1px 4px" }}>LIVE</span>}
-            {!isLive && price?.session === "after" && <span style={{ fontSize: 8, fontWeight: 700, color: "#FF9500", background: "rgba(255,149,0,0.12)", borderRadius: 4, padding: "1px 4px" }}>시간외</span>}
-            {!isLive && price?.session === "pre" && <span style={{ fontSize: 8, fontWeight: 700, color: "#5AC8FA", background: "rgba(90,200,250,0.12)", borderRadius: 4, padding: "1px 4px" }}>장전</span>}
-            {hitTarget && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--red)", background: "rgba(255,59,48,0.1)", borderRadius: 4, padding: "1px 5px" }}>목표</span>}
-            {hitStop && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--primary)", background: "rgba(0,122,255,0.1)", borderRadius: 4, padding: "1px 5px" }}>손절</span>}
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 1 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.025em" }}>{item.corp_name}</span>
+            {isLive && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--green)", background: "rgba(52,199,89,0.13)", borderRadius: 4, padding: "1px 5px" }}>LIVE</span>}
+            {!isLive && price?.session === "after" && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--orange)", background: "rgba(255,149,0,0.13)", borderRadius: 4, padding: "1px 5px" }}>시간외</span>}
+            {!isLive && price?.session === "pre" && <span style={{ fontSize: 8, fontWeight: 700, color: "#5AC8FA", background: "rgba(90,200,250,0.13)", borderRadius: 4, padding: "1px 5px" }}>장전</span>}
+            {hitTarget && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--red)", background: "rgba(255,59,48,0.10)", borderRadius: 4, padding: "1px 5px" }}>목표</span>}
+            {hitStop && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--primary)", background: "rgba(0,122,255,0.10)", borderRadius: 4, padding: "1px 5px" }}>손절</span>}
           </div>
-          <div style={{ fontSize: 11, color: "var(--label3)" }}>
-            {fmt(item.quantity)}주 · 단가 {fmt(item.buy_price)}원
+          <div style={{ fontSize: 11, color: "var(--label3)", letterSpacing: "-0.01em" }}>
+            {fmt(item.quantity)}주 · {fmt(item.buy_price)}원
           </div>
           {evalPnl !== null && (
             <div style={{ fontSize: 11, fontWeight: 600, color: accentColor, marginTop: 1 }}>
@@ -588,21 +592,21 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
         )}
 
         {/* 현재가 + 등락 */}
-        <div style={{ textAlign: "right", flexShrink: 0, minWidth: 68 }}>
+        <div style={{ textAlign: "right", flexShrink: 0, minWidth: 70 }}>
           {loading && !realtimePrice ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
-              <div style={{ width: 54, height: 14, background: "var(--surface2)", borderRadius: 4, animation: "pulse 1.4s ease-in-out infinite" }} />
-              <div style={{ width: 38, height: 11, background: "var(--surface2)", borderRadius: 4, animation: "pulse 1.4s ease-in-out infinite" }} />
+              <div style={{ width: 56, height: 15, background: "var(--surface2)", borderRadius: 5, animation: "pulse 1.4s ease-in-out infinite" }} />
+              <div style={{ width: 40, height: 11, background: "var(--surface2)", borderRadius: 4, animation: "pulse 1.4s ease-in-out infinite" }} />
             </div>
           ) : currentPrice !== null ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.03em" }}>{fmt(currentPrice)}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: evalPnlPct !== null ? pctColor(evalPnlPct) : "var(--label3)" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.035em" }}>{fmt(currentPrice)}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: evalPnlPct !== null ? pctColor(evalPnlPct) : "var(--label3)", marginTop: 1 }}>
                 {evalPnlPct !== null ? pctSign(evalPnlPct) : "—"}
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 11, color: "var(--label3)" }}>조회 실패</div>
+            <div style={{ fontSize: 11, color: "var(--label3)" }}>—</div>
           )}
         </div>
 
@@ -611,12 +615,13 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
           <button
             onClick={onEdit}
             style={{
-              padding: "6px 12px", borderRadius: 9,
+              padding: "6px 11px", borderRadius: 9,
               background: isEditing ? "var(--primary)" : "var(--surface2)",
               color: isEditing ? "white" : "var(--label2)",
               fontSize: 12, fontWeight: 700,
-              transition: "all 0.15s",
+              transition: "all 0.18s",
               minWidth: 44, minHeight: 32,
+              boxShadow: isEditing ? "0 2px 8px rgba(0,122,255,0.25)" : "none",
             }}
           >
             거래
@@ -695,20 +700,20 @@ function WatchlistTab({ onAddToPortfolio, onSelectItem }: { onAddToPortfolio: (i
 
       {/* 관심종목 목록 */}
       {items.length === 0 ? (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "40px 24px", gap: 20 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "48px 32px", gap: 16 }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 20,
+            width: 48, height: 48, borderRadius: 15,
             background: "var(--surface2)",
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--label3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--label3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
             </svg>
           </div>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--label)", marginBottom: 8 }}>관심 종목이 없어요</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "var(--label)", marginBottom: 6 }}>관심 종목이 없어요</div>
             <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7 }}>
-              관심 종목을 추가하면<br />시세를 한눈에 확인할 수 있어요
+              위에서 종목을 검색해 추가하면<br />시세를 한눈에 확인할 수 있어요
             </div>
           </div>
         </div>
@@ -1075,8 +1080,15 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
           <div style={{ padding: "8px 16px 10px" }}>
             {!showAdd ? (
               <button onClick={() => setShowAdd(true)}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", padding: "10px", background: "var(--primary)", color: "white", borderRadius: 12, fontSize: 13, fontWeight: 600 }}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+                  width: "100%", padding: "11px",
+                  background: "var(--primary)", color: "white",
+                  borderRadius: 13, fontSize: 13, fontWeight: 700,
+                  boxShadow: "0 3px 10px rgba(0,122,255,0.25)",
+                  letterSpacing: "-0.01em",
+                }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round" /></svg>
                 종목 추가
               </button>
             ) : (
@@ -1088,13 +1100,13 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
           </div>
 
           {items.length === 0 && !showAdd && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "40px 24px", gap: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: "48px 32px", gap: 16 }}>
               <div style={{
-                width: 64, height: 64, borderRadius: 20,
+                width: 48, height: 48, borderRadius: 15,
                 background: "var(--surface2)",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--label3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--label3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />
                 </svg>
               </div>

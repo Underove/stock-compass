@@ -99,31 +99,40 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* 탭 바 */}
+      {/* 탭 바 — iOS 세그먼트 컨트롤 */}
       <div style={{
-        display: "flex",
-        borderBottom: "0.5px solid var(--sep)",
+        padding: "10px 16px 8px",
         flexShrink: 0,
         background: "var(--bg)",
+        borderBottom: "0.5px solid var(--sep)",
       }}>
-        {([["briefing", "AI 브리핑"], ["news", "뉴스"], ["chat", "채팅"], ["factcheck", "팩트체크"]] as [Tab, string][]).map(([tab, label]) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            style={{
-              flex: 1,
-              padding: "12px 4px",
-              fontSize: 13,
-              fontWeight: activeTab === tab ? 700 : 500,
-              color: activeTab === tab ? "var(--primary)" : "var(--label3)",
-              borderBottom: `2.5px solid ${activeTab === tab ? "var(--primary)" : "transparent"}`,
-              marginBottom: -1,
-              transition: "all 0.15s",
-            }}
-          >
-            {label}
-          </button>
-        ))}
+        <div style={{
+          display: "flex",
+          background: "var(--surface2)",
+          borderRadius: 11,
+          padding: 2,
+        }}>
+          {([["briefing", "AI 브리핑"], ["news", "뉴스"], ["chat", "채팅"], ["factcheck", "팩트체크"]] as [Tab, string][]).map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              style={{
+                flex: 1,
+                padding: "6px 4px",
+                fontSize: 12,
+                fontWeight: activeTab === tab ? 700 : 500,
+                color: activeTab === tab ? "var(--label)" : "var(--label3)",
+                background: activeTab === tab ? "var(--surface)" : "transparent",
+                borderRadius: 9,
+                boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                transition: "all 0.18s",
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── AI 브리핑 탭 ── */}
@@ -205,15 +214,15 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
             {turns.length === 0 && (
               <div style={{
                 flex: 1, display: "flex", flexDirection: "column",
-                alignItems: "center", justifyContent: "center", gap: 16, padding: "0 24px",
+                alignItems: "center", justifyContent: "center", gap: 20, padding: "0 20px",
               }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: 15, color: "var(--label)", fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 4 }}>무엇이든 물어보세요</div>
-                  <div style={{ fontSize: 12, color: "var(--label3)", lineHeight: 1.7 }}>
-                    업로드한 자료 · 포트폴리오 · 공시 기반으로 답변합니다
+                  <div style={{ fontSize: 16, color: "var(--label)", fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 5 }}>무엇이든 물어보세요</div>
+                  <div style={{ fontSize: 12, color: "var(--label3)", lineHeight: 1.8 }}>
+                    업로드한 자료 · 포트폴리오 · 공시 기반으로 답변
                   </div>
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7, width: "100%", maxWidth: 320 }}>
                   {[
                     "오늘 포트폴리오 전반 요약해줘",
                     "최근 공시에서 주목할 내용 있어?",
@@ -224,15 +233,20 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
                       key={q}
                       onClick={() => { setInput(q); }}
                       style={{
-                        fontSize: 12, fontWeight: 600,
-                        color: "var(--primary)",
-                        background: "rgba(0,122,255,0.08)",
-                        border: "0.5px solid rgba(0,122,255,0.15)",
-                        borderRadius: 20, padding: "7px 13px",
-                        transition: "background 0.15s",
+                        fontSize: 13, fontWeight: 500,
+                        color: "var(--label)",
+                        background: "var(--surface)",
+                        border: "0.5px solid var(--sep)",
+                        borderRadius: 12, padding: "10px 14px",
+                        textAlign: "left",
+                        boxShadow: "var(--shadow-sm)",
+                        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
                       }}
                     >
-                      {q}
+                      <span>{q}</span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--label3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6" />
+                      </svg>
                     </button>
                   ))}
                 </div>
@@ -247,7 +261,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
 
           {/* 입력창 */}
           <div style={{
-            padding: "10px 12px 14px",
+            padding: "8px 12px 12px",
             borderTop: "0.5px solid var(--sep)",
             flexShrink: 0,
             display: "flex", gap: 8, alignItems: "flex-end",
@@ -257,18 +271,18 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               flex: 1,
               display: "flex", alignItems: "center",
               background: "var(--surface)",
-              borderRadius: 22,
+              borderRadius: 24,
               padding: "0 16px",
-              boxShadow: "var(--shadow-sm)",
-              minHeight: 46,
+              minHeight: 44,
               border: "0.5px solid var(--sep)",
+              boxShadow: "var(--shadow-sm)",
             }}>
               <input
                 type="text"
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !isAsking) send(); }}
-                placeholder="메시지 입력…"
+                placeholder="메시지를 입력하세요"
                 disabled={isAsking}
                 style={{
                   flex: 1, background: "transparent",
@@ -281,23 +295,23 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
               onClick={send}
               disabled={isAsking || !input.trim()}
               style={{
-                width: 46, height: 46, borderRadius: "50%",
+                width: 44, height: 44, borderRadius: "50%",
                 background: isAsking || !input.trim() ? "var(--surface2)" : "var(--primary)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0,
-                transition: "all 0.15s",
-                boxShadow: isAsking || !input.trim() ? "none" : "0 3px 10px rgba(0,122,255,0.35)",
+                transition: "all 0.18s",
+                boxShadow: isAsking || !input.trim() ? "none" : "0 4px 12px rgba(0,122,255,0.30)",
               }}
             >
               {isAsking ? (
                 <div style={{
-                  width: 16, height: 16,
-                  border: "2px solid var(--label3)", borderTopColor: "var(--label2)",
-                  borderRadius: "50%", animation: "spin 0.8s linear infinite",
+                  width: 15, height: 15,
+                  border: "2px solid var(--label3)", borderTopColor: "var(--label)",
+                  borderRadius: "50%", animation: "spin 0.75s linear infinite",
                 }} />
               ) : (
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 4L12 20M12 4L6 10M12 4L18 10" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 4L12 20M12 4L6 10M12 4L18 10" stroke="white" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               )}
             </button>
@@ -570,13 +584,14 @@ function renderInline(text: string): React.ReactNode {
 
 function ChatTurnView({ turn }: { turn: ChatTurn }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, animation: "fadeIn 0.2s ease-out" }}>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
         <div style={{
           background: "var(--primary)", color: "white",
-          borderRadius: "18px 18px 4px 18px",
-          padding: "10px 14px", maxWidth: "82%",
-          fontSize: 14, lineHeight: 1.5, whiteSpace: "pre-wrap", wordBreak: "break-word",
+          borderRadius: "20px 20px 5px 20px",
+          padding: "10px 15px", maxWidth: "80%",
+          fontSize: 14, lineHeight: 1.55, whiteSpace: "pre-wrap", wordBreak: "break-word",
+          boxShadow: "0 2px 8px rgba(0,122,255,0.25)",
         }}>
           {turn.question}
         </div>
@@ -584,20 +599,21 @@ function ChatTurnView({ turn }: { turn: ChatTurn }) {
 
       <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
         <div style={{
-          width: 26, height: 26, borderRadius: 8,
-          background: "linear-gradient(135deg, rgba(0,122,255,0.15), rgba(0,122,255,0.08))",
-          border: "0.5px solid rgba(0,122,255,0.2)",
+          width: 28, height: 28, borderRadius: 9,
+          background: "var(--primary)",
           flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 10, fontWeight: 800, color: "var(--primary)",
+          fontSize: 9, fontWeight: 800, color: "white",
+          letterSpacing: "0.01em",
         }}>
           AI
         </div>
         <div style={{
           background: "var(--surface)", color: "var(--label)",
-          borderRadius: "18px 18px 18px 4px",
-          padding: "11px 14px", maxWidth: "82%",
-          fontSize: 14, wordBreak: "break-word",
+          borderRadius: "20px 20px 20px 5px",
+          padding: "11px 15px", maxWidth: "80%",
+          fontSize: 14, wordBreak: "break-word", lineHeight: 1.6,
           boxShadow: "var(--shadow-sm)",
+          border: "0.5px solid var(--sep)",
         }}>
           {turn.error ? (
             <span style={{ color: "var(--red)" }}>{turn.error}</span>

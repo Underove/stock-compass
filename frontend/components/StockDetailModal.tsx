@@ -242,72 +242,85 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
     <div style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 100, display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
 
-        {/* ── 상단 헤더 (종목명 + 현재가 통합) ── */}
+        {/* ── 상단 헤더 ── */}
         <div style={{
-          padding: "12px 20px 0",
+          padding: "14px 20px 12px",
           flexShrink: 0,
+          borderBottom: "0.5px solid var(--sep)",
+          background: "var(--bg)",
         }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          {/* 종목명 + 닫기 */}
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: "var(--label2)", fontWeight: 500 }}>
+              <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 500, letterSpacing: "0.01em", marginBottom: 2 }}>
                 {currentItem.stock_code}
               </div>
-              <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.2, marginTop: 2 }}>
+              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.2 }}>
                 {currentItem.corp_name}
               </div>
             </div>
             <button
               onClick={onClose}
-              style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--surface2)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--label2)", fontSize: 15, flexShrink: 0 }}
+              style={{
+                width: 32, height: 32, borderRadius: "50%",
+                background: "var(--surface2)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "var(--label3)", flexShrink: 0,
+              }}
             >
-              ✕
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
           {/* 현재가 */}
-          <div style={{ marginTop: 12, marginBottom: 4 }}>
-            {loadingPrice ? (
-              <Skeleton height={44} width="55%" />
-            ) : price ? (
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1, color: pctColor(price.change_pct) }}>
+          {loadingPrice ? (
+            <Skeleton height={40} width="50%" />
+          ) : price ? (
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: pctColor(price.change_pct) }}>
                   {fmt(price.current_price)}
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "var(--label2)", marginLeft: 3 }}>원</span>
-                </div>
-                <div style={{
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: "var(--label3)", marginBottom: 2 }}>원</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: 3 }}>
+                <span style={{
                   fontSize: 13, fontWeight: 700, color: pctColor(price.change_pct),
-                  background: isProfit ? "rgba(255,59,48,0.08)" : "rgba(0,122,255,0.08)",
-                  borderRadius: 8, padding: "3px 10px",
+                  background: isProfit ? "rgba(255,59,48,0.09)" : "rgba(0,122,255,0.09)",
+                  borderRadius: 8, padding: "3px 9px",
                 }}>
                   {isFinite(price.change_amount) ? `${price.change_amount > 0 ? "+" : ""}${fmt(price.change_amount)}` : "—"} ({isFinite(price.change_pct) ? pctSign(price.change_pct) : "—"})
-                </div>
+                </span>
                 {sessionLabel && (
                   <span style={{
                     fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
                     background: sessionLabel === "시간외" ? "rgba(255,149,0,0.12)" : "rgba(90,200,250,0.15)",
-                    color: sessionLabel === "시간외" ? "#FF9500" : "#5AC8FA",
+                    color: sessionLabel === "시간외" ? "var(--orange)" : "#5AC8FA",
                   }}>
                     {sessionLabel}
                   </span>
                 )}
               </div>
-            ) : (
-              <div style={{ fontSize: 15, color: "var(--label3)" }}>시세 조회 불가</div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: 15, color: "var(--label3)" }}>시세 조회 불가</div>
+          )}
 
-          {/* 시가·고가·저가 mini row */}
+          {/* 시가·고가·저가·거래량 mini row */}
           {price && (
-            <div style={{ display: "flex", gap: 16, paddingBottom: 12, borderBottom: "0.5px solid var(--sep)" }}>
-              <span style={{ fontSize: 12, color: "var(--label3)" }}>
-                시 <span style={{ color: "var(--label2)", fontWeight: 600 }}>{fmt(price.open)}</span>
-              </span>
-              <span style={{ fontSize: 12, color: "var(--label3)" }}>
-                고 <span style={{ color: "var(--red)", fontWeight: 600 }}>{fmt(price.high)}</span>
-              </span>
-              <span style={{ fontSize: 12, color: "var(--label3)" }}>
-                저 <span style={{ color: "var(--primary)", fontWeight: 600 }}>{fmt(price.low)}</span>
-              </span>
+            <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+              {[
+                { label: "시", value: fmt(price.open), color: "var(--label2)" },
+                { label: "고", value: fmt(price.high), color: "var(--red)" },
+                { label: "저", value: fmt(price.low), color: "var(--primary)" },
+                { label: "량", value: price.volume ? `${(price.volume / 1000).toFixed(0)}K` : "—", color: "var(--label2)" },
+              ].map(({ label, value, color }) => (
+                <span key={label} style={{ fontSize: 11, color: "var(--label3)" }}>
+                  {label} <span style={{ color, fontWeight: 600 }}>{value}</span>
+                </span>
+              ))}
             </div>
           )}
         </div>
@@ -343,24 +356,27 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
           </div>
         )}
 
-        {/* ── 탭 바 ── */}
-        <div style={{ display: "flex", flexShrink: 0, borderBottom: "0.5px solid var(--sep)" }}>
-          {([["price", "시세"], ["technical", "기술 지표"], ["ai", "공시"]] as [Tab, string][]).map(([tab, label]) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              style={{
-                flex: 1, padding: "11px 4px 12px",
-                fontSize: 13, fontWeight: 600,
-                color: activeTab === tab ? "var(--primary)" : "var(--label2)",
-                borderBottom: `2px solid ${activeTab === tab ? "var(--primary)" : "transparent"}`,
-                transition: "color 0.15s",
-                marginBottom: -1,
-              }}
-            >
-              {label}
-            </button>
-          ))}
+        {/* ── 탭 바 — iOS 세그먼트 ── */}
+        <div style={{ padding: "8px 16px 7px", flexShrink: 0, borderBottom: "0.5px solid var(--sep)", background: "var(--bg)" }}>
+          <div style={{ display: "flex", background: "var(--surface2)", borderRadius: 11, padding: 2 }}>
+            {([["price", "시세"], ["technical", "기술 지표"], ["ai", "공시"]] as [Tab, string][]).map(([tab, label]) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  flex: 1, padding: "7px 4px",
+                  fontSize: 13, fontWeight: activeTab === tab ? 700 : 500,
+                  color: activeTab === tab ? "var(--label)" : "var(--label3)",
+                  background: activeTab === tab ? "var(--surface)" : "transparent",
+                  borderRadius: 9,
+                  boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                  transition: "all 0.18s",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── 스크롤 본문 ── */}
@@ -409,15 +425,16 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   {/* ── 차트 히어로 ── */}
                   <div style={{ background: "var(--surface)", padding: "12px 16px 10px", borderBottom: "0.5px solid var(--sep)" }}>
                     {/* 기간 선택 */}
-                    <div style={{ display: "flex", gap: 4, marginBottom: 12 }}>
+                    <div style={{ display: "flex", gap: 0, background: "var(--bg)", borderRadius: 10, padding: 2, marginBottom: 12, alignSelf: "flex-start" }}>
                       {(["1M", "3M", "6M"] as Period[]).map(p => (
                         <button
                           key={p}
                           onClick={() => setPeriod(p)}
                           style={{
-                            padding: "5px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700,
-                            background: period === p ? "var(--primary)" : "var(--bg)",
-                            color: period === p ? "white" : "var(--label2)",
+                            padding: "5px 16px", borderRadius: 8, fontSize: 12, fontWeight: period === p ? 700 : 500,
+                            background: period === p ? "var(--surface)" : "transparent",
+                            color: period === p ? "var(--label)" : "var(--label3)",
+                            boxShadow: period === p ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
                             transition: "all 0.15s",
                           }}
                         >
@@ -501,25 +518,28 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 </div>
               ) : fundamental ? (
                 <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>재무 지표</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, paddingTop: 12, borderTop: "0.5px solid var(--sep)" }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>재무 지표</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {([
-                      { label: "PER", value: fundamental.per !== null ? `${fundamental.per.toFixed(1)}배` : "—", note: "주가 / 순이익" },
-                      { label: "PBR", value: fundamental.pbr !== null ? `${fundamental.pbr.toFixed(2)}배` : "—", note: "주가 / 순자산" },
-                      { label: "EPS", value: fundamental.eps !== null ? `${fmt(Math.round(fundamental.eps))}원` : "—", note: "주당순이익" },
-                      { label: "배당수익률", value: fundamental.div !== null ? `${fundamental.div.toFixed(2)}%` : "—", note: "연간배당 / 주가" },
-                    ] as { label: string; value: string; note: string }[]).map(({ label, value, note }) => (
-                      <div key={label} style={{ background: "var(--bg)", borderRadius: 12, padding: "10px 12px" }}>
-                        <div style={{ fontSize: 10, color: "var(--label3)", marginBottom: 3 }}>{label}</div>
-                        <div style={{ fontSize: 15, fontWeight: 700 }}>{value}</div>
-                        <div style={{ fontSize: 10, color: "var(--label3)", marginTop: 2 }}>{note}</div>
+                      { label: "PER", value: fundamental.per !== null ? `${fundamental.per.toFixed(1)}배` : "—", note: "주가 / 순이익", accent: "rgba(0,122,255,0.08)", dot: "var(--primary)" },
+                      { label: "PBR", value: fundamental.pbr !== null ? `${fundamental.pbr.toFixed(2)}배` : "—", note: "주가 / 순자산", accent: "rgba(88,86,214,0.08)", dot: "#5856D6" },
+                      { label: "EPS", value: fundamental.eps !== null ? `${fmt(Math.round(fundamental.eps))}원` : "—", note: "주당순이익", accent: "rgba(52,199,89,0.08)", dot: "var(--green)" },
+                      { label: "배당수익률", value: fundamental.div !== null ? `${fundamental.div.toFixed(2)}%` : "—", note: "연간 배당 / 주가", accent: "rgba(255,149,0,0.08)", dot: "var(--orange)" },
+                    ] as { label: string; value: string; note: string; accent: string; dot: string }[]).map(({ label, value, note, accent, dot }) => (
+                      <div key={label} style={{ background: accent, borderRadius: 14, padding: "12px 13px", border: `0.5px solid ${dot}20` }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                          <div style={{ width: 5, height: 5, borderRadius: "50%", background: dot, flexShrink: 0 }} />
+                          <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>{label}</span>
+                        </div>
+                        <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.03em", color: value === "—" ? "var(--label3)" : "var(--label)" }}>{value}</div>
+                        <div style={{ fontSize: 10, color: "var(--label3)", marginTop: 3 }}>{note}</div>
                       </div>
                     ))}
                   </div>
                   {fundamental.market_cap !== null && (
-                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid var(--sep)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: 12, color: "var(--label3)" }}>시가총액</span>
-                      <span style={{ fontSize: 13, fontWeight: 700 }}>{fmtMarketCap(fundamental.market_cap)}</span>
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: "0.5px solid var(--sep)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: "var(--label3)", fontWeight: 500 }}>시가총액</span>
+                      <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em" }}>{fmtMarketCap(fundamental.market_cap)}</span>
                     </div>
                   )}
                 </div>
@@ -535,7 +555,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 </div>
               ) : tradingFlow.length > 0 ? (
                 <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>외인·기관 순매수</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>외인·기관 순매수</div>
                   <div style={{ display: "flex", gap: 12, paddingTop: 12, borderTop: "0.5px solid var(--sep)" }}>
                     {([["외국인", "foreign_net"], ["기관", "institution_net"]] as [string, keyof TradingFlowItem][]).map(([label, key]) => (
                       <div key={label} style={{ flex: 1 }}>
@@ -566,7 +586,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 </div>
               ) : shortSelling && (shortSelling.ratio !== null || shortSelling.trend.length > 0) ? (
                 <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>공매도 비율</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>공매도 비율</div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0 12px", borderTop: "0.5px solid var(--sep)" }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
                       <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.04em", color: (shortSelling.ratio ?? 0) > 5 ? "var(--red)" : "var(--label)" }}>
@@ -636,8 +656,8 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
               {/* 종목 메모 */}
               <div style={{ background: "var(--surface)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
                 <div style={{ padding: "14px 18px 12px", borderBottom: "0.5px solid var(--sep)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 14, fontWeight: 700 }}>종목 메모</span>
-                  <span style={{ fontSize: 11, color: "var(--label3)" }}>자동 저장</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em" }}>종목 메모</span>
+                  <span style={{ fontSize: 11, color: "var(--label3)", fontWeight: 500 }}>자동 저장</span>
                 </div>
                 <div style={{ padding: "12px 18px 16px" }}>
                   <textarea
