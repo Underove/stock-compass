@@ -1,4 +1,5 @@
 import sqlite3
+import json as _json
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -42,6 +43,15 @@ def init_db() -> None:
                 total_invested  INTEGER NOT NULL,
                 created_at      TEXT    NOT NULL,
                 UNIQUE(username, snapshot_date)
+            );
+
+            CREATE TABLE IF NOT EXISTS user_profiles (
+                username    TEXT PRIMARY KEY,
+                risk_level  TEXT NOT NULL DEFAULT 'neutral',
+                horizon     TEXT NOT NULL DEFAULT 'mid',
+                sectors     TEXT NOT NULL DEFAULT '[]',
+                ai_memo     TEXT NOT NULL DEFAULT '',
+                updated_at  TEXT NOT NULL DEFAULT ''
             );
         """)
 
@@ -168,3 +178,61 @@ def get_realized_summary(username: str) -> list[dict]:
             d["date"] = d["created_at"][:10]
             result.append(d)
         return result
+
+
+def get_profile(username: str) -> dict:
+    """user_profiles 조회. 없으면 기본값 반환 (DB에 저장하지 않음)."""
+    with _conn() as con:
+        row = con.execute(
+            "SELECT * FROM user_profiles WHERE username=?", (username,)
+        ).fetchone()
+    if row is None:
+        return {
+            "username": username,
+            "risk_level": "neutral",
+            "horizon": "mid",
+            "sectors": [],
+            "ai_memo": "",
+            "updated_at": "",
+        }
+    d = dict(row)
+    d["sectors"] = _json.loads(d["sectors"] or "[]")
+    return d
+
+
+def upsert_profile(
+    username: str,
+    risk_level: str | None = None,
+    horizon: str | None = None,
+    sectors: list[str] | None = None,
+) -> None:
+    """투자 성향 저장. None 필드는 기존 값 유지 (ai_memo는 건드리지 않음)."""
+    current = get_profile(username)
+    new_risk = risk_level if risk_level is not None else current["risk_level"]
+    new_horizon = horizon if horizon is not None else current["horizon"]
+    new_sectors = sectors if sectors is not None else current["sectors"]
+    with _conn() as con:
+        con.execute(
+            """INSERT INTO user_profiles (username, risk_level, horizon, sectors, ai_memo, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?)
+               ON CONFLICT(username) DO UPDATE SET
+                   risk_level=excluded.risk_level,
+                   horizon=excluded.horizon,
+                   sectors=excluded.sectors,
+                   updated_at=excluded.updated_at""",
+            (username, new_risk, new_horizon, _json.dumps(new_sectors, ensure_ascii=False),
+             current["ai_memo"], _kst_now()),
+        )
+
+
+def update_ai_memo(username: str, memo: str) -> None:
+    """AI 추론 메모만 업데이트. 프로필이 없으면 기본값으로 생성."""
+    with _conn() as con:
+        con.execute(
+            """INSERT INTO user_profiles (username, risk_level, horizon, sectors, ai_memo, updated_at)
+               VALUES (?, 'neutral', 'mid', '[]', ?, ?)
+               ON CONFLICT(username) DO UPDATE SET
+                   ai_memo=excluded.ai_memo,
+                   updated_at=excluded.updated_at""",
+            (username, memo, _kst_now()),
+        )
