@@ -16,12 +16,29 @@ export type RealtimePrice = {
 
 export function isMarketOpen(): boolean {
   const now = new Date();
-  // KST = UTC+9
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-  const day = kst.getUTCDay(); // 0=Sun, 6=Sat
+  const day = kst.getUTCDay();
   if (day === 0 || day === 6) return false;
   const total = kst.getUTCHours() * 60 + kst.getUTCMinutes();
   return total >= 9 * 60 && total < 15 * 60 + 30; // 09:00–15:30 KST
+}
+
+export function isAfterHours(): boolean {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const day = kst.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  const total = kst.getUTCHours() * 60 + kst.getUTCMinutes();
+  return total >= 15 * 60 + 30 && total < 18 * 60; // 15:30–18:00 KST
+}
+
+export function isPreMarket(): boolean {
+  const now = new Date();
+  const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const day = kst.getUTCDay();
+  if (day === 0 || day === 6) return false;
+  const total = kst.getUTCHours() * 60 + kst.getUTCMinutes();
+  return total >= 8 * 60 && total < 9 * 60; // 08:00–09:00 KST
 }
 
 export function useRealtimePrice(stockCodes: string[]): Record<string, RealtimePrice> {

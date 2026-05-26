@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
-import { isMarketOpen } from "../hooks/useRealtimePrice";
+import { isAfterHours, isMarketOpen, isPreMarket } from "../hooks/useRealtimePrice";
 import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
 import { StockChart } from "./StockChart";
 
@@ -149,8 +149,9 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
     : null;
 
   const todayStr = new Date().toLocaleDateString("sv-SE"); // "YYYY-MM-DD"
+  const isTradingHours = isMarketOpen() || isAfterHours() || isPreMarket();
   const liveCandle: Candle | undefined =
-    price && isMarketOpen() && isFinite(price.open) && price.open > 0
+    price && isTradingHours && isFinite(price.open) && price.open > 0
       ? {
           time: todayStr,
           open: price.open,
@@ -160,6 +161,10 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
           volume: price.volume,
         }
       : undefined;
+
+  const sessionLabel =
+    price?.session === "after" ? "시간외" :
+    price?.session === "pre" ? "장전" : null;
 
   async function saveEdit() {
     const q = parseInt(editQty, 10);
@@ -242,6 +247,15 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 }}>
                   {isFinite(price.change_amount) ? `${price.change_amount > 0 ? "+" : ""}${fmt(price.change_amount)}` : "—"} ({isFinite(price.change_pct) ? pctSign(price.change_pct) : "—"})
                 </div>
+                {sessionLabel && (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6,
+                    background: sessionLabel === "시간외" ? "rgba(255,149,0,0.12)" : "rgba(90,200,250,0.15)",
+                    color: sessionLabel === "시간외" ? "#FF9500" : "#5AC8FA",
+                  }}>
+                    {sessionLabel}
+                  </span>
+                )}
               </div>
             ) : (
               <div style={{ fontSize: 15, color: "var(--label3)" }}>시세 조회 불가</div>

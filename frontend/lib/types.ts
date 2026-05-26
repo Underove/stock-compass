@@ -141,6 +141,7 @@ export type StockPrice = {
   low: number;
   volume: number;
   date: string;
+  session?: "open" | "pre" | "after" | "closed";
 };
 
 export type Candle = {

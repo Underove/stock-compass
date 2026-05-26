@@ -8,6 +8,20 @@ from pydantic import BaseModel
 from app.api.auth import get_current_user
 from app.collectors.dart import download_corp_codes, fetch_recent_disclosures
 from app.collectors.krx import get_chart_data, get_current_price, search_ticker
+from app.collectors.kis_rest import get_current_price_kis
+from app.config import settings
+
+
+def _get_price(stock_code: str) -> dict:
+    """KIS REST 우선, 실패 시 pykrx fallback."""
+    if settings.kis_app_key and settings.kis_app_secret:
+        try:
+            return get_current_price_kis(stock_code)
+        except Exception:
+            pass
+    data = get_current_price(stock_code)
+    data.setdefault("session", "open")
+    return data
 from app.collectors.ta_engine import analyze as ta_analyze, ta_text_summary
 from app.llm.gemini import generate_answer, parse_json_response
 
@@ -100,7 +114,7 @@ def update_portfolio(stock_code: str, body: UpdatePortfolioBody, username: str =
 def get_price(stock_code: str):
     """현재가·등락률 조회 (pykrx)."""
     try:
-        data = get_current_price(stock_code)
+        data = _get_price(stock_code)
         return data
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
@@ -127,7 +141,7 @@ def search_stock(q: str):
 def get_commentary(stock_code: str, corp_name: str = ""):
     """최근 시세 + DART 공시 기반 AI 코멘터리 생성."""
     try:
-        price_data = get_current_price(stock_code)
+        price_data = _get_price(stock_code)
         candles = get_chart_data(stock_code, days=30)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"시세 조회 실패: {e}")
@@ -221,7 +235,7 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
 
     for item in items[:8]:
         try:
-            price = get_current_price(item["stock_code"])
+            price = _get_price(item["stock_code"])
             cp = price["current_price"]
             day_pct = price.get("change_pct", 0)
             pnl_pct = ((cp - item["buy_price"]) / item["buy_price"] * 100) if item["buy_price"] else 0

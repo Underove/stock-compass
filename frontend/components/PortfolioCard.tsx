@@ -543,6 +543,8 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
             <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.02em" }}>{item.corp_name}</span>
             {isLive && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--green)", background: "rgba(52,199,89,0.12)", borderRadius: 4, padding: "1px 4px" }}>LIVE</span>}
+            {!isLive && price?.session === "after" && <span style={{ fontSize: 8, fontWeight: 700, color: "#FF9500", background: "rgba(255,149,0,0.12)", borderRadius: 4, padding: "1px 4px" }}>시간외</span>}
+            {!isLive && price?.session === "pre" && <span style={{ fontSize: 8, fontWeight: 700, color: "#5AC8FA", background: "rgba(90,200,250,0.12)", borderRadius: 4, padding: "1px 4px" }}>장전</span>}
             {hitTarget && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--red)", background: "rgba(255,59,48,0.1)", borderRadius: 4, padding: "1px 5px" }}>목표</span>}
             {hitStop && <span style={{ fontSize: 8, fontWeight: 700, color: "var(--primary)", background: "rgba(0,122,255,0.1)", borderRadius: 4, padding: "1px 5px" }}>손절</span>}
           </div>
