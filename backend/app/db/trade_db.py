@@ -63,7 +63,7 @@ def record_trade(
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (username, stock_code, corp_name, trade_type, quantity, price, buy_price, memo, _kst_now()),
         )
-        return cur.lastrowid
+        return cur.lastrowid or 0
 
 
 def get_trades(
@@ -127,6 +127,29 @@ def get_snapshots(username: str, days: int = 90) -> list[dict]:
             (username, days),
         ).fetchall()
         return list(reversed([dict(r) for r in rows]))
+
+
+def delete_trade(username: str, trade_id: int) -> bool:
+    with _conn() as con:
+        cur = con.execute("DELETE FROM trades WHERE id=? AND username=?", (trade_id, username))
+        return cur.rowcount > 0
+
+
+def update_trade(
+    username: str,
+    trade_id: int,
+    trade_type: str,
+    quantity: int,
+    price: int,
+    buy_price: int | None,
+) -> bool:
+    with _conn() as con:
+        cur = con.execute(
+            """UPDATE trades SET trade_type=?, quantity=?, price=?, buy_price=?
+               WHERE id=? AND username=?""",
+            (trade_type, quantity, price, buy_price, trade_id, username),
+        )
+        return cur.rowcount > 0
 
 
 def get_realized_summary(username: str) -> list[dict]:

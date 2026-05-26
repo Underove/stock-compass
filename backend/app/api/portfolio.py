@@ -115,9 +115,13 @@ def remove_portfolio(stock_code: str, username: str = Depends(get_current_user))
     _save([i for i in items if i["stock_code"] != stock_code], username)
     if target:
         try:
+            sell_price = _get_price(stock_code).get("current_price") or target["buy_price"]
+        except Exception:
+            sell_price = target["buy_price"]
+        try:
             record_trade(
                 username, stock_code, target.get("corp_name", stock_code),
-                "sell", target["quantity"], target["buy_price"],
+                "sell", target["quantity"], sell_price,
                 buy_price=target["buy_price"],
             )
         except Exception:
@@ -140,7 +144,11 @@ def update_portfolio(stock_code: str, body: UpdatePortfolioBody, username: str =
         items = [i for i in items if i["stock_code"] != stock_code]
         _save(items, username)
         try:
-            record_trade(username, stock_code, corp_name, "sell", old_qty, old_buy_price, buy_price=old_buy_price)
+            sell_price = _get_price(stock_code).get("current_price") or old_buy_price
+        except Exception:
+            sell_price = old_buy_price
+        try:
+            record_trade(username, stock_code, corp_name, "sell", old_qty, sell_price, buy_price=old_buy_price)
         except Exception:
             pass
     else:
@@ -152,8 +160,12 @@ def update_portfolio(stock_code: str, body: UpdatePortfolioBody, username: str =
         target["stop_loss"] = body.stop_loss
         _save(items, username)
         try:
+            sell_price = _get_price(stock_code).get("current_price") or old_buy_price
+        except Exception:
+            sell_price = old_buy_price
+        try:
             if qty_diff > 0:
-                record_trade(username, stock_code, corp_name, "sell", qty_diff, old_buy_price, buy_price=old_buy_price)
+                record_trade(username, stock_code, corp_name, "sell", qty_diff, sell_price, buy_price=old_buy_price)
             elif qty_diff < 0:
                 record_trade(username, stock_code, corp_name, "buy", -qty_diff, body.buy_price)
             elif price_changed:

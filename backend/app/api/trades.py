@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.api.auth import get_current_user
-from app.db.trade_db import get_realized_summary, get_snapshots, get_trades, update_memo
+from app.db.trade_db import delete_trade, get_realized_summary, get_snapshots, get_trades, update_memo, update_trade
 
 router = APIRouter()
 
@@ -85,6 +85,36 @@ def trades_summary(username: str = Depends(get_current_user)) -> dict:
         for r in rows
     ]
     return {"items": [i.model_dump() for i in items]}
+
+
+class TradeUpdateRequest(BaseModel):
+    trade_type: str = Field(..., pattern="^(buy|sell|edit)$")
+    quantity: int = Field(..., ge=1)
+    price: int = Field(..., ge=0)
+    buy_price: int | None = None
+
+
+@router.put("/trades/{trade_id}")
+def edit_trade(
+    trade_id: int,
+    body: TradeUpdateRequest,
+    username: str = Depends(get_current_user),
+) -> dict:
+    ok = update_trade(username, trade_id, body.trade_type, body.quantity, body.price, body.buy_price)
+    if not ok:
+        raise HTTPException(404, "거래 내역을 찾을 수 없습니다")
+    return {"ok": True}
+
+
+@router.delete("/trades/{trade_id}")
+def remove_trade(
+    trade_id: int,
+    username: str = Depends(get_current_user),
+) -> dict:
+    ok = delete_trade(username, trade_id)
+    if not ok:
+        raise HTTPException(404, "거래 내역을 찾을 수 없습니다")
+    return {"ok": True}
 
 
 @router.get("/portfolio/snapshots")

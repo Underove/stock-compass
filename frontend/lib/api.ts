@@ -324,3 +324,26 @@ export async function fetchTradeSummary(): Promise<{ items: TradeSummaryItem[] }
 export async function fetchPortfolioSnapshots(days = 90): Promise<{ snapshots: PortfolioSnapshot[] }> {
   return getJSON(`/api/portfolio/snapshots?days=${days}`);
 }
+
+export async function deleteTrade(tradeId: number): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/trades/${tradeId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("삭제 실패");
+}
+
+export async function editTrade(
+  tradeId: number,
+  trade_type: "buy" | "sell" | "edit",
+  quantity: number,
+  price: number,
+  buy_price?: number | null,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/trades/${tradeId}`, {
+    method: "PUT",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ trade_type, quantity, price, buy_price: buy_price ?? null }),
+  });
+  if (!res.ok) throw new Error("수정 실패");
+}

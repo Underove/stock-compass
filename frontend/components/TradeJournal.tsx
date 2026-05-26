@@ -316,6 +316,15 @@ export default function TradeJournal({ portfolio }: Props) {
           onMemoSaved={(id, memo) => {
             setTrades((prev) => prev.map((t) => t.id === id ? { ...t, memo } : t));
           }}
+          onDeleted={(id) => {
+            setTrades((prev) => prev.filter((t) => t.id !== id));
+            setTotal((prev) => Math.max(0, prev - 1));
+            setSelected(null);
+          }}
+          onEdited={(updated) => {
+            setTrades((prev) => prev.map((t) => t.id === updated.id ? updated : t));
+            setSelected(updated);
+          }}
         />
       )}
     </div>
