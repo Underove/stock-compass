@@ -108,7 +108,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
       }}>
         <div style={{
           display: "flex",
-          background: "var(--surface2)",
+          background: "var(--surface3)",
           borderRadius: 11,
           padding: 2,
         }}>
@@ -121,10 +121,10 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
                 padding: "6px 4px",
                 fontSize: 12,
                 fontWeight: activeTab === tab ? 700 : 500,
-                color: activeTab === tab ? "var(--label)" : "var(--label3)",
-                background: activeTab === tab ? "var(--surface)" : "transparent",
+                color: activeTab === tab ? "white" : "var(--label2)",
+                background: activeTab === tab ? "var(--primary)" : "transparent",
                 borderRadius: 9,
-                boxShadow: activeTab === tab ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+                boxShadow: activeTab === tab ? "0 2px 8px rgba(0,122,255,0.28)" : "none",
                 transition: "all 0.18s",
                 letterSpacing: "-0.01em",
               }}

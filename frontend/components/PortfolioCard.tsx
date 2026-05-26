@@ -81,7 +81,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
   ];
   return (
     <div style={{ padding: "10px 16px 8px", flexShrink: 0, background: "var(--bg)", borderBottom: "0.5px solid var(--sep)" }}>
-      <div style={{ display: "flex", background: "var(--surface2)", borderRadius: 11, padding: 2 }}>
+      <div style={{ display: "flex", background: "var(--surface3)", borderRadius: 11, padding: 2 }}>
         {tabs.map(t => (
           <button
             key={t.key}
@@ -89,10 +89,10 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
             style={{
               flex: 1, padding: "7px 4px",
               fontSize: 13, fontWeight: active === t.key ? 700 : 500,
-              color: active === t.key ? "var(--label)" : "var(--label3)",
-              background: active === t.key ? "var(--surface)" : "transparent",
+              color: active === t.key ? "white" : "var(--label2)",
+              background: active === t.key ? "var(--primary)" : "transparent",
               borderRadius: 9,
-              boxShadow: active === t.key ? "0 1px 4px rgba(0,0,0,0.10)" : "none",
+              boxShadow: active === t.key ? "0 2px 8px rgba(0,122,255,0.28)" : "none",
               transition: "all 0.18s",
             }}
           >

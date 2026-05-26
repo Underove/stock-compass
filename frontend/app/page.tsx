@@ -105,19 +105,19 @@ export default function Home() {
         zIndex: 10,
         gap: 16,
       }}>
-        {/* 로고 */}
+        {/* 로고 + 장 상태 */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
           <img src="/compass1.png" alt="주식나침반" style={{ width: 28, height: 28, borderRadius: 7, display: "block" }} />
           <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "-0.04em" }}>주식나침반</span>
+          {marketStatus && <MarketStatusBadge status={marketStatus} />}
         </div>
 
-        {/* 시장 지수 + 상태 */}
+        {/* 시장 지수 */}
         <div className="market-badges" style={{ display: "flex", gap: 6, flex: 1, justifyContent: "center", alignItems: "center" }}>
-          {marketStatus && <MarketStatusBadge status={marketStatus} />}
           {Object.values(indices).map((idx, i) => (
             <MarketBadge key={idx.name} index={idx} className={`market-badge market-badge--${i}`} />
           ))}
-          {!marketStatus && Object.keys(indices).length === 0 && (
+          {Object.keys(indices).length === 0 && (
             <div style={{ fontSize: 12, color: "var(--label3)" }}>시장 조회 중…</div>
           )}
         </div>
