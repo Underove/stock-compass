@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   addPortfolioItem,
   addWatchlistItem,
+  fetchChartData,
   fetchPortfolioAlerts,
   fetchStockPrice,
   listPortfolio,
@@ -499,10 +500,11 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
 
 // ─── 종목 행 ──────────────────────────────────────────────────────────────────
 
-function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePrice, isEditing }: {
+function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePrice, isEditing, sparkPoints }: {
   item: PortfolioItem; onClick: () => void; onEdit: () => void;
   onPriceLoaded: (code: string, price: StockPrice) => void;
   alertCount: number; realtimePrice?: RealtimePrice; isEditing: boolean;
+  sparkPoints?: number[];
 }) {
   const [price, setPrice] = useState<StockPrice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -553,6 +555,35 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
             </div>
           )}
         </div>
+
+        {/* 스파크라인 */}
+        {sparkPoints && sparkPoints.length >= 2 && (
+          <div style={{ width: 44, height: 24, flexShrink: 0 }}>
+            {(() => {
+              const min = Math.min(...sparkPoints);
+              const max = Math.max(...sparkPoints);
+              const range = max - min || 1;
+              const W = 44, H = 24;
+              const pts = sparkPoints.map((v, i) => {
+                const x = (i / (sparkPoints.length - 1)) * W;
+                const y = H - ((v - min) / range) * (H - 4) - 2;
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+              }).join(" ");
+              const isUp = sparkPoints[sparkPoints.length - 1] >= sparkPoints[0];
+              const color = isUp ? "var(--red)" : "var(--primary)";
+              const fillColor = isUp ? "rgba(255,59,48,0.08)" : "rgba(0,122,255,0.08)";
+              const lastPt = sparkPoints[sparkPoints.length - 1];
+              const lastY = H - ((lastPt - min) / range) * (H - 4) - 2;
+              const fillPts = `${pts} ${W},${lastY} ${W},${H} 0,${H}`;
+              return (
+                <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "100%" }}>
+                  <polygon points={fillPts} fill={fillColor} />
+                  <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+                </svg>
+              );
+            })()}
+          </div>
+        )}
 
         {/* 현재가 + 등락 */}
         <div style={{ textAlign: "right", flexShrink: 0, minWidth: 68 }}>
@@ -952,6 +983,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [watchlistAdd, setWatchlistAdd] = useState<WatchlistItem | null>(null);
   const [watchlistSelected, setWatchlistSelected] = useState<WatchlistItem | null>(null);
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
 
   const stockCodes = useMemo(() => items.map(i => i.stock_code), [items]);
   const realtimePrices = useRealtimePrice(stockCodes);
@@ -971,6 +1003,16 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
 
   const handlePriceLoaded = useCallback((code: string, price: StockPrice) => {
     setPrices(prev => ({ ...prev, [code]: price }));
+    setSparklines(prev => {
+      if (prev[code]) return prev;
+      fetchChartData(code, 30)
+        .then(candles => {
+          const closes = candles.filter(c => isFinite(c.close)).map(c => c.close);
+          if (closes.length > 0) setSparklines(p => ({ ...p, [code]: closes }));
+        })
+        .catch(() => {});
+      return prev;
+    });
   }, []);
 
   async function handleAdd(item: PortfolioItem) {
@@ -1078,6 +1120,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
                     alertCount={alerts[item.stock_code] ?? 0}
                     realtimePrice={realtimePrices[item.stock_code]}
                     isEditing={editingCode === item.stock_code}
+                    sparkPoints={sparklines[item.stock_code]}
                   />
                   {editingCode === item.stock_code && (
                     <TradePanel
