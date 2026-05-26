@@ -4,6 +4,14 @@ import json
 import logging
 from pathlib import Path
 
+from app.db.trade_db import (
+    insert_alert,
+    get_unread_alerts as _db_get_unread,
+    mark_alerts_read as _db_mark_read,
+    get_alert_watch,
+    get_unread_alert_counts,
+)
+
 logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
@@ -59,33 +67,70 @@ def job_generate_briefing() -> None:
 
 # ─── 알림 시스템 ──────────────────────────────────────────────────────────────
 
-def _load_alerts() -> list[dict]:
-    if not ALERTS_LOG.exists():
+def get_unread_alerts(username: str) -> list[dict]:
+    return _db_get_unread(username)
+
+
+def mark_alerts_read(username: str, ids: list[str]) -> None:
+    _db_mark_read(username, ids)
+
+
+def _get_all_usernames() -> list[str]:
+    """포트폴리오/관심종목 JSON 파일 + alert_watch DB에서 전체 username 수집."""
+    seen: set[str] = set()
+    for f in DATA_DIR.glob("portfolio_*.json"):
+        seen.add(f.stem[len("portfolio_"):])
+    for f in DATA_DIR.glob("watchlist_*.json"):
+        seen.add(f.stem[len("watchlist_"):])
+    try:
+        from app.db.trade_db import _conn
+        with _conn() as con:
+            for row in con.execute("SELECT DISTINCT username FROM alert_watch").fetchall():
+                seen.add(row[0])
+    except Exception:
+        pass
+    return list(seen)
+
+
+def _load_portfolio_json(username: str) -> list[dict]:
+    f = DATA_DIR / f"portfolio_{username}.json"
+    if not f.exists():
         return []
     try:
-        return json.loads(ALERTS_LOG.read_text(encoding="utf-8"))
+        return json.loads(f.read_text(encoding="utf-8"))
     except Exception:
         return []
 
 
-def _save_alerts(alerts: list[dict]) -> None:
-    ALERTS_LOG.write_text(json.dumps(alerts, ensure_ascii=False, indent=2), encoding="utf-8")
+def _load_watchlist_json(username: str) -> list[dict]:
+    f = DATA_DIR / f"watchlist_{username}.json"
+    if not f.exists():
+        return []
+    try:
+        return json.loads(f.read_text(encoding="utf-8"))
+    except Exception:
+        return []
 
 
-def get_unread_alerts() -> list[dict]:
-    return [a for a in _load_alerts() if not a.get("read")]
-
-
-def mark_alerts_read(alert_ids: list[str]) -> None:
-    alerts = _load_alerts()
-    for a in alerts:
-        if a["id"] in alert_ids:
-            a["read"] = True
-    _save_alerts(alerts)
+def _get_monitored_stocks(username: str) -> list[dict]:
+    """포트폴리오 + 관심종목 + alert_watch 합집합 (중복 제거)."""
+    seen: set[str] = set()
+    result: list[dict] = []
+    for src in (
+        _load_portfolio_json(username),
+        _load_watchlist_json(username),
+        get_alert_watch(username),
+    ):
+        for item in src:
+            code = item["stock_code"]
+            if code not in seen:
+                seen.add(code)
+                result.append({"stock_code": code, "corp_name": item["corp_name"]})
+    return result
 
 
 def job_check_price_alerts() -> None:
-    """목표가·손절가 도달 체크 (장 중 매 5분)."""
+    """목표가·손절가 도달 체크 (장 중 매 5분). DB 기반."""
     now = _now_kst()
     if now.weekday() >= 5:
         return
@@ -96,59 +141,34 @@ def job_check_price_alerts() -> None:
     logger.info("[스케줄러] 가격 알림 체크")
     try:
         from app.collectors.krx import get_current_price
-        items: list[dict] = []
-        for f in DATA_DIR.glob("portfolio_*.json"):
-            try:
-                items.extend(json.loads(f.read_text(encoding="utf-8")))
-            except Exception:
-                pass
-        alerts = _load_alerts()
-        existing_ids = {a["id"] for a in alerts}
-        new_alerts: list[dict] = []
+        date_str = now.strftime("%Y-%m-%d")
+        for username in _get_all_usernames():
+            for item in _load_portfolio_json(username):
+                if not item.get("target_price") and not item.get("stop_loss"):
+                    continue
+                try:
+                    price_data = get_current_price(item["stock_code"])
+                    cp = price_data["current_price"]
 
-        for item in items:
-            if not item.get("target_price") and not item.get("stop_loss"):
-                continue
-            try:
-                price_data = get_current_price(item["stock_code"])
-                cp = price_data["current_price"]
-                date_str = now.strftime("%Y-%m-%d")
+                    if item.get("target_price") and cp >= item["target_price"]:
+                        alert_id = f"{item['stock_code']}_target_{date_str}"
+                        insert_alert(
+                            username, alert_id, "target",
+                            item["stock_code"], item["corp_name"],
+                            f"{item['corp_name']} 목표가 {item['target_price']:,}원 도달 (현재 {cp:,}원)",
+                            {"current_price": cp, "trigger_price": item["target_price"]},
+                        )
 
-                if item.get("target_price") and cp >= item["target_price"]:
-                    alert_id = f"{item['stock_code']}_target_{date_str}"
-                    if alert_id not in existing_ids:
-                        new_alerts.append({
-                            "id": alert_id,
-                            "type": "target",
-                            "stock_code": item["stock_code"],
-                            "corp_name": item["corp_name"],
-                            "current_price": cp,
-                            "trigger_price": item["target_price"],
-                            "message": f"{item['corp_name']} 목표가 {item['target_price']:,}원 도달 (현재 {cp:,}원)",
-                            "created_at": now.isoformat(),
-                            "read": False,
-                        })
-
-                if item.get("stop_loss") and cp <= item["stop_loss"]:
-                    alert_id = f"{item['stock_code']}_stoploss_{date_str}"
-                    if alert_id not in existing_ids:
-                        new_alerts.append({
-                            "id": alert_id,
-                            "type": "stop_loss",
-                            "stock_code": item["stock_code"],
-                            "corp_name": item["corp_name"],
-                            "current_price": cp,
-                            "trigger_price": item["stop_loss"],
-                            "message": f"{item['corp_name']} 손절가 {item['stop_loss']:,}원 도달 (현재 {cp:,}원)",
-                            "created_at": now.isoformat(),
-                            "read": False,
-                        })
-            except Exception as e:
-                logger.warning("[스케줄러] %s 가격 조회 실패: %s", item["stock_code"], e)
-
-        if new_alerts:
-            _save_alerts(alerts + new_alerts)
-            logger.info("[스케줄러] 신규 알림 %d건 저장", len(new_alerts))
+                    if item.get("stop_loss") and cp <= item["stop_loss"]:
+                        alert_id = f"{item['stock_code']}_stoploss_{date_str}"
+                        insert_alert(
+                            username, alert_id, "stop_loss",
+                            item["stock_code"], item["corp_name"],
+                            f"{item['corp_name']} 손절가 {item['stop_loss']:,}원 도달 (현재 {cp:,}원)",
+                            {"current_price": cp, "trigger_price": item["stop_loss"]},
+                        )
+                except Exception as e:
+                    logger.warning("[스케줄러] %s 가격 조회 실패: %s", item["stock_code"], e)
     except Exception as e:
         logger.error("[스케줄러] 알림 체크 실패: %s", e)
 
@@ -229,7 +249,7 @@ def job_premarket_news_summary() -> None:
             system_instruction=SYSTEM,
             temperature=0.2,
         )
-        sections = parse_json_response(raw, default=None)
+        sections = parse_json_response(raw, default={})
         now = _now_kst()
         result = {
             "summary": raw,
@@ -319,11 +339,33 @@ def job_refresh_screener_ta() -> None:
                 base = existing.get(ta["stock_code"])
                 if not base:
                     continue
-                merged.append({**base, "rsi": ta["rsi"], "ma_status": ta["ma_status"], "has_ta": 1})
+                merged.append({
+                    **base,
+                    "rsi":          ta["rsi"],
+                    "ma_status":    ta["ma_status"],
+                    "volume_ratio": ta.get("volume_ratio"),
+                    "has_ta":       1,
+                })
             upsert_screener_snapshot(merged)
             logger.info("[스케줄러] TA 배치 완료: %d종목", len(merged))
     except Exception as e:
         logger.error("[스케줄러] TA 배치 실패: %s", e)
+
+
+def job_refresh_screener_market_signals() -> None:
+    """거래량 급등비율 + 외인·기관 7일 순매수 배치 (평일 16:35 KST)."""
+    logger.info("[스케줄러] 시장 시그널(거래량·외인) 배치 시작")
+    try:
+        from app.collectors.screener_collector import compute_foreign_signals
+        from app.db.trade_db import update_market_signals
+        signals = compute_foreign_signals(n=3000)
+        if signals:
+            update_market_signals(signals)
+            logger.info("[스케줄러] 시장 시그널 완료: %d종목", len(signals))
+        else:
+            logger.warning("[스케줄러] 시장 시그널: 데이터 없음")
+    except Exception as e:
+        logger.error("[스케줄러] 시장 시그널 실패: %s", e)
 
 
 def job_refresh_disclosure_counts() -> None:
