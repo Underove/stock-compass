@@ -85,35 +85,45 @@ const BADGE: Record<string, { label: string; bg: string; color: string }> = {
 
 function TradeRow({ trade, onClick }: { trade: Trade; onClick: () => void }) {
   const b = BADGE[trade.trade_type];
+  const date = trade.created_at.slice(0, 10);   // YYYY-MM-DD
+  const time = trade.created_at.slice(11, 16);  // HH:MM
   return (
     <button
       onClick={onClick}
       style={{
         display: "flex", alignItems: "center", gap: 10,
         width: "100%", background: "none", border: "none", cursor: "pointer",
-        padding: "10px 0", borderBottom: "1px solid var(--border)",
+        padding: "11px 0", borderBottom: "1px solid var(--border)",
         textAlign: "left",
       }}
     >
-      <span style={{
-        flexShrink: 0, fontSize: 10, fontWeight: 700,
-        padding: "3px 7px", borderRadius: 6,
-        background: b.bg, color: b.color,
-      }}>{b.label}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--label1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {trade.corp_name}
+      {/* 날짜 */}
+      <div style={{ flexShrink: 0, width: 52, textAlign: "center" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: "var(--label1)" }}>{date.slice(5)}</div>
+        <div style={{ fontSize: 10, color: "var(--label3)", marginTop: 1 }}>{time}</div>
+      </div>
+
+      {/* 뱃지 + 종목명 */}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{
+            flexShrink: 0, fontSize: 10, fontWeight: 700,
+            padding: "2px 6px", borderRadius: 5,
+            background: b.bg, color: b.color,
+          }}>{b.label}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--label1)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {trade.corp_name}
+          </span>
         </div>
         <div style={{ fontSize: 11, color: "var(--label3)" }}>
           {trade.quantity.toLocaleString()}주 · {trade.price.toLocaleString()}원
         </div>
       </div>
-      <div style={{ textAlign: "right", flexShrink: 0 }}>
-        <div style={{ fontSize: 12, color: "var(--label1)", fontWeight: 600 }}>
+
+      {/* 총액 */}
+      <div style={{ flexShrink: 0, textAlign: "right" }}>
+        <div style={{ fontSize: 13, color: "var(--label1)", fontWeight: 600 }}>
           {(trade.price * trade.quantity).toLocaleString()}원
-        </div>
-        <div style={{ fontSize: 10, color: "var(--label3)" }}>
-          {trade.created_at.slice(5, 16).replace("T", " ")}
         </div>
       </div>
     </button>
