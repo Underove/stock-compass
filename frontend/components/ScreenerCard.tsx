@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { screenStocks, addWatchlistItem } from "../lib/api";
+import { screenStocks } from "../lib/api";
 import type { ScreenerItem, ScreenerParams } from "../lib/types";
 import type { PortfolioItem } from "../lib/types";
 import { StockDetailModal } from "./StockDetailModal";
@@ -77,17 +77,7 @@ export function ScreenerCard() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [selectedItem, setSelectedItem] = useState<PortfolioItem | null>(null);
-  const [watchlistAdded, setWatchlistAdded] = useState<Set<string>>(new Set());
   const latestReq = React.useRef(0);
-
-  async function handleAddWatchlist(e: React.MouseEvent, code: string, name: string) {
-    e.stopPropagation();
-    if (watchlistAdded.has(code)) return;
-    try {
-      await addWatchlistItem({ stock_code: code, corp_name: name });
-      setWatchlistAdded(prev => new Set([...prev, code]));
-    } catch {}
-  }
 
   function buildParams(): ScreenerParams {
     return {
@@ -293,9 +283,7 @@ export function ScreenerCard() {
                 <p style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, margin: "0 0 4px" }}>
                   {results.length}개 종목
                 </p>
-                {results.map(item => {
-                  const isAdded = watchlistAdded.has(item.stock_code);
-                  return (
+                {results.map(item => (
                     <div
                       key={item.stock_code}
                       onClick={() => setSelectedItem({
@@ -322,47 +310,28 @@ export function ScreenerCard() {
                           {item.sector} · {fmt(item.market_cap)}억
                         </span>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-                          {item.rsi != null && (
-                            <span style={{
-                              fontSize: 11, fontWeight: 600,
-                              color: item.rsi < 30 ? "var(--primary)" : item.rsi > 70 ? "var(--red)" : "var(--label2)",
-                            }}>
-                              RSI {item.rsi}
-                            </span>
-                          )}
-                          {item.per != null && (
-                            <span style={{ fontSize: 11, fontWeight: 500, color: "var(--label3)" }}>
-                              PER {item.per}
-                            </span>
-                          )}
-                          {item.ma_status && item.ma_status !== "none" && (
-                            <span style={{ fontSize: 10, fontWeight: 700, color: maStatusColor(item.ma_status) }}>
-                              {item.ma_status === "golden" ? "골든" : item.ma_status === "dead" ? "데드" : item.ma_status}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={(e) => handleAddWatchlist(e, item.stock_code, item.corp_name)}
-                          style={{
-                            width: 30, height: 30, borderRadius: "50%",
-                            background: isAdded ? "var(--primary)" : "var(--surface)",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            color: isAdded ? "white" : "var(--label3)",
-                            flexShrink: 0,
-                            transition: "background 0.15s, color 0.15s",
-                            border: isAdded ? "none" : "1px solid var(--sep)",
-                          }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill={isAdded ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                          </svg>
-                        </button>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3, flexShrink: 0 }}>
+                        {item.rsi != null && (
+                          <span style={{
+                            fontSize: 11, fontWeight: 600,
+                            color: item.rsi < 30 ? "var(--primary)" : item.rsi > 70 ? "var(--red)" : "var(--label2)",
+                          }}>
+                            RSI {item.rsi}
+                          </span>
+                        )}
+                        {item.per != null && (
+                          <span style={{ fontSize: 11, fontWeight: 500, color: "var(--label3)" }}>
+                            PER {item.per}
+                          </span>
+                        )}
+                        {item.ma_status && item.ma_status !== "none" && (
+                          <span style={{ fontSize: 10, fontWeight: 700, color: maStatusColor(item.ma_status) }}>
+                            {item.ma_status === "golden" ? "골든" : item.ma_status === "dead" ? "데드" : item.ma_status}
+                          </span>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
+                ))}
               </div>
             )
           )}
