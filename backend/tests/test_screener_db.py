@@ -20,7 +20,7 @@ def test_upsert_and_query_screener(tmp_path):
     ])
     results = db.query_screener(sector="반도체", per_max=15.0)
     assert len(results) == 2
-    assert results[0]["stock_code"] in ("005930", "000660")
+    assert results[0]["stock_code"] == "000660"  # has_ta=1 → first by has_ta DESC sort
 
 def test_query_screener_rsi_filter(tmp_path):
     db = _make_db(tmp_path)

@@ -305,6 +305,7 @@ def query_screener(
     if pbr_max is not None:
         clauses.append("(pbr IS NULL OR pbr <= ?)")
         params.append(pbr_max)
+    # rsi/market_cap filters intentionally exclude NULL rows (no TA data = not yet computed)
     if rsi_min is not None:
         clauses.append("rsi >= ?")
         params.append(rsi_min)
