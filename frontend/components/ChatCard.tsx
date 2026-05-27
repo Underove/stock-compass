@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ask, fetchPortfolioBriefing, fetchPremarketNews } from "../lib/api";
+import { ask, fetchPortfolioBriefing, fetchPremarketNews, generatePremarketNews } from "../lib/api";
 import type { PremarketNews } from "../lib/api";
 import type { ChatTurn, CompanySynced, PortfolioBriefing, PortfolioStats, Source } from "../lib/types";
 import { ProfileSettings } from "./ProfileSettings";
@@ -26,6 +26,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
   const [premarketNews, setPremarketNews] = useState<PremarketNews | null>(null);
   const [loadingNews, setLoadingNews] = useState(false);
   const [newsLoaded, setNewsLoaded] = useState(false);
+  const [generatingNews, setGeneratingNews] = useState(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -70,6 +71,21 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
         .finally(() => { setLoadingNews(false); setNewsLoaded(true); });
     }
   }, [activeTab, premarketNews, loadingNews, newsLoaded]);
+
+  const refreshNews = useCallback(async () => {
+    if (generatingNews) return;
+    setGeneratingNews(true);
+    setPremarketNews(null);
+    try {
+      const data = await generatePremarketNews();
+      setPremarketNews(data);
+      setNewsLoaded(true);
+    } catch {
+      setNewsLoaded(false); // 실패 시 재시도 허용
+    } finally {
+      setGeneratingNews(false);
+    }
+  }, [generatingNews]);
 
   async function send() {
     const question = input.trim();
@@ -208,17 +224,28 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
       {/* ── 뉴스 요약 탭 ── */}
       {activeTab === "news" && (
         <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 32px", WebkitOverflowScrolling: "touch" as const }}>
-          {loadingNews ? (
+          {loadingNews || generatingNews ? (
             <BriefingSkeleton />
           ) : premarketNews ? (
-            <PremarketNewsView news={premarketNews} />
+            <PremarketNewsView news={premarketNews} onRefresh={refreshNews} refreshing={generatingNews} />
           ) : (
             <div style={{ background: "var(--surface)", borderRadius: 20, padding: "28px 20px", boxShadow: "var(--shadow)", textAlign: "center" }}>
               <div style={{ fontSize: 28, marginBottom: 12 }}>📰</div>
               <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>개장 전 뉴스 요약</div>
-              <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7 }}>
+              <div style={{ fontSize: 13, color: "var(--label3)", lineHeight: 1.7, marginBottom: 20 }}>
                 매일 오전 8:50에 자동으로 생성됩니다.<br />오늘 요약이 아직 준비되지 않았어요.
               </div>
+              <button
+                onClick={refreshNews}
+                style={{
+                  padding: "11px 28px", borderRadius: 14,
+                  background: "var(--primary)", color: "white",
+                  fontSize: 14, fontWeight: 700,
+                  boxShadow: "0 4px 12px rgba(0,122,255,0.28)",
+                }}
+              >
+                지금 생성하기
+              </button>
             </div>
           )}
         </div>
@@ -734,7 +761,11 @@ const NEWS_TONE = {
   neutral:  { color: "var(--label3)", bg: "var(--surface2)",        label: "중립" },
 };
 
-function PremarketNewsView({ news }: { news: PremarketNews }) {
+function PremarketNewsView({ news, onRefresh, refreshing }: {
+  news: PremarketNews;
+  onRefresh: () => void;
+  refreshing: boolean;
+}) {
   const s = news.sections;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -749,7 +780,19 @@ function PremarketNewsView({ news }: { news: PremarketNews }) {
             <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--orange)" }} />
             <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.03em" }}>개장 전 뉴스 요약</span>
           </div>
-          <span style={{ fontSize: 11, color: "var(--label3)" }}>{news.generated_at}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 11, color: "var(--label3)" }}>{news.generated_at}</span>
+            <button
+              onClick={onRefresh}
+              disabled={refreshing}
+              style={{
+                fontSize: 11, color: "var(--primary)", fontWeight: 700,
+                padding: "5px 12px", background: "rgba(0,122,255,0.09)", borderRadius: 9,
+              }}
+            >
+              {refreshing ? "…" : "새로고침"}
+            </button>
+          </div>
         </div>
 
         <div style={{ padding: "14px 18px 16px", display: "flex", flexDirection: "column", gap: 14 }}>

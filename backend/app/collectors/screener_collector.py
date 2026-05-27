@@ -169,9 +169,14 @@ def fetch_all_fundamentals() -> list[dict]:
     """전 종목 기본적 지표 + 섹터 수집. 반환: list of screener_snapshot 행 dict."""
     from app.collectors.kis_rest import _inquire_price
 
-    corps = _load_dart_codes()
+    # 파일이 없으면 DART API에서 자동 다운로드 (Railway 최초 배포 대응)
+    try:
+        from app.collectors.dart import download_corp_codes
+        corps = download_corp_codes()
+    except Exception:
+        corps = _load_dart_codes()
     if not corps:
-        logger.error("[스크리너] DART corp_codes.json 없음")
+        logger.error("[스크리너] DART corp_codes 로드/다운로드 실패")
         return []
 
     all_codes = [c["stock_code"] for c in corps if c.get("stock_code")]

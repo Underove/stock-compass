@@ -112,7 +112,7 @@ input,
 textarea,
 select {
   font-family: inherit;
-  font-size: max(16px, 1em); /* iOS Safari 줌인 방지 */
+  font-size: max(16px, 1em) !important; /* iOS Safari 줌인 방지 — !important로 inline style 덮어씀 */
   letter-spacing: inherit;
 }
 

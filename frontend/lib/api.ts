@@ -308,6 +308,11 @@ export async function fetchPremarketNews(): Promise<PremarketNews | null> {
   return data.cached;
 }
 
+export async function generatePremarketNews(): Promise<PremarketNews | null> {
+  const data = await postJSON<{ cached: PremarketNews | null }>("/api/notifications/premarket-news/generate", {});
+  return data.cached;
+}
+
 export async function fetchPortfolioBriefingCached(): Promise<import("./types").PortfolioBriefing | null> {
   const data = await getJSON<{ cached: import("./types").PortfolioBriefing | null }>("/api/notifications/briefing-cache");
   return data.cached;
