@@ -8,7 +8,7 @@ import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
 import { ScreenerCard } from "../components/ScreenerCard";
 import { fetchAlerts, fetchAlertWatch, markAlertsRead, deleteAlert, addAlertWatch, removeAlertWatch, searchStock, fetchMarketIndices, initAuth } from "../lib/api";
-import { isMarketOpen } from "../hooks/useRealtimePrice";
+import { isMarketOpen, useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { Alert, WatchStock, MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1 | 2;
@@ -52,6 +52,7 @@ export default function Home() {
   const [portfolioVersion, setPortfolioVersion] = useState(0);
   const [indicesLoaded, setIndicesLoaded] = useState(false);
 
+  // HTTP 폴링 — 초기값 + 장외 fallback (60초)
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -65,11 +66,22 @@ export default function Home() {
       finally { if (!cancelled) setIndicesLoaded(true); }
     }
     load();
-    // 장 중 5초, 장외 60초 갱신
-    const tick = isMarketOpen() ? 5_000 : 60_000;
-    const id = setInterval(load, tick);
+    const id = setInterval(load, 60_000);
     return () => { cancelled = true; clearInterval(id); };
   }, []);
+
+  // 장 중 WebSocket으로 KOSPI/KOSDAQ 실시간 갱신
+  const wsIndices = useRealtimePrice(["KOSPI", "KOSDAQ"]);
+  useEffect(() => {
+    const kospi = wsIndices["KOSPI"];
+    const kosdaq = wsIndices["KOSDAQ"];
+    if (!kospi && !kosdaq) return;
+    setIndices(prev => ({
+      ...prev,
+      ...(kospi ? { KOSPI: { name: "KOSPI", value: kospi.current_price, change: kospi.change_amount, change_pct: kospi.change_pct } } : {}),
+      ...(kosdaq ? { KOSDAQ: { name: "KOSDAQ", value: kosdaq.current_price, change: kosdaq.change_amount, change_pct: kosdaq.change_pct } } : {}),
+    }));
+  }, [wsIndices]);
 
   // 알림 폴링 (2분마다)
   useEffect(() => {

@@ -5,7 +5,7 @@ import json
 import websockets
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from app.collectors.kis_ws import WS_URL, get_approval_key, parse_price, subscribe_msg
+from app.collectors.kis_ws import WS_URL, get_approval_key, is_index_code, parse_index, parse_price, subscribe_index_msg, subscribe_msg
 from app.config import settings
 
 router = APIRouter()
@@ -44,18 +44,20 @@ async def ws_realtime(ws: WebSocket):
     try:
         async with websockets.connect(WS_URL, ping_interval=None) as kis_ws:
             for code in stock_codes:
-                await kis_ws.send(subscribe_msg(approval_key, code))
+                if is_index_code(code):
+                    await kis_ws.send(subscribe_index_msg(approval_key, code))
+                else:
+                    await kis_ws.send(subscribe_msg(approval_key, code))
 
             async for raw_msg in kis_ws:
                 if isinstance(raw_msg, bytes):
                     raw_msg = raw_msg.decode("utf-8")
 
-                # KIS PINGPONG 응답
                 if "PINGPONG" in raw_msg:
                     await kis_ws.send(_PINGPONG_RESP)
                     continue
 
-                price = parse_price(raw_msg)
+                price = parse_price(raw_msg) or parse_index(raw_msg)
                 if price:
                     try:
                         await ws.send_json(price)

@@ -94,6 +94,18 @@ def get_approval_key() -> str:
     return _approval_cache["key"]
 
 
+# 지수 코드: 프론트 식별자 → (KIS TR_ID, KIS TR_KEY)
+_INDEX_MAP = {
+    "KOSPI":  ("H0UPCNT0", "0001"),
+    "KOSDAQ": ("H0UPDNT0", "1001"),
+}
+_KIS_TO_INDEX = {"0001": "KOSPI", "1001": "KOSDAQ"}
+
+
+def is_index_code(code: str) -> bool:
+    return code in _INDEX_MAP
+
+
 def subscribe_msg(approval_key: str, stock_code: str) -> str:
     return json.dumps({
         "header": {
@@ -103,6 +115,19 @@ def subscribe_msg(approval_key: str, stock_code: str) -> str:
             "content-type": "utf-8",
         },
         "body": {"input": {"tr_id": "H0STCNT0", "tr_key": stock_code}},
+    })
+
+
+def subscribe_index_msg(approval_key: str, code: str) -> str:
+    tr_id, tr_key = _INDEX_MAP[code]
+    return json.dumps({
+        "header": {
+            "approval_key": approval_key,
+            "custtype": "P",
+            "tr_type": "1",
+            "content-type": "utf-8",
+        },
+        "body": {"input": {"tr_id": tr_id, "tr_key": tr_key}},
     })
 
 
@@ -129,6 +154,38 @@ def parse_price(raw: str) -> dict | None:
             "change_amount": change_amount if sign in ("1", "2") else -change_amount if sign in ("4", "5") else 0,
             "change_pct": float(fields[5]) if sign in ("1", "2") else -float(fields[5]) if sign in ("4", "5") else 0.0,
             "volume": int(fields[13]) if len(fields) > 13 else 0,
+        }
+    except (ValueError, IndexError):
+        return None
+
+
+def parse_index(raw: str) -> dict | None:
+    """H0UPCNT0(KOSPI) / H0UPDNT0(KOSDAQ) 파이프 구분 응답 파싱."""
+    if not raw.startswith("0|"):
+        return None
+    parts = raw.split("|", 3)
+    if len(parts) < 4:
+        return None
+    tr_id = parts[1]
+    if tr_id not in ("H0UPCNT0", "H0UPDNT0"):
+        return None
+    fields = parts[3].split("^")
+    if len(fields) < 5:
+        return None
+    try:
+        sign = fields[3]
+        change_abs = float(fields[2])
+        change_pct_abs = float(fields[4])
+        display = _KIS_TO_INDEX.get(fields[0], fields[0])
+        return {
+            "stock_code": display,
+            "time": "",
+            "current_price": round(float(fields[1]), 2),
+            "change_sign": sign,
+            "change_amount": round(change_abs if sign in ("1", "2") else -change_abs if sign in ("4", "5") else 0.0, 2),
+            "change_pct": round(change_pct_abs if sign in ("1", "2") else -change_pct_abs if sign in ("4", "5") else 0.0, 2),
+            "volume": int(float(fields[5])) if len(fields) > 5 else 0,
+            "is_index": True,
         }
     except (ValueError, IndexError):
         return None
