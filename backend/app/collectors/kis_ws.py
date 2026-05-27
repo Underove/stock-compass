@@ -22,12 +22,13 @@ WS_URL = (
 _token_cache: dict = {"token": "", "expires_at": 0.0}
 _approval_cache: dict = {"key": "", "expires_at": 0.0}
 
-# 토큰 파일: 서버 재시작해도 유효한 토큰 재사용
-_TOKEN_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "kis_token.json"
+# 토큰/승인키 파일: 서버 재시작해도 유효한 값 재사용 → KIS 카톡 알림 최소화
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+_TOKEN_FILE = _DATA_DIR / "kis_token.json"
+_APPROVAL_FILE = _DATA_DIR / "kis_approval.json"
 
 
 def _load_token_file() -> None:
-    """파일에서 토큰 읽어 메모리 캐시에 올림."""
     try:
         if _TOKEN_FILE.exists():
             data = json.loads(_TOKEN_FILE.read_text())
@@ -39,7 +40,6 @@ def _load_token_file() -> None:
 
 
 def _save_token_file() -> None:
-    """메모리 캐시 → 파일 저장."""
     try:
         _TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
         _TOKEN_FILE.write_text(json.dumps({
@@ -50,7 +50,30 @@ def _save_token_file() -> None:
         pass
 
 
-_load_token_file()  # 모듈 로드 시 파일에서 복원
+def _load_approval_file() -> None:
+    try:
+        if _APPROVAL_FILE.exists():
+            data = json.loads(_APPROVAL_FILE.read_text())
+            if data.get("expires_at", 0) > time.time() + 60:
+                _approval_cache["key"] = data["key"]
+                _approval_cache["expires_at"] = data["expires_at"]
+    except Exception:
+        pass
+
+
+def _save_approval_file() -> None:
+    try:
+        _APPROVAL_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _APPROVAL_FILE.write_text(json.dumps({
+            "key": _approval_cache["key"],
+            "expires_at": _approval_cache["expires_at"],
+        }))
+    except Exception:
+        pass
+
+
+_load_token_file()    # 모듈 로드 시 파일에서 복원
+_load_approval_file()
 
 
 def get_access_token() -> str:
@@ -91,6 +114,7 @@ def get_approval_key() -> str:
         data = r.json()
     _approval_cache["key"] = data["approval_key"]
     _approval_cache["expires_at"] = now + 86400
+    _save_approval_file()
     return _approval_cache["key"]
 
 
@@ -173,18 +197,20 @@ def parse_index(raw: str) -> dict | None:
     if len(fields) < 5:
         return None
     try:
+        # H0UPCNT0/H0UPDNT0 필드 순서:
+        # [0]업종코드 [1]영업시간(HHMMSS) [2]지수현재가 [3]전일대비부호 [4]전일대비 [5]전일대비율 [6]누적거래량
         sign = fields[3]
-        change_abs = float(fields[2])
-        change_pct_abs = float(fields[4])
+        change_abs = float(fields[4])
+        change_pct_abs = float(fields[5])
         display = _KIS_TO_INDEX.get(fields[0], fields[0])
         return {
             "stock_code": display,
-            "time": "",
-            "current_price": round(float(fields[1]), 2),
+            "time": fields[1],
+            "current_price": round(float(fields[2]), 2),
             "change_sign": sign,
             "change_amount": round(change_abs if sign in ("1", "2") else -change_abs if sign in ("4", "5") else 0.0, 2),
             "change_pct": round(change_pct_abs if sign in ("1", "2") else -change_pct_abs if sign in ("4", "5") else 0.0, 2),
-            "volume": int(float(fields[5])) if len(fields) > 5 else 0,
+            "volume": int(float(fields[6])) if len(fields) > 6 else 0,
             "is_index": True,
         }
     except (ValueError, IndexError):
