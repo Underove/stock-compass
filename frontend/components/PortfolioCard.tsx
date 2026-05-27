@@ -17,6 +17,7 @@ import {
 } from "../lib/api";
 import { useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { RealtimePrice } from "../hooks/useRealtimePrice";
+import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { PortfolioItem, SearchResult, StockPrice, WatchlistItem } from "../lib/types";
 import { StockDetailModal } from "./StockDetailModal";
 import { CompareModal } from "./CompareModal";
@@ -525,6 +526,7 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
   }, [item.stock_code, onPriceLoaded]);
 
   const currentPrice = realtimePrice?.current_price ?? price?.current_price ?? null;
+  const priceFlash = usePriceFlash(currentPrice);
   const evalPnlPct = currentPrice && item.buy_price ? ((currentPrice - item.buy_price) / item.buy_price) * 100 : null;
   const evalPnl = currentPrice ? (currentPrice - item.buy_price) * item.quantity : null;
   const isLive = !!realtimePrice;
@@ -604,7 +606,12 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
             </div>
           ) : currentPrice !== null ? (
             <>
-              <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.035em" }}>{fmt(currentPrice)}</div>
+              <div
+                className={priceFlash ? `price-flash-${priceFlash}` : undefined}
+                style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.035em" }}
+              >
+                {fmt(currentPrice)}
+              </div>
               <div style={{ fontSize: 11, fontWeight: 700, color: evalPnlPct !== null ? pctColor(evalPnlPct) : "var(--label2)", marginTop: 1 }}>
                 {evalPnlPct !== null ? pctSign(evalPnlPct) : "—"}
               </div>

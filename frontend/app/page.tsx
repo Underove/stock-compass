@@ -9,6 +9,7 @@ import { PortfolioCard } from "../components/PortfolioCard";
 import { ScreenerCard } from "../components/ScreenerCard";
 import { fetchAlerts, fetchAlertWatch, markAlertsRead, deleteAlert, addAlertWatch, removeAlertWatch, searchStock, fetchMarketIndices, initAuth } from "../lib/api";
 import { isMarketOpen, useRealtimePrice } from "../hooks/useRealtimePrice";
+import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { Alert, WatchStock, MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1 | 2;
@@ -346,6 +347,7 @@ function MarketBadge({ index, compact }: { index: MarketIndex; compact?: boolean
   const color = up ? "var(--red)" : "var(--primary)";
   const bg    = up ? "rgba(255,59,48,0.08)" : "rgba(0,122,255,0.08)";
   const sign  = up ? "+" : "−";
+  const flash = usePriceFlash(index.value);
   return (
     <div
       className={compact ? undefined : "market-index-item"}
@@ -360,7 +362,10 @@ function MarketBadge({ index, compact }: { index: MarketIndex; compact?: boolean
       <span style={{ fontSize: 11, fontWeight: 700, color: "var(--label)", letterSpacing: "0" }}>
         {index.name}
       </span>
-      <span style={{ fontSize: compact ? 13 : 13, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}>
+      <span
+        className={flash ? `price-flash-${flash}` : undefined}
+        style={{ fontSize: compact ? 13 : 13, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}
+      >
         {index.value.toLocaleString("ko-KR")}
       </span>
       <span style={{

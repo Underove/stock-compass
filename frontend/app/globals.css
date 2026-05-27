@@ -174,6 +174,28 @@ textarea:focus {
   to { opacity: 1; transform: scale(1); }
 }
 
+/* 실시간 가격 변동 플래시 — 한국 컨벤션 (상승=빨강, 하락=파랑) */
+@keyframes price-flash-up {
+  0%   { background-color: rgba(255, 59, 48, 0.22); }
+  100% { background-color: transparent; }
+}
+@keyframes price-flash-down {
+  0%   { background-color: rgba(0, 122, 255, 0.22); }
+  100% { background-color: transparent; }
+}
+.price-flash-up {
+  animation: price-flash-up 0.6s ease-out;
+  border-radius: 6px;
+  margin: -2px -4px;
+  padding: 2px 4px;
+}
+.price-flash-down {
+  animation: price-flash-down 0.6s ease-out;
+  border-radius: 6px;
+  margin: -2px -4px;
+  padding: 2px 4px;
+}
+
 /* ─── 대시보드 레이아웃 ──────────────────────────────────────────────────────── */
 
 .dashboard-grid {
