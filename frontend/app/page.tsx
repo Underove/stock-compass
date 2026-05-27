@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 import { ChatCard } from "../components/ChatCard";
+import { HomeCard } from "../components/HomeCard";
 import { PortfolioCard } from "../components/PortfolioCard";
 import { ScreenerCard } from "../components/ScreenerCard";
 import { fetchAlerts, fetchAlertWatch, markAlertsRead, deleteAlert, addAlertWatch, removeAlertWatch, searchStock, fetchMarketIndices, initAuth } from "../lib/api";
@@ -12,7 +13,7 @@ import { isMarketOpen, useRealtimePrice } from "../hooks/useRealtimePrice";
 import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { Alert, WatchStock, MarketIndex, MarketStatus } from "../lib/types";
 
-type MobilePanel = 0 | 1 | 2;
+type MobilePanel = 0 | 1 | 2 | 3;
 
 function getInitialTheme(): "light" | "dark" | "system" {
   if (typeof window === "undefined") return "system";
@@ -43,7 +44,7 @@ export default function Home() {
     if (status === "unauthenticated") router.replace("/login");
     if (status === "authenticated") initAuth().then(() => setAuthReady(true));
   }, [status, router]);
-  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(1);
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>(0);
   const [indices, setIndices] = useState<Record<string, MarketIndex>>({});
   const [marketStatus, setMarketStatus] = useState<MarketStatus | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -138,21 +139,8 @@ export default function Home() {
           <span className="header-market-status">{marketStatus && <MarketStatusBadge status={marketStatus} />}</span>
         </div>
 
-        {/* 우측: 지수 + 구분선 + 아이콘 */}
+        {/* 우측: 알림/테마/프로필 — 시장 지수는 대시보드 홈에서 표시 */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8 }}>
-          {/* 지수 배지 — 로딩 중엔 스켈레톤, 실패하면 미표시 */}
-          {!indicesLoaded && (
-            <>
-              <div className="index-skeleton market-index-item" />
-              <div className="index-skeleton market-index-item" />
-            </>
-          )}
-          {indicesLoaded && Object.values(indices).map((idx) => (
-            <MarketBadge key={idx.name} index={idx} />
-          ))}
-          {indicesLoaded && Object.keys(indices).length > 0 && (
-            <div className="market-index-sep" style={{ width: 1, height: 18, background: "var(--sep)", flexShrink: 0 }} />
-          )}
           <AlertBell alerts={alerts} show={showAlerts} onToggle={() => setShowAlerts(v => !v)} />
           <button
             onClick={toggleTheme}
@@ -215,19 +203,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 모바일 전용 지수 스트립 — 헤더 바로 아래 */}
-      <div className="mobile-ticker-strip" style={{ justifyContent: "flex-start" }}>
-        {!indicesLoaded && (
-          <>
-            <div className="index-skeleton" style={{ width: 110 }} />
-            <div className="index-skeleton" style={{ width: 110 }} />
-          </>
-        )}
-        {indicesLoaded && Object.values(indices).map((idx) => (
-          <MarketBadge key={idx.name} index={idx} compact />
-        ))}
-      </div>
-
       {showAlerts && (
         <AlertDropdown
           alerts={alerts}
@@ -254,23 +229,35 @@ export default function Home() {
         />
       )}
 
-      {/* 메인 대시보드 그리드 */}
+      {/* 메인 대시보드 그리드 (4분할: 홈 + 지갑 + AI + 스크리너) */}
       <div className="dashboard-grid">
 
-        {/* ── 왼쪽: 내 지갑 ── */}
-        <div className={`dashboard-panel dashboard-panel--highlight ${mobilePanel === 0 ? "dashboard-panel--active" : ""}`}>
+        {/* ── 홈 사이드 (신규) ── */}
+        <div className={`dashboard-panel ${mobilePanel === 0 ? "dashboard-panel--active" : ""}`}>
+          <PanelHeader title="홈" subtitle="오늘 한눈에" />
+          <HomeCard
+            onNavigate={(p) => {
+              if (p === "alerts") { setShowAlerts(true); return; }
+              const map = { portfolio: 1, chat: 2, screener: 3, watchlist: 1 } as const;
+              setMobilePanel(map[p] as MobilePanel);
+            }}
+          />
+        </div>
+
+        {/* ── 내 지갑 ── */}
+        <div className={`dashboard-panel dashboard-panel--highlight ${mobilePanel === 1 ? "dashboard-panel--active" : ""}`}>
           <PanelHeader title="내 지갑" subtitle="내 주식 · 관심종목 · 배분 · 일지" />
           <PortfolioCard onPortfolioChange={() => setPortfolioVersion(v => v + 1)} />
         </div>
 
-        {/* ── 오른쪽: AI 비서 ── */}
-        <div className={`dashboard-panel ${mobilePanel === 1 ? "dashboard-panel--active" : ""}`}>
+        {/* ── AI 비서 ── */}
+        <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`}>
           <PanelHeader title="AI 비서" subtitle="AI 브리핑 · 뉴스 · 채팅 · 팩트체크" />
           <ChatCard portfolioVersion={portfolioVersion} />
         </div>
 
         {/* ── 스크리너 ── */}
-        <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`}>
+        <div className={`dashboard-panel ${mobilePanel === 3 ? "dashboard-panel--active" : ""}`}>
           <PanelHeader title="종목 스크리너" subtitle="원하는 조건으로 종목 찾기" />
           <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 32px" }}>
             <ScreenerCard />
@@ -279,11 +266,20 @@ export default function Home() {
 
       </div>
 
-      {/* 모바일 하단 탭바 */}
+      {/* 모바일 하단 탭바 — 4탭 (홈/지갑/AI/스크리너) */}
       <nav className="mobile-tab-bar">
         <button
           className={mobilePanel === 0 ? "active" : ""}
           onClick={() => setMobilePanel(0)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          홈
+        </button>
+        <button
+          className={mobilePanel === 1 ? "active" : ""}
+          onClick={() => setMobilePanel(1)}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <rect x="2" y="3" width="20" height="14" rx="2" />
@@ -293,8 +289,8 @@ export default function Home() {
           지갑
         </button>
         <button
-          className={mobilePanel === 1 ? "active" : ""}
-          onClick={() => setMobilePanel(1)}
+          className={mobilePanel === 2 ? "active" : ""}
+          onClick={() => setMobilePanel(2)}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
@@ -302,8 +298,8 @@ export default function Home() {
           AI
         </button>
         <button
-          className={mobilePanel === 2 ? "active" : ""}
-          onClick={() => setMobilePanel(2)}
+          className={mobilePanel === 3 ? "active" : ""}
+          onClick={() => setMobilePanel(3)}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8" />

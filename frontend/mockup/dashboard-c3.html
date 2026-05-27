@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>N.O.V.A — C3 (Wide Hero Chart)</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root { --bg: #F2F2F7; --surface: #FFFFFF; --surface2: rgba(118,118,128,0.10); --surface3: rgba(118,118,128,0.16); --primary: #007AFF; --green: #34C759; --orange: #FF9500; --red: #FF3B30; --label: #000000; --label2: #6C6C70; --label3: #AEAEB2; --sep: rgba(60,60,67,0.12); --shadow: 0 2px 10px rgba(0,0,0,0.07); --header-bg: rgba(242,242,247,0.88); }
+    [data-theme="dark"] { --bg: #000000; --surface: #1C1C1E; --surface2: rgba(118,118,128,0.18); --surface3: rgba(118,118,128,0.26); --primary: #0A84FF; --green: #30D158; --orange: #FF9F0A; --red: #FF453A; --label: #FFFFFF; --label2: #EBEBF5; --label3: #6C6C70; --sep: rgba(84,84,88,0.65); --shadow: 0 2px 10px rgba(0,0,0,0.30); --header-bg: rgba(28,28,30,0.88); }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--label); font-family: "Pretendard Variable", -apple-system, sans-serif; font-size: 17px; letter-spacing: -0.022em; }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    .variant-tag { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100; background: #FF3B30; color: white; padding: 6px 14px; border-radius: 100px; font-size: 11px; font-weight: 800; letter-spacing: 0.04em; }
+    .app { height: 100dvh; display: flex; flex-direction: column; }
+    .header { height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; background: var(--header-bg); backdrop-filter: blur(28px); border-bottom: 0.5px solid var(--sep); flex-shrink: 0; }
+    .logo-wrap { display: flex; align-items: center; gap: 8px; }
+    .logo { width: 36px; height: 36px; border-radius: 9px; background: linear-gradient(135deg, #007AFF, #5856D6); color: white; font-weight: 800; font-size: 13px; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: center; }
+    .brand-name { font-size: 16px; font-weight: 800; letter-spacing: 0.08em; }
+    .brand-sub { font-size: 10px; color: var(--label2); font-weight: 500; }
+
+    .grid { flex: 1; display: grid; grid-template-columns: 360px 1fr 1fr 1fr; gap: 1px; background: var(--sep); overflow: hidden; }
+    .panel { background: var(--bg); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .panel-head { padding: 13px 20px 12px; border-bottom: 0.5px solid var(--sep); display: flex; justify-content: space-between; align-items: center; }
+    .panel-title { font-size: 17px; font-weight: 700; letter-spacing: -0.022em; }
+    .panel-subtitle { font-size: 12px; color: var(--label2); font-weight: 500; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+    .widget { background: var(--surface); border: 0.5px solid var(--sep); border-radius: 16px; padding: 14px 16px; }
+    .widget-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .widget-label { font-size: 11px; color: var(--label2); font-weight: 700; letter-spacing: -0.01em; }
+    .widget-cta { font-size: 11px; color: var(--primary); font-weight: 700; }
+
+    /* HERO P&L — 큰 차트가 카드의 메인 */
+    .hero-pnl {
+      padding: 16px;
+      background: var(--surface);
+      border: 0.5px solid var(--sep);
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-pnl .top {
+      display: flex; align-items: baseline; gap: 8px;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 4px;
+    }
+    .hero-pnl .pct {
+      font-size: 28px; font-weight: 800; letter-spacing: -0.04em; color: var(--red);
+      font-variant-numeric: tabular-nums;
+    }
+    .hero-pnl .total {
+      font-size: 12px; color: var(--label2); font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+    .hero-pnl .sub { font-size: 11px; color: var(--label3); font-weight: 600; margin-bottom: 12px; }
+    .hero-pnl .chart {
+      width: 100%; height: 80px;
+    }
+    .hero-pnl .axis {
+      display: flex; justify-content: space-between;
+      font-size: 9px; color: var(--label3); font-weight: 600;
+      margin-top: 4px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ai-widget {
+      background: linear-gradient(135deg, rgba(0,122,255,0.06), rgba(88,86,214,0.04));
+      border-color: rgba(0,122,255,0.20);
+    }
+    .ai-headline { font-size: 14px; font-weight: 700; letter-spacing: -0.022em; line-height: 1.5; color: var(--label); margin: 0; }
+    .ai-headline strong { color: var(--primary); }
+
+    .mover-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--sep); cursor: pointer; }
+    .mover-row:last-child { border-bottom: none; }
+    .mover-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .mover-spark { width: 32px; height: 18px; flex-shrink: 0; }
+    .mover-name { font-size: 13px; font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mover-pct { font-size: 13px; font-weight: 800; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+
+    .market-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .market-card { background: var(--surface2); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 3px; }
+    .market-card-row { display: flex; align-items: center; justify-content: space-between; }
+    .market-card .nm { font-size: 10px; color: var(--label2); font-weight: 700; }
+    .market-card .vl { font-size: 13px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .market-card .cg { font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .market-card svg { width: 36px; height: 14px; }
+
+    .footer-strip { display: flex; gap: 6px; }
+    .footer-strip .icon-btn { flex: 1; background: var(--surface); border: 0.5px solid var(--sep); border-radius: 12px; padding: 11px 6px; display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative; }
+    .footer-strip .icon-btn .icon { width: 18px; height: 18px; color: var(--primary); }
+    .footer-strip .icon-btn .nm { font-size: 10px; font-weight: 700; letter-spacing: -0.01em; color: var(--label); }
+    .footer-strip .alert-btn .badge { position: absolute; top: 6px; right: 6px; background: var(--red); color: white; font-size: 9px; font-weight: 800; padding: 1px 5px; border-radius: 100px; }
+
+    .placeholder { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--label3); font-size: 13px; }
+    .theme-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--surface); border: 0.5px solid var(--sep); border-radius: 100px; padding: 8px 14px; font-size: 12px; font-weight: 700; color: var(--label); box-shadow: var(--shadow); z-index: 50; }
+    @media (max-width: 768px) { .grid { grid-template-columns: 1fr; overflow-y: auto; } .panel:not(.home) { display: none; } }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="variant-tag">C3 — Wide Hero Chart</div>
+  <button class="theme-toggle" id="themeBtn">🌙 다크</button>
+  <div class="app">
+    <header class="header">
+      <div class="logo-wrap"><div class="logo">N</div><div><div class="brand-name">N.O.V.A</div><div class="brand-sub">AI 기반 투자 인사이트 플랫폼</div></div></div>
+    </header>
+    <div class="grid">
+      <div class="panel home">
+        <div class="panel-head"><div class="panel-title">홈</div><div class="panel-subtitle">큰 차트가 한눈에</div></div>
+        <div class="panel-body">
+
+          <!-- HERO P&L (큰 차트가 메인) -->
+          <div class="hero-pnl">
+            <div class="widget-head" style="margin-bottom: 8px;">
+              <span class="widget-label">7일 평가손익 추이</span>
+              <span class="widget-cta">상세 →</span>
+            </div>
+            <div class="top">
+              <span class="pct">+2.34%</span>
+              <span class="total">평가 8,234만원</span>
+            </div>
+            <div class="sub">7일 누적 +5.1%</div>
+            <svg class="chart" viewBox="0 0 320 80" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(255,59,48,0.25)"/>
+                  <stop offset="100%" stop-color="rgba(255,59,48,0)"/>
+                </linearGradient>
+              </defs>
+              <polygon fill="url(#heroGrad)" points="0,60 40,55 80,58 120,42 160,46 200,30 240,32 280,18 320,12 320,80 0,80"/>
+              <polyline fill="none" stroke="var(--red)" stroke-width="2" stroke-linejoin="round" points="0,60 40,55 80,58 120,42 160,46 200,30 240,32 280,18 320,12"/>
+              <circle cx="320" cy="12" r="3" fill="var(--red)"/>
+            </svg>
+            <div class="axis">
+              <span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>월</span><span>화</span><span>오늘</span>
+            </div>
+          </div>
+
+          <div class="widget ai-widget">
+            <div class="widget-head"><span class="widget-label" style="color: var(--primary);">✨ AI 브리핑</span><span class="widget-cta">전체 →</span></div>
+            <p class="ai-headline">반도체 강세에 <strong>SK하이닉스 +5%</strong>, 외인 매도 전환에 주의.</p>
+          </div>
+
+          <div class="widget">
+            <div class="widget-head"><span class="widget-label">오늘 움직임</span><span class="widget-cta">전체 →</span></div>
+            <div class="mover-row">
+              <div class="mover-left">
+                <svg class="mover-spark" viewBox="0 0 32 18"><polyline fill="none" stroke="var(--red)" stroke-width="1.4" points="0,14 5,12 10,13 15,9 20,8 25,4 32,2"/></svg>
+                <span class="mover-name">SK하이닉스</span>
+              </div>
+              <span class="mover-pct" style="color: var(--red);">+5.21%</span>
+            </div>
+            <div class="mover-row">
+              <div class="mover-left">
+                <svg class="mover-spark" viewBox="0 0 32 18"><polyline fill="none" stroke="var(--primary)" stroke-width="1.4" points="0,4 5,6 10,5 15,9 20,11 25,14 32,15"/></svg>
+                <span class="mover-name">NAVER</span>
+              </div>
+              <span class="mover-pct" style="color: var(--primary);">−3.42%</span>
+            </div>
+            <div class="mover-row">
+              <div class="mover-left">
+                <svg class="mover-spark" viewBox="0 0 32 18"><polyline fill="none" stroke="var(--red)" stroke-width="1.4" points="0,10 5,11 10,8 15,9 20,6 25,5 32,4"/></svg>
+                <span class="mover-name">삼성전자</span>
+              </div>
+              <span class="mover-pct" style="color: var(--red);">+2.18%</span>
+            </div>
+          </div>
+
+          <div class="widget">
+            <div class="widget-head"><span class="widget-label">시장 현황</span></div>
+            <div class="market-grid">
+              <div class="market-card">
+                <div class="market-card-row"><span class="nm">KOSPI</span><svg viewBox="0 0 36 14"><polyline fill="none" stroke="var(--red)" stroke-width="1.3" points="0,10 6,9 12,11 18,7 24,6 30,4 36,3"/></svg></div>
+                <span class="vl">2,654</span><span class="cg" style="color: var(--red);">+0.83%</span>
+              </div>
+              <div class="market-card">
+                <div class="market-card-row"><span class="nm">KOSDAQ</span><svg viewBox="0 0 36 14"><polyline fill="none" stroke="var(--red)" stroke-width="1.3" points="0,12 6,10 12,8 18,9 24,5 30,3 36,2"/></svg></div>
+                <span class="vl">879.2</span><span class="cg" style="color: var(--red);">+1.24%</span>
+              </div>
+              <div class="market-card">
+                <div class="market-card-row"><span class="nm">USD</span><svg viewBox="0 0 36 14"><polyline fill="none" stroke="var(--primary)" stroke-width="1.3" points="0,4 6,5 12,7 18,8 24,9 30,11 36,12"/></svg></div>
+                <span class="vl">1,358</span><span class="cg" style="color: var(--primary);">−0.31%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-strip">
+            <button class="icon-btn alert-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="nm">알림</span><span class="badge">3</span></button>
+            <button class="icon-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg><span class="nm">포트</span></button>
+            <button class="icon-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nm">AI</span></button>
+            <button class="icon-btn"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><span class="nm">스크리너</span></button>
+          </div>
+
+        </div>
+      </div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">내 지갑</div></div><div class="placeholder">기존 PortfolioCard</div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">AI 비서</div></div><div class="placeholder">기존 ChatCard</div></div>
+      <div class="panel"><div class="panel-head"><div class="panel-title">스크리너</div></div><div class="placeholder">기존 ScreenerCard</div></div>
+    </div>
+  </div>
+  <script>
+    const btn = document.getElementById("themeBtn");
+    btn.addEventListener("click", () => { const c = document.body.getAttribute("data-theme"); const n = c === "dark" ? "light" : "dark"; document.body.setAttribute("data-theme", n); btn.textContent = n === "dark" ? "☀️ 라이트" : "🌙 다크"; });
+  </script>
+</body>
+</html>

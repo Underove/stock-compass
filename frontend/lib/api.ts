@@ -11,6 +11,8 @@ import type {
   NewsItem,
   PortfolioBriefing,
   PortfolioItem,
+  PortfolioMover,
+  PortfolioOneliner,
   PortfolioSnapshot,
   SavedFilter,
   ScreenerItem,
@@ -116,6 +118,23 @@ export async function fetchPortfolioInsights(): Promise<Record<string, StockInsi
     return data.insights ?? {};
   } catch {
     return {};
+  }
+}
+
+export async function fetchPortfolioOneliner(force = false): Promise<PortfolioOneliner | null> {
+  try {
+    return await getJSON<PortfolioOneliner>(`/api/portfolio/oneliner${force ? "?force=true" : ""}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchPortfolioMovers(): Promise<PortfolioMover[]> {
+  try {
+    const data = await getJSON<{ movers: PortfolioMover[] }>("/api/portfolio/movers");
+    return data.movers ?? [];
+  } catch {
+    return [];
   }
 }
 

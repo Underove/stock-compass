@@ -144,6 +144,20 @@ export type StockPrice = {
   session?: "open" | "pre" | "after" | "closed";
 };
 
+export type PortfolioOneliner = {
+  headline: string;
+  tone: "positive" | "negative" | "neutral";
+  generated_at: string;
+};
+
+export type PortfolioMover = {
+  stock_code: string;
+  corp_name: string;
+  current_price: number;
+  change_pct: number;
+  sparkline: number[];
+};
+
 export type Candle = {
   time: string | number;  // string "YYYY-MM-DD" (daily) or number unix-seconds (intraday)
   open: number;

@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>N.O.V.A — 대시보드 B (AI 중심)</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <style>
+    :root {
+      --bg: #F2F2F7; --surface: #FFFFFF;
+      --surface2: rgba(118,118,128,0.10); --surface3: rgba(118,118,128,0.16);
+      --primary: #007AFF; --primary-soft: rgba(0,122,255,0.10);
+      --green: #34C759; --orange: #FF9500; --red: #FF3B30;
+      --label: #000000; --label2: #6C6C70; --label3: #AEAEB2;
+      --sep: rgba(60,60,67,0.12);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 1px 6px rgba(0,0,0,0.03);
+      --shadow: 0 2px 10px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+      --shadow-md: 0 6px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.05);
+      --header-bg: rgba(242,242,247,0.88);
+    }
+    [data-theme="dark"] {
+      --bg: #000000; --surface: #1C1C1E;
+      --surface2: rgba(118,118,128,0.18); --surface3: rgba(118,118,128,0.26);
+      --primary: #0A84FF; --primary-soft: rgba(10,132,255,0.12);
+      --green: #30D158; --orange: #FF9F0A; --red: #FF453A;
+      --label: #FFFFFF; --label2: #EBEBF5; --label3: #6C6C70;
+      --sep: rgba(84,84,88,0.65);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.20), 0 1px 6px rgba(0,0,0,0.16);
+      --shadow: 0 2px 10px rgba(0,0,0,0.30), 0 1px 3px rgba(0,0,0,0.18);
+      --shadow-md: 0 6px 24px rgba(0,0,0,0.40), 0 2px 8px rgba(0,0,0,0.22);
+      --header-bg: rgba(28,28,30,0.88);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%;
+      background: var(--bg); color: var(--label);
+      font-family: "Pretendard Variable", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 17px; letter-spacing: -0.022em;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    .variant-tag {
+      position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100;
+      background: var(--primary); color: white;
+      padding: 6px 14px; border-radius: 100px;
+      font-size: 11px; font-weight: 800; letter-spacing: 0.04em;
+    }
+
+    .app { height: 100dvh; display: flex; flex-direction: column; }
+    .header {
+      height: 52px; padding: 0 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--header-bg); backdrop-filter: blur(28px);
+      border-bottom: 0.5px solid var(--sep); flex-shrink: 0;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 8px; }
+    .logo {
+      width: 36px; height: 36px; border-radius: 9px;
+      background: linear-gradient(135deg, #007AFF, #5856D6);
+      color: white; font-weight: 800; font-size: 13px; letter-spacing: 0.05em;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-name { font-size: 16px; font-weight: 800; letter-spacing: 0.08em; }
+    .brand-sub { font-size: 10px; color: var(--label2); font-weight: 500; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--label3);
+    }
+
+    .grid {
+      flex: 1; display: grid;
+      grid-template-columns: 340px 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--sep); overflow: hidden;
+    }
+    .panel { background: var(--bg); display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+    .panel-head {
+      padding: 13px 20px 12px;
+      border-bottom: 0.5px solid var(--sep);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .panel-title { font-size: 17px; font-weight: 700; letter-spacing: -0.022em; }
+    .panel-subtitle { font-size: 12px; color: var(--label2); font-weight: 500; }
+    .panel-body { flex: 1; overflow-y: auto; }
+
+    /* ── B: AI Hero ── */
+    .ai-hero {
+      margin: 16px;
+      padding: 18px 18px 16px;
+      background: linear-gradient(135deg, rgba(0,122,255,0.12) 0%, rgba(88,86,214,0.08) 100%);
+      border: 0.5px solid var(--sep);
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-hero::before {
+      content: ""; position: absolute; top: -20px; right: -20px;
+      width: 80px; height: 80px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,122,255,0.25), transparent 70%);
+      filter: blur(20px);
+    }
+    .ai-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--primary); color: white;
+      padding: 4px 10px; border-radius: 100px;
+      font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .ai-headline {
+      font-size: 16px; font-weight: 700;
+      letter-spacing: -0.022em; line-height: 1.45;
+      color: var(--label); margin: 0 0 6px;
+    }
+    .ai-detail {
+      font-size: 13px; line-height: 1.55; color: var(--label2);
+      letter-spacing: -0.015em; margin: 0 0 14px;
+    }
+    .ai-cta {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 12px; font-weight: 700; color: var(--primary);
+      background: rgba(0,122,255,0.10);
+      padding: 7px 14px; border-radius: 100px;
+      letter-spacing: -0.01em;
+    }
+
+    /* P&L 작은 영역 */
+    .pnl-section {
+      margin: 0 16px 16px; padding: 14px 16px;
+      background: var(--surface); border-radius: 14px;
+      border: 0.5px solid var(--sep);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .pnl-section .label-col { display: flex; flex-direction: column; gap: 2px; }
+    .pnl-section .lbl { font-size: 11px; color: var(--label2); font-weight: 600; letter-spacing: -0.01em; }
+    .pnl-section .val {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--red); font-variant-numeric: tabular-nums;
+    }
+    .pnl-section .total {
+      font-size: 11px; color: var(--label3); font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Top mover compact (Winner/Loser highlight) */
+    .mover-compact {
+      margin: 0 16px 16px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .mover-cell {
+      background: var(--surface); border: 0.5px solid var(--sep);
+      border-radius: 12px; padding: 12px 12px 11px;
+    }
+    .mover-cell .tag {
+      font-size: 10px; font-weight: 700; letter-spacing: -0.01em;
+      margin-bottom: 4px;
+    }
+    .mover-cell .name {
+      font-size: 14px; font-weight: 700; letter-spacing: -0.022em;
+      margin-bottom: 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .mover-cell .pct {
+      font-size: 16px; font-weight: 800; letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 시장 (sub-stat row) */
+    .market-strip {
+      margin: 0 16px 16px;
+      padding: 12px 14px;
+      background: var(--surface); border-radius: 14px;
+      border: 0.5px solid var(--sep);
+      display: flex; justify-content: space-between; gap: 6px;
+    }
+    .market-strip .col { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+    .market-strip .nm { font-size: 10px; font-weight: 700; color: var(--label3); letter-spacing: -0.01em; }
+    .market-strip .vl { font-size: 14px; font-weight: 800; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+    .market-strip .cg { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .market-strip .sep { width: 0.5px; background: var(--sep); }
+
+    /* 알림 + 빠른 액션 합친 카드 */
+    .alert-quick {
+      margin: 0 16px 16px;
+      background: var(--surface); border: 0.5px solid var(--sep);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .alert-line {
+      padding: 11px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 0.5px solid var(--sep);
+    }
+    .alert-line .left { display: flex; align-items: center; gap: 8px; }
+    .alert-line .label { font-size: 13px; font-weight: 700; letter-spacing: -0.015em; }
+    .alert-line .count { background: var(--red); color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 100px; }
+    .quick-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+    }
+    .quick-cell {
+      padding: 11px 6px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      border-right: 0.5px solid var(--sep);
+    }
+    .quick-cell:last-child { border-right: none; }
+    .quick-cell .icon { width: 18px; height: 18px; color: var(--primary); }
+    .quick-cell .name { font-size: 10px; font-weight: 700; color: var(--label); letter-spacing: -0.01em; }
+
+    .placeholder {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px; padding: 40px; text-align: center;
+      color: var(--label3); font-size: 13px;
+    }
+
+    .theme-toggle {
+      position: fixed; bottom: 20px; right: 20px;
+      background: var(--surface); border: 0.5px solid var(--sep);
+      border-radius: 100px; padding: 8px 14px;
+      font-size: 12px; font-weight: 700; color: var(--label);
+      box-shadow: var(--shadow); z-index: 50;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; overflow-y: auto; }
+      .panel:not(.home) { display: none; }
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="variant-tag">VARIANT B — AI 중심</div>
+  <button class="theme-toggle" id="themeBtn">🌙 다크</button>
+
+  <div class="app">
+    <header class="header">
+      <div class="logo-wrap">
+        <div class="logo">N</div>
+        <div>
+          <div class="brand-name">N.O.V.A</div>
+          <div class="brand-sub">AI 기반 투자 인사이트 플랫폼</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <div class="panel home">
+        <div class="panel-head">
+          <div class="panel-title">홈</div>
+          <div class="panel-subtitle">AI가 정리해드려요</div>
+        </div>
+        <div class="panel-body">
+
+          <!-- AI Hero (사이드 위쪽 30%) -->
+          <div class="ai-hero">
+            <div class="ai-badge">✨ 오늘의 AI 브리핑</div>
+            <h2 class="ai-headline">반도체 강세에 SK하이닉스 +5.2%</h2>
+            <p class="ai-detail">
+              다만 외국인이 매도 전환한 상황. 단기 차익실현 후 흐름 관망 추천.
+            </p>
+            <button class="ai-cta">
+              전체 브리핑 보기
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- P&L (작은 영역) -->
+          <div class="pnl-section">
+            <div class="label-col">
+              <span class="lbl">오늘 평가손익</span>
+              <span class="val">+2.34%</span>
+            </div>
+            <span class="total">평가 8,234만원</span>
+          </div>
+
+          <!-- Top Mover (Winner / Loser 2개) -->
+          <div class="mover-compact">
+            <div class="mover-cell">
+              <div class="tag" style="color: var(--red);">↑ 가장 많이 올랐어요</div>
+              <div class="name">SK하이닉스</div>
+              <div class="pct" style="color: var(--red);">+5.21%</div>
+            </div>
+            <div class="mover-cell">
+              <div class="tag" style="color: var(--primary);">↓ 가장 많이 떨어졌어요</div>
+              <div class="name">NAVER</div>
+              <div class="pct" style="color: var(--primary);">−3.42%</div>
+            </div>
+          </div>
+
+          <!-- 시장 strip -->
+          <div class="market-strip">
+            <div class="col">
+              <span class="nm">KOSPI</span>
+              <span class="vl">2,654</span>
+              <span class="cg" style="color: var(--red);">+0.83%</span>
+            </div>
+            <div class="sep"></div>
+            <div class="col">
+              <span class="nm">KOSDAQ</span>
+              <span class="vl">879.2</span>
+              <span class="cg" style="color: var(--red);">+1.24%</span>
+            </div>
+            <div class="sep"></div>
+            <div class="col">
+              <span class="nm">USD</span>
+              <span class="vl">1,358</span>
+              <span class="cg" style="color: var(--primary);">−0.31%</span>
+            </div>
+          </div>
+
+          <!-- 알림 + 빠른 액션 통합 -->
+          <div class="alert-quick">
+            <div class="alert-line">
+              <div class="left">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--orange)" stroke-width="2" stroke-linecap="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span class="label">새 알림</span>
+              </div>
+              <span class="count">3</span>
+            </div>
+            <div class="quick-row">
+              <button class="quick-cell">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+                <span class="name">포트폴리오</span>
+              </button>
+              <button class="quick-cell">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="name">AI</span>
+              </button>
+              <button class="quick-cell">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span class="name">스크리너</span>
+              </button>
+              <button class="quick-cell">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span class="name">관심</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">내 지갑</div><div class="panel-subtitle">변경 없음</div></div>
+        <div class="placeholder">기존 PortfolioCard</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">AI 비서</div><div class="panel-subtitle">변경 없음</div></div>
+        <div class="placeholder">기존 ChatCard</div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">스크리너</div><div class="panel-subtitle">변경 없음</div></div>
+        <div class="placeholder">기존 ScreenerCard</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById("themeBtn");
+    btn.addEventListener("click", () => {
+      const cur = document.body.getAttribute("data-theme");
+      const next = cur === "dark" ? "light" : "dark";
+      document.body.setAttribute("data-theme", next);
+      btn.textContent = next === "dark" ? "☀️ 라이트" : "🌙 다크";
+    });
+  </script>
+</body>
+</html>

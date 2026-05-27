@@ -459,6 +459,120 @@ def get_portfolio_insights(username: str = Depends(get_current_user)):
     return {"insights": insights}
 
 
+@router.get("/portfolio/oneliner")
+def get_portfolio_oneliner(force: bool = False, username: str = Depends(get_current_user)):
+    """대시보드 사이드용 한 줄 AI 브리핑. 1시간 캐시. gpt-5.4 full 사용."""
+    import datetime as _dt
+    cache_path = _DATA_DIR / f"oneliner_cache_{username}.json"
+
+    if not force and cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            cached_at = _dt.datetime.fromisoformat(cached.get("_cached_at", ""))
+            if _dt.datetime.now() - cached_at < _dt.timedelta(hours=1):
+                return {k: v for k, v in cached.items() if not k.startswith("_")}
+        except Exception:
+            pass
+
+    items = _load(username)
+    if not items:
+        return {
+            "headline": "아직 보유 종목이 없어요",
+            "tone": "neutral",
+            "generated_at": _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=9))).strftime("%m/%d %H:%M"),
+        }
+
+    lines = []
+    for item in items[:10]:
+        try:
+            p = _get_price(item["stock_code"])
+            cp = p.get("current_price", 0)
+            bp = item.get("buy_price", 0)
+            pnl_pct = ((cp - bp) / bp * 100) if bp else 0
+            chg_pct = p.get("change_pct", 0)
+            lines.append(f"{item['corp_name']}: 현재가 {cp:,}원, 오늘 {chg_pct:+.2f}%, 평가손익 {pnl_pct:+.1f}%")
+        except Exception:
+            continue
+
+    portfolio_text = "\n".join(lines) if lines else "(시세 조회 불가)"
+
+    SYSTEM = """당신은 한국 주식 포트폴리오 AI 비서입니다.
+사용자 포트폴리오 현황을 보고 **한 줄 (최대 60자 이내)**로 가장 두드러진 흐름을 요약하세요.
+
+규칙:
+- 가장 두드러진 종목 1~2개 언급 (예: "삼성전자 +3%")
+- 톤은 친근하고 담백 (~이에요/~해요 종결, ~합니다 금지)
+- 호칭(어르신/여러분/당신) 금지, 별표(*) 금지
+- 출력은 JSON: {"headline": "...", "tone": "positive" | "negative" | "neutral"}
+  - positive: 전반적으로 수익 흐름
+  - negative: 전반적으로 손실 흐름
+  - neutral: 혼조
+
+예시:
+{"headline": "SK하이닉스 +5%에 강세, 다만 외인 매도 전환에 주의해요.", "tone": "positive"}"""
+
+    prompt = f"포트폴리오 현황:\n{portfolio_text}"
+
+    try:
+        raw = generate_answer(prompt, system_instruction=SYSTEM, temperature=0.3, model=settings.openai_model_pro)
+        parsed = parse_json_response(raw, default={})
+        headline = (parsed.get("headline") or "").strip() or "AI 브리핑을 준비 중이에요"
+        tone = parsed.get("tone") or "neutral"
+        if tone not in ("positive", "negative", "neutral"):
+            tone = "neutral"
+    except Exception:
+        headline = "AI 브리핑을 일시적으로 불러올 수 없어요"
+        tone = "neutral"
+
+    now_kst = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=9)))
+    result = {
+        "headline": headline,
+        "tone": tone,
+        "generated_at": now_kst.strftime("%m/%d %H:%M"),
+        "_cached_at": _dt.datetime.now().isoformat(),
+    }
+    try:
+        cache_path.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
+    return {k: v for k, v in result.items() if not k.startswith("_")}
+
+
+@router.get("/portfolio/movers")
+def get_portfolio_movers(username: str = Depends(get_current_user)):
+    """보유 종목 중 절대등락률 Top 3 + 7일 sparkline."""
+    items = _load(username)
+    if not items:
+        return {"movers": []}
+
+    data = []
+    for item in items:
+        try:
+            p = _get_price(item["stock_code"])
+            cp = p.get("current_price", 0)
+            chg_pct = p.get("change_pct", 0)
+            if not cp or not isinstance(chg_pct, (int, float)):
+                continue
+            sparkline = []
+            try:
+                candles = get_chart_data(item["stock_code"], days=10)
+                sparkline = [c["close"] for c in candles[-7:]]
+            except Exception:
+                pass
+            data.append({
+                "stock_code": item["stock_code"],
+                "corp_name": item["corp_name"],
+                "current_price": cp,
+                "change_pct": chg_pct,
+                "sparkline": sparkline,
+            })
+        except Exception:
+            continue
+
+    data.sort(key=lambda x: abs(x["change_pct"]), reverse=True)
+    return {"movers": data[:3]}
+
+
 @router.get("/portfolio/disclosures/{stock_code}")
 def get_disclosures(stock_code: str, days: int = 30):
     """종목코드 기준 최근 DART 공시 목록 조회."""

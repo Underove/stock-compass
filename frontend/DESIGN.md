@@ -317,6 +317,19 @@ The patterns below describe N.O.V.A's actual components. When adding new UI, mat
 - Radius 16px, padding `18px`
 - The semantic color carries through to the hero number AND the tint background — they reinforce each other
 
+### Wide Hero with Sparkline + Sentiment Tint
+**Use:** Dashboard hero (e.g. HomeCard's PnLWidget). Combines a Hero KPI with a small 7-day sparkline and a sentiment-tinted card background.
+
+Anatomy:
+1. Card wrapper — `Sentiment-Tinted Card` (5–10% alpha gradient bg, sentiment border)
+2. Label (11px / 700 / `--label2`) + small CTA link (11px / 700 / `--primary`) on the same row
+3. **Hero number** — 26–28px / weight 800 / sentiment color / `letter-spacing: -0.04em` / `tabular-nums`
+4. Sub-stat caption (11px / 600 / `--label3` / `tabular-nums`) — e.g. "7일 누적 +5.1%"
+5. **80px-tall area sparkline** with gradient fill + matching stroke + end-point dot
+6. Optional axis labels below (9px / 600 / `--label3`)
+
+This is the densest Hero KPI variant — used when the metric + its trend are both important. For pure KPI without trend, use the simpler Hero KPI Block.
+
 ### Hero KPI Block
 **Use:** Display ONE critical metric prominently (today's P&L, total return, account balance). Always placed at the top of a screen or card.
 
