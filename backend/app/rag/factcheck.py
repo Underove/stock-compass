@@ -11,24 +11,25 @@ MAX_CLAIMS = 5
 def extract_companies_and_claims(text: str) -> dict:
     """문서에서 회사명과 검증 대상 주장들을 LLM으로 추출."""
     truncated = text[:MAX_DOC_CHARS]
-    prompt = f"""다음 문서에서 두 가지를 JSON으로 추출하세요.
+    SYSTEM = f"""역할: 한국 주식 관련 문서에서 검증 대상 추출자.
 
-1. companies: 언급된 한국 상장 회사명만 (배열, 정확한 회사명, 최대 {MAX_COMPANIES}개)
-2. claims: 검증이 필요한 핵심 주장 (배열, 각 한 문장, 최대 {MAX_CLAIMS}개)
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록 금지.
 
-주장이란 사실관계·수치·시점·결과 등에 대한 단정적 진술입니다.
-회사명 또는 주장이 없으면 빈 배열로.
-
-[문서]
-{truncated}
-
-JSON 형식만 출력. 다른 설명 금지. 바로 {{ 로 시작.
 {{
-  "companies": ["..."],
-  "claims": ["..."]
+  "companies": ["문서에 등장한 한국 상장 회사명 배열, 최대 {MAX_COMPANIES}개"],
+  "claims": ["검증이 필요한 단정적 주장 한 문장씩, 최대 {MAX_CLAIMS}개"]
 }}
-"""
-    response = generate_answer(prompt, temperature=0.0)
+
+기준:
+- companies: 문서에 직접 등장한 정확한 회사명만. 추측·유사명 금지.
+- claims: 사실관계·수치·시점·결과에 대한 단정. "X가 Y하다", "X 매출이 Z원" 같은 검증 가능한 진술.
+- 의견·전망·추측은 제외 ("좋아 보인다", "오를 것 같다").
+- 해당 없으면 빈 배열."""
+    prompt = f"[문서]\n{truncated}"
+    response = generate_answer(
+        prompt, system_instruction=SYSTEM,
+        temperature=0.0, max_tokens=500, json_mode=True,
+    )
     parsed = parse_json_response(response, default={"companies": [], "claims": []})
     return {
         "companies": parsed.get("companies", [])[:MAX_COMPANIES],
@@ -59,37 +60,36 @@ def verify_claim(claim: str, n_chunks: int = 5) -> dict:
         }
 
     context = build_context(chunks, metadatas)
-    prompt = f"""다음 주장이 공식 자료에 의해 뒷받침되는지 판단하세요.
+    SYSTEM = """역할: DART 공시 기반 주장 검증자.
+
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록·별표(*) 금지.
+
+{"verdict": "지지 | 모순 | 근거없음", "reasoning": "2~3문장 판단 근거"}
 
 판정 기준:
-- 지지: 공식 자료가 주장과 일치하는 사실을 명시함.
-- 모순: 다음 중 하나에 해당.
-  (1) 공식 자료가 주장과 반대되는 사실을 명시함.
-  (2) 자료에서 드러난 회사의 실제 사업 영역과 주장이 명백히 무관함.
-      (예: 반도체·전자 회사에 대한 신약 임상 주장, 자동차 회사에 대한 외식 사업 주장 등)
-- 근거없음: 공식 자료에 관련 정보가 부분적이거나, 결정적으로 판단하기 부족함.
+- 지지: 공식 자료가 주장과 일치하는 사실을 명시.
+- 모순: 다음 중 하나.
+  (1) 공식 자료가 반대 사실을 명시.
+  (2) 자료에서 드러난 회사 사업 영역과 주장이 명백히 무관 (예: 반도체 회사에 대한 신약 임상 주장).
+- 근거없음: 자료 정보가 부분적이거나 결정 불가.
 
 판단 절차:
-1. 먼저 [공식 자료]를 보고 회사의 주요 사업 영역을 파악.
-2. 그 사업 영역과 [주장]의 내용을 비교.
-3. 명백한 일치/반대/사업 영역 불일치 신호가 있으면 "지지"/"모순"으로 단정.
-4. 신호가 약하거나 일부만 일치하면 "근거없음".
+1. 먼저 [공식 자료]에서 회사 사업 영역 파악.
+2. 그 영역과 [주장]을 비교.
+3. 명백한 일치/반대/영역 불일치만 '지지'/'모순'. 신호 약하면 '근거없음'.
 
-reasoning은 2~3문장. 회사의 사업 영역을 언급한 뒤 판정 근거를 설명.
+reasoning 형식:
+- 첫 문장: 회사 사업 영역 1줄 요약 (자료 인용).
+- 둘째~셋째 문장: 주장과의 일치/불일치 판단 근거.
 
-[주장]
-{claim}
-
-[공식 자료]
-{context}
-
-JSON 형식만 출력. 마크다운 코드블록 금지. 별표 굵기 금지. 바로 {{ 로 시작.
-{{
-  "verdict": "지지" | "모순" | "근거없음",
-  "reasoning": "2~3문장의 판단 이유"
-}}
-"""
-    response = generate_answer(prompt, temperature=0.0)
+그라운딩 (필수):
+- [공식 자료]에 없는 사실 생성 금지. 추측·일반화 금지.
+- 일반 상식이나 외부 지식 사용 금지. 오직 제공된 자료만."""
+    prompt = f"[주장]\n{claim}\n\n[공식 자료]\n{context}"
+    response = generate_answer(
+        prompt, system_instruction=SYSTEM,
+        temperature=0.0, max_tokens=400, json_mode=True,
+    )
     parsed = parse_json_response(
         response,
         default={"verdict": "근거없음", "reasoning": "판단 실패"},

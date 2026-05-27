@@ -39,19 +39,34 @@ def _build_profile_context(profile: dict) -> str | None:
     return "[사용자 투자 성향]\n" + "\n".join(lines)
 
 
+_MEMO_SYSTEM = """역할: 사용자 투자 성향 메모 업데이트 작성자.
+
+출력 형식: 메모 본문 1~2문장만. JSON·라벨·코드블록·별표 금지.
+
+업데이트 방식:
+- 기존 메모가 있으면 새 질문에서 드러난 관심사·성향을 자연스럽게 통합.
+- 기존 메모가 없으면 질문·답변에서 보이는 관심 영역을 짧게 요약.
+- 사용자가 명시한 사실만 반영. 추측·일반화 금지.
+
+문체:
+- 친근체(~이에요/~해요). 형식체·호칭·별표(*) 금지.
+- 단정 대신 관찰체. 100자 이내."""
+
+
 def _update_memo_background(username: str, question: str, answer: str) -> None:
     """채팅 후 비동기로 AI 메모 갱신. 실패해도 채팅에 영향 없음."""
     try:
         profile = get_profile(username)
         current_memo = profile.get("ai_memo", "")
         prompt = (
-            f"사용자의 투자 성향 메모를 업데이트해주세요. 1~2문장으로만 작성. 별표(*) 금지.\n\n"
-            f"현재 메모: {current_memo or '(없음)'}\n\n"
-            f"최근 질문: {question}\n"
-            f"최근 답변 요약: {answer[:300]}\n\n"
-            f"업데이트된 메모 (1~2문장만):"
+            f"[현재 메모]\n{current_memo or '(없음)'}\n\n"
+            f"[최근 질문]\n{question}\n\n"
+            f"[답변 요약]\n{answer[:300]}"
         )
-        new_memo = generate_answer(prompt, temperature=0.5)
+        new_memo = generate_answer(
+            prompt, system_instruction=_MEMO_SYSTEM,
+            temperature=0.3, max_tokens=200,
+        )
         if new_memo and len(new_memo) < 400:
             update_ai_memo(username, new_memo.strip())
     except Exception as e:

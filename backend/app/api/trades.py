@@ -184,39 +184,50 @@ def diagnose_trading_pattern(force: bool = False, username: str = Depends(get_cu
         f"누적 실현손익: {total_realized:+,}원"
     )
 
-    SYSTEM = """당신은 한국 주식 매매 행동 분석 AI입니다.
-사용자의 매매일지를 분석해 객관적이고 도움이 되는 행동 패턴을 진단합니다.
+    SYSTEM = """역할: 개인 투자자 매매 행동 분석가.
 
-다음 항목을 살펴보세요:
-- 평균 보유 기간 (단타 vs 장기)
-- 같은 종목 반복 매매 빈도
-- 수익 실현 vs 손실 손절 비율
-- 매수 시점 패턴 (고점 매수 경향 등)
-- 분산 정도 (한 종목 집중 매매)
-- 매수·매도 사이즈 일관성
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록 금지.
 
-출력은 JSON:
 {
-  "diagnosis": "전체 매매 흐름 1~2문장 진단 (담백한 톤)",
+  "diagnosis": "전체 흐름 1~2문장 (수치 1개 이상 인용)",
   "patterns": [
-    {"label": "수익 실현 비율", "detail": "구체 패턴 설명", "tone": "positive"|"negative"|"neutral"}
+    {"label": "8자 이내 패턴 이름", "detail": "구체 관찰 1문장 (수치 포함)", "tone": "positive | negative | neutral"}
   ]
 }
 
-규칙:
-- patterns는 3~5개만. 가장 두드러진 것 위주.
-- tone: positive(긍정적 습관), negative(개선 필요), neutral(관찰)
-- 친근한 종결어미(~이에요/~해요), 형식체(~합니다) 금지
-- 호칭(어르신/여러분/당신) 금지, 별표(*) 금지
-- 투자 권유/매수·매도 추천 금지
-- 단정적 표현보다는 "경향이 있어요", "비율이 X%로 보여요" 같은 관찰체"""
+분석 관점 (입력 데이터에서 보이는 것만):
+- 매수/매도 비율, 같은 종목 반복 매매 빈도
+- 수익 실현 비율 (수익 종목 수 / 실현 종목 수)
+- 손실 폭 평균 vs 수익 폭 평균
+- 매매 사이즈 일관성 (한 거래당 금액 편차)
+- 보유 종목 다양성 (집중 vs 분산)
+
+tone 기준:
+- positive: 좋은 습관 (예: 손절 일관성, 분산 매매)
+- negative: 개선 여지 (예: 추격 매수, 손실 종목 추가 매수)
+- neutral: 관찰 사실 (좋고 나쁨 불명확)
+
+patterns: 3~5개. 가장 두드러진 것 위주.
+
+그라운딩 (필수):
+- 입력 누적 통계·매매 내역에 있는 수치만 인용. 추정·일반화 금지.
+- "고점 매수 경향"처럼 외부 시세 비교가 필요한 판단은 데이터에 명백히 보일 때만.
+
+문체:
+- 친근체(~이에요/~해요). 형식체·호칭(어르신/여러분/당신)·별표(*) 금지.
+- 단정 대신 관찰체 ("X 비율이 Y%로 보여요", "X 경향이 있어요").
+- 투자 권유·매수/매도 추천 금지."""
 
     prompt = f"[누적 통계]\n{summary_stats}\n\n[최근 매매 (최대 50건)]\n{trade_text}"
 
     try:
-        raw = _generate_answer(prompt, system_instruction=SYSTEM, temperature=0.3, model=_settings.openai_model_pro)
+        raw = _generate_answer(
+            prompt, system_instruction=SYSTEM,
+            temperature=0.15, max_tokens=800, json_mode=True,
+            model=_settings.openai_model_pro,
+        )
         parsed = _parse_json(raw, default={})
-        diagnosis = (parsed.get("diagnosis") or "").strip() or "매매 패턴 분석을 일시적으로 받지 못했어요."
+        diagnosis = (parsed.get("diagnosis") or "").strip() or "매매 패턴 분석을 잠시 후 다시 받아볼 수 있어요."
         patterns_raw = parsed.get("patterns") or []
         patterns = []
         for p in patterns_raw:
@@ -231,7 +242,7 @@ def diagnose_trading_pattern(force: bool = False, username: str = Depends(get_cu
                 "tone": tone,
             })
     except Exception:
-        diagnosis = "AI 진단을 일시적으로 받지 못했어요. 잠시 후 다시 시도해주세요."
+        diagnosis = "AI 진단을 잠시 후 다시 받아볼 수 있어요."
         patterns = []
 
     now_kst = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=9)))

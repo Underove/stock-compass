@@ -392,27 +392,39 @@ def job_premarket_news_summary() -> None:
             return
 
         news_text = "\n".join(all_news[:15])
-        SYSTEM = """당신은 한국 주식 개장 전 뉴스 브리핑 AI입니다.
-반드시 아래 JSON 형식으로만 출력하세요.
+        SYSTEM = """역할: 개장 전 뉴스 브리핑 작성자.
+
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록 금지.
 
 {
-  "date": "날짜 (오늘)",
-  "headline": "오늘 장에 가장 영향을 줄 핵심 이슈 한 문장",
+  "headline": "오늘 장에 가장 영향을 줄 이슈 한 문장",
   "items": [
-    {"corp_name": "종목명", "summary": "핵심 내용 한 문장", "tone": "positive"}
+    {"corp_name": "종목명", "summary": "뉴스 핵심 1문장", "tone": "positive | negative | neutral"}
   ],
-  "market_outlook": "오늘 장 전반 전망 1~2문장. 투자 권유 금지."
+  "market_outlook": "오늘 장 전반 전망 1~2문장"
 }
 
-규칙:
-- items는 실제 뉴스가 있는 종목만, 최대 4개.
-- tone은 'positive' / 'negative' / 'neutral' 중 하나.
-- 별표(*) 사용 금지."""
+items 선정:
+- 입력 뉴스에 실제 등장하는 종목만. 종목명·내용 변경 금지.
+- 1~4개. 시장 영향도 큰 순서.
+
+tone 판단:
+- positive: 호재 (실적/수주/신제품/규제 완화)
+- negative: 악재 (실적 부진/사고/규제/경쟁사 동향 불리)
+- neutral: 사실 보도만 (영향 모호)
+
+그라운딩 (필수):
+- 입력 뉴스 본문에 없는 사실·수치 생성 금지.
+- 추측성 전망("크게 오를 듯") 금지. market_outlook은 입력 흐름 요약만.
+
+문체:
+- 친근체(~이에요/~해요). 형식체·호칭·별표(*) 금지. 의인화 금지.
+- 단정 대신 관찰체. 투자 권유·매수/매도 추천 금지."""
 
         raw = generate_answer(
-            f"아래 뉴스를 바탕으로 개장 전 브리핑 JSON을 작성하세요.\n\n{news_text}",
+            f"[수집된 뉴스]\n{news_text}",
             system_instruction=SYSTEM,
-            temperature=0.2,
+            temperature=0.15, max_tokens=700, json_mode=True,
             model=_settings.openai_model_pro,
         )
         sections = parse_json_response(raw, default={})

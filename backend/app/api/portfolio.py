@@ -244,21 +244,36 @@ def get_commentary(stock_code: str, corp_name: str = ""):
     except Exception:
         ta_section = ""
 
-    COMMENTARY_SYSTEM = """당신은 한국 상장 주식 AI 해설 시스템입니다.
-반드시 아래 JSON 형식으로만 출력하세요. 다른 텍스트는 절대 출력하지 마세요.
+    COMMENTARY_SYSTEM = """역할: 한국 주식 종목 시황 해설 작성자.
+
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록·주석 금지.
 
 {
-  "sentiment": "bullish",
-  "headline": "현재 상황을 한 문장으로 요약. 수치 1개 포함. 예: '오늘 1.2% 하락하며 52,400원에 거래 중입니다.'",
-  "trend": "최근 흐름과 배경 1~2문장. 30일 고저가·기간 수익률 등 구체적 수치 포함.",
-  "signal": "기술적 지표 신호 1문장. 전문 용어는 반드시 괄호로 풀어 쓰기. 예: 'RSI(과매수·과매도 지표)가 38로 저평가 구간에 접근 중입니다.'",
-  "note": "투자자가 오늘 확인해볼 포인트 1문장. 투자 권유 금지."
+  "sentiment": "bullish | bearish | neutral",
+  "headline": "현재 상황 한 문장 (수치 1개 포함, 30자~50자)",
+  "trend": "최근 30일 흐름 1~2문장 (고저가·기간 수익률 중 1개 인용)",
+  "signal": "기술 지표 신호 1문장 (지표명은 괄호로 풀이)",
+  "note": "오늘 직접 확인해볼 포인트 1문장"
 }
 
-추가 규칙:
-- sentiment는 기술지표·가격 흐름 종합: "bullish" / "bearish" / "neutral" 중 하나.
-- 별표(*) 사용 금지. 큰따옴표 안 텍스트에는 작은따옴표 사용.
-- 라디오 진행자처럼 친근하고 차분하게."""
+sentiment 판단 기준:
+- bullish: 5일선·20일선 정배열 + 등락률 +1% 이상, 또는 RSI 60 이상.
+- bearish: 5일선·20일선 역배열 + 등락률 -1% 이하, 또는 RSI 35 이하.
+- neutral: 위 둘 모두 아님.
+
+그라운딩 (필수):
+- 입력 데이터에 명시된 수치만 사용. 가격·지표 값을 새로 만들거나 추정 금지.
+- 데이터 없는 항목은 "확인 불가" 대신 일반 흐름만 서술.
+
+문체:
+- 친근체(~이에요/~해요). 형식체(~합니다)·호칭(어르신/여러분/당신)·별표(*) 금지.
+- 의인화 금지 ("주가가 힘들어해요" X).
+- 단정 대신 관찰체 ("X로 보여요", "X 구간이에요").
+- 투자 권유·매수/매도 추천 금지.
+- 큰따옴표 안엔 작은따옴표 사용.
+
+예시 출력:
+{"sentiment":"bearish","headline":"오늘 1.2% 빠지며 52,400원에 거래되고 있어요.","trend":"최근 30일간 -4.5% 흐름이고 고가 56,800원·저가 51,200원 구간이에요.","signal":"RSI(과매수·과매도 지표)가 38로 저평가 구간에 들어왔어요.","note":"5일선 회복 여부와 거래량 변화를 함께 보시면 좋아요."}"""
 
     prompt = f"""{corp_name or stock_code} 종목의 아래 시세 및 기술 지표를 바탕으로 JSON 해설을 작성하세요.
 
@@ -271,12 +286,15 @@ def get_commentary(stock_code: str, corp_name: str = ""):
 {chart_summary}{ta_section}"""
 
     try:
-        raw = generate_answer(prompt, system_instruction=COMMENTARY_SYSTEM, temperature=0.2)
-        sections = parse_json_response(raw, default=None)
+        raw = generate_answer(
+            prompt, system_instruction=COMMENTARY_SYSTEM,
+            temperature=0.1, max_tokens=400, json_mode=True,
+        )
+        sections = parse_json_response(raw, default={})
         if not sections or not isinstance(sections.get("headline"), str):
             sections = None
     except Exception:
-        raw = "AI 해설을 일시적으로 불러오지 못했습니다."
+        raw = "AI 해설을 잠시 후 다시 받아볼 수 있어요."
         sections = None
 
     return {
@@ -357,33 +375,45 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
     if weight_lines:
         portfolio_text += "\n\n[종목 비중 (상위 5종목)]\n" + "\n".join(weight_lines)
 
-    BRIEFING_SYSTEM = """당신은 한국 주식 포트폴리오 AI 브리핑 시스템입니다.
-반드시 아래 JSON 형식으로만 출력하세요. 다른 텍스트는 절대 출력하지 마세요.
+    BRIEFING_SYSTEM = """역할: 개인 투자자 포트폴리오 일일 브리핑 작성자.
+
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록 금지.
 
 {
-  "sentiment": "positive",
-  "summary": "오늘 포트폴리오 전반 분위기 1~2문장. 전체 흐름과 시장 상황 중심.",
+  "sentiment": "positive | negative | neutral",
+  "summary": "포트폴리오 전반 분위기 1~2문장 (전체 등락 흐름 + 시장 맥락)",
   "highlights": [
-    {"corp_name": "종목명", "status": "상승", "change_note": "금일 +2.1%", "note": "이 종목 핵심 포인트 한 문장"}
+    {"corp_name": "종목명", "status": "상승 | 하락 | 보합", "change_note": "금일 +X.X%", "note": "왜 그런지 또는 무엇을 봐야 하는지 한 문장"}
   ],
-  "action_items": ["오늘 구체적으로 확인할 항목 1", "항목 2"],
-  "watch": "오늘 특히 주의해서 볼 포인트 1문장",
-  "risk": "포트폴리오 리스크 또는 유의사항 1문장"
+  "action_items": ["오늘 직접 확인 가능한 행동 1", "행동 2"],
+  "watch": "오늘 특별히 주시할 포인트 1문장",
+  "risk": "포트폴리오 구성 리스크 1문장"
 }
 
-규칙:
-- sentiment는 포트폴리오 전반 분위기: "positive" / "negative" / "neutral" 중 하나만.
-- highlights는 가장 주목할 1~3개 종목만. change_note는 "금일 +X.X%" 형식으로 간결하게.
-- status 값은 반드시 '상승', '하락', '보합' 중 하나.
-- action_items는 오늘 투자자가 직접 확인해볼 수 있는 2~3가지 구체적 체크리스트. 투자 권유 금지.
-- risk는 분산 부족, 특정 섹터 쏠림, 손실 위험 등 실질적 유의사항. 다음 룰 적용:
-  · 한 종목이 전체 포트폴리오의 40% 이상이면 "한 종목 집중 — 분산 고려해보세요" 류 한 줄 권고.
-  · 비슷한 섹터 종목이 3개 이상이거나 한 섹터에 60% 이상이면 "섹터 집중 — 다른 섹터 분산 고려" 권고.
-  · -10% 이하 손실 종목이 3개 이상이면 "전반적 약세 — 손절 기준 재점검" 류 권고.
-  · 위 조건 모두 해당 없으면 일반 시장 리스크 문장.
-- 투자 권유·매수·매도 추천 절대 금지.
-- 별표(*) 사용 금지. 큰따옴표 안 텍스트에는 작은따옴표 사용.
-- 전문 용어는 괄호로 쉽게 풀어 설명."""
+sentiment 판단:
+- positive: 보유 종목 중 +1% 이상이 절반 이상.
+- negative: 보유 종목 중 -1% 이하가 절반 이상.
+- neutral: 위 둘 모두 아님 또는 혼조.
+
+highlights 선정:
+- 입력 데이터에 명시된 종목만 사용. 종목명·수치 변경 금지.
+- 등락률 절댓값 큰 순으로 1~3개. change_note는 입력의 '금일 X.X%' 값 그대로 인용.
+
+action_items: 2~3개. "X 확인", "Y 점검" 같은 구체적 행위. 투자 권유 금지.
+
+risk 룰 (우선순위 순):
+1. 입력 [종목 비중] 섹션에 단일 종목 비중 40% 이상이 있으면 → "OO 비중 X% — 한 종목 집중도가 높아요. 분산 고려해보세요"
+2. -10% 이하 종목이 3개 이상이면 → "손실 종목 N개 — 손절 기준이나 평단가 점검이 필요해요"
+3. 모두 해당 없으면 → 일반 시장 변동성 한 줄
+
+그라운딩 (필수):
+- 입력에 없는 수치·종목 생성 금지. 비중·등락률 추정 금지.
+- 시장 상황은 보유 종목 분포에서 보이는 흐름만 언급.
+
+문체:
+- 친근체(~이에요/~해요). 형식체·호칭·별표(*) 금지. 의인화 금지.
+- 단정 대신 관찰체 ("X해 보여요", "X가 눈에 띄어요").
+- 전문 용어는 괄호로 풀이. 큰따옴표 안엔 작은따옴표 사용."""
 
     prompt = f"""아래 포트폴리오 현황을 바탕으로 오늘의 브리핑 JSON을 작성하세요.
 
@@ -391,12 +421,16 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
 {portfolio_text}"""
 
     try:
-        raw = generate_answer(prompt, system_instruction=BRIEFING_SYSTEM, temperature=0.25, model=settings.openai_model_pro)
-        sections = parse_json_response(raw, default=None)
+        raw = generate_answer(
+            prompt, system_instruction=BRIEFING_SYSTEM,
+            temperature=0.15, max_tokens=900, json_mode=True,
+            model=settings.openai_model_pro,
+        )
+        sections = parse_json_response(raw, default={})
         if not sections or not isinstance(sections.get("summary"), str):
             sections = None
     except Exception:
-        raw = "AI 브리핑 생성에 실패했습니다. 잠시 후 다시 시도해주세요."
+        raw = "AI 브리핑을 잠시 후 다시 받아볼 수 있어요."
         sections = None
 
     result = {
@@ -511,32 +545,38 @@ def get_portfolio_oneliner(force: bool = False, username: str = Depends(get_curr
 
     portfolio_text = "\n".join(lines) if lines else "(시세 조회 불가)"
 
-    SYSTEM = """당신은 한국 주식 포트폴리오 AI 비서입니다.
-사용자 포트폴리오 현황을 보고 **한 줄 (최대 60자 이내)**로 가장 두드러진 흐름을 요약하세요.
+    SYSTEM = """역할: 포트폴리오 한 줄 헤드라인 작성자.
+
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록 금지.
+
+{"headline": "60자 이내 한 문장", "tone": "positive | negative | neutral"}
 
 규칙:
-- 가장 두드러진 종목 1~2개 언급 (예: "삼성전자 +3%")
-- 톤은 친근하고 담백 (~이에요/~해요 종결, ~합니다 금지)
-- 호칭(어르신/여러분/당신) 금지, 별표(*) 금지
-- 출력은 JSON: {"headline": "...", "tone": "positive" | "negative" | "neutral"}
-  - positive: 전반적으로 수익 흐름
-  - negative: 전반적으로 손실 흐름
-  - neutral: 혼조
+- headline은 입력에 보이는 가장 두드러진 종목 1~2개 + 등락률 인용.
+- 입력에 없는 수치·종목명 생성 금지.
+- tone 판단: 합산 평가손익이 +이면 positive, -이면 negative, ±1% 이내면 neutral.
+
+문체:
+- 친근체(~이에요/~해요). 형식체·호칭·별표(*) 금지. 의인화 금지.
 
 예시:
-{"headline": "SK하이닉스 +5%에 강세, 다만 외인 매도 전환에 주의해요.", "tone": "positive"}"""
+{"headline":"SK하이닉스 +5%로 강세, 삼성전자 -1.2% 조정이 눈에 띄어요.","tone":"positive"}"""
 
-    prompt = f"포트폴리오 현황:\n{portfolio_text}"
+    prompt = f"[포트폴리오 현황]\n{portfolio_text}"
 
     try:
-        raw = generate_answer(prompt, system_instruction=SYSTEM, temperature=0.3, model=settings.openai_model_pro)
+        raw = generate_answer(
+            prompt, system_instruction=SYSTEM,
+            temperature=0.2, max_tokens=120, json_mode=True,
+            model=settings.openai_model_pro,
+        )
         parsed = parse_json_response(raw, default={})
         headline = (parsed.get("headline") or "").strip() or "AI 브리핑을 준비 중이에요"
         tone = parsed.get("tone") or "neutral"
         if tone not in ("positive", "negative", "neutral"):
             tone = "neutral"
     except Exception:
-        headline = "AI 브리핑을 일시적으로 불러올 수 없어요"
+        headline = "AI 브리핑을 잠시 후 다시 받아볼 수 있어요"
         tone = "neutral"
 
     now_kst = _dt.datetime.now(_dt.timezone(_dt.timedelta(hours=9)))
@@ -639,47 +679,46 @@ def get_disclosures(stock_code: str, days: int = 30, with_summary: bool = True):
                         bodies.append((d["rcept_no"], d["report_nm"], body[:3000]))
 
                 if bodies:
-                    SYS = """공시 본문 여러 개를 받아서 각각 한 줄로 요약합니다.
-요약 규칙:
-- 1~2문장, 최대 50자 이내
-- 핵심 사실만 (수치 포함 시 단위 명확하게)
-- 친근한 종결어미 (~이에요/~해요), 형식체(~합니다) 금지
-- 별표(*) / 호칭 금지
+                    SYS = """역할: DART 공시 본문 일괄 요약자.
 
-출력은 JSON 배열: [{"rcept_no": "...", "summary": "..."}, ...]"""
+출력은 아래 JSON 객체 하나. 그 외 텍스트·코드블록 금지.
+
+{"items": [{"rcept_no": "...", "summary": "..."}, ...]}
+
+요약 규칙:
+- summary는 한 문장, 최대 50자.
+- 본문에 있는 사실·수치만 사용. 수치는 단위 포함(주/원/%). 추정·일반화 금지.
+- 핵심 1가지만: '누가 무엇을 얼마나' 구조 (예: '조미선 상무, 보유 120주 늘어 3,409주예요').
+- 입력 rcept_no 그대로 매핑. 본문이 비거나 모호하면 해당 항목 제외.
+
+문체:
+- 친근체(~이에요/~해요). 형식체·호칭·별표(*) 금지."""
 
                     prompt_parts = []
                     for rcept_no, report_nm, body in bodies:
-                        prompt_parts.append(f"[rcept_no: {rcept_no}]\n[제목: {report_nm}]\n[본문 요약 대상]\n{body}\n")
-                    prompt = "\n---\n".join(prompt_parts)
+                        prompt_parts.append(f"[rcept_no: {rcept_no}]\n[제목: {report_nm}]\n[본문]\n{body}")
+                    prompt = "\n\n---\n\n".join(prompt_parts)
 
-                    raw_text = generate_answer(prompt, system_instruction=SYS, temperature=0.2)
-                    parsed = parse_json_response(raw_text, default={})
-                    # parse_json_response는 dict default — list로 다시 시도
-                    if not isinstance(parsed, list):
-                        # raw에서 직접 list 추출
-                        import re as _re
-                        m = _re.search(r"\[[\s\S]*\]", raw_text)
-                        if m:
-                            try:
-                                parsed = json.loads(m.group())
-                            except Exception:
-                                parsed = []
-                        else:
-                            parsed = []
+                    raw_text = generate_answer(
+                        prompt, system_instruction=SYS,
+                        temperature=0.1, max_tokens=600, json_mode=True,
+                    )
+                    parsed_obj = parse_json_response(raw_text, default={})
+                    items = parsed_obj.get("items") if isinstance(parsed_obj, dict) else None
+                    if not isinstance(items, list):
+                        items = []
 
-                    if isinstance(parsed, list):
-                        for item in parsed:
-                            if not isinstance(item, dict):
-                                continue
-                            rno = item.get("rcept_no", "")
-                            summ = (item.get("summary") or "").strip()
-                            if rno and summ:
-                                save_disclosure_summary(rno, summ)
-                                for d in disclosures:
-                                    if d["rcept_no"] == rno:
-                                        d["ai_summary"] = summ
-                                        break
+                    for item in items:
+                        if not isinstance(item, dict):
+                            continue
+                        rno = item.get("rcept_no", "")
+                        summ = (item.get("summary") or "").strip()
+                        if rno and summ:
+                            save_disclosure_summary(rno, summ)
+                            for d in disclosures:
+                                if d["rcept_no"] == rno:
+                                    d["ai_summary"] = summ
+                                    break
             except Exception:
                 pass  # 요약 실패해도 공시 목록 자체는 반환
 

@@ -155,7 +155,7 @@ function SummaryCard({ items, prices }: { items: PortfolioItem[]; prices: Record
         </div>
         <div style={{ width: "0.5px", background: "var(--sep)", alignSelf: "stretch" }} />
         <div style={cellStyle}>
-          <span style={labelStyle}>오늘 손익</span>
+          <span style={labelStyle}>오늘변동</span>
           <span style={{ fontSize: 14, fontWeight: 800, color: isTodayProfit ? "var(--red)" : "var(--primary)", letterSpacing: "-0.03em" }}>
             {todayPnl > 0 ? "+" : ""}{fmtShort(todayPnl)}
           </span>

@@ -797,9 +797,9 @@ function TypingIndicator() {
 }
 
 const NEWS_TONE = {
-  positive: { color: "var(--red)",    bg: "rgba(255,59,48,0.08)",  label: "긍정" },
-  negative: { color: "var(--primary)", bg: "rgba(0,122,255,0.08)", label: "부정" },
-  neutral:  { color: "var(--label3)", bg: "var(--surface2)",        label: "중립" },
+  positive: { color: "#FF3B30", bg: "rgba(255,59,48,0.08)",  chipBg: "rgba(255,59,48,0.16)",  label: "긍정" },
+  negative: { color: "#007AFF", bg: "rgba(0,122,255,0.08)",  chipBg: "rgba(0,122,255,0.16)",  label: "부정" },
+  neutral:  { color: "#8E8E93", bg: "rgba(142,142,147,0.08)", chipBg: "rgba(142,142,147,0.16)", label: "중립" },
 };
 
 function PremarketNewsView({ news, onRefresh, refreshing }: {
@@ -857,7 +857,11 @@ function PremarketNewsView({ news, onRefresh, refreshing }: {
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                           <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.022em", color: tone.color }}>{item.corp_name}</span>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: tone.color, background: `${tone.color}20`, borderRadius: 5, padding: "2px 7px" }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, color: tone.color,
+                            background: tone.chipBg, borderRadius: 100, padding: "3px 9px",
+                            letterSpacing: "-0.01em",
+                          }}>
                             {tone.label}
                           </span>
                         </div>

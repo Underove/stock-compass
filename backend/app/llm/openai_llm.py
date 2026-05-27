@@ -23,6 +23,8 @@ def generate_answer(
     temperature: float = 0.3,
     _retries: int = 2,
     model: str | None = None,
+    max_tokens: int | None = None,
+    json_mode: bool = False,
 ) -> str:
     client = get_client()
     _model = model or settings.openai_model
@@ -31,14 +33,17 @@ def generate_answer(
         messages.append({"role": "system", "content": system_instruction})
     messages.append({"role": "user", "content": prompt})
 
+    kwargs: dict = {"model": _model, "messages": messages, "temperature": temperature}
+    if max_tokens is not None:
+        # gpt-5.x reasoning 모델은 max_completion_tokens 사용
+        kwargs["max_completion_tokens"] = max_tokens
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+
     last_exc: Exception | None = None
     for attempt in range(_retries + 1):
         try:
-            response = client.chat.completions.create(
-                model=_model,
-                messages=messages,
-                temperature=temperature,
-            )
+            response = client.chat.completions.create(**kwargs)
             return (response.choices[0].message.content or "").strip()
         except Exception as e:
             last_exc = e
