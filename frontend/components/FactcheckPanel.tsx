@@ -83,12 +83,12 @@ export function FactcheckPanel({
             margin: "0 auto 16px",
           }}
         />
-        <div style={{ fontSize: 17, fontWeight: 600 }}>AI 분석 중</div>
-        <div style={{ fontSize: 15, color: "var(--label2)", marginTop: 6 }}>
+        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em" }}>AI가 분석하고 있어요</div>
+        <div style={{ fontSize: 14, color: "var(--label2)", marginTop: 6, letterSpacing: "-0.015em" }}>
           주장 추출 → 공시 조회 → 교차검증
         </div>
-        <div style={{ fontSize: 13, color: "var(--label3)", marginTop: 8 }}>
-          최대 30초 소요
+        <div style={{ fontSize: 12, color: "var(--label3)", marginTop: 8 }}>
+          최대 30초 걸려요
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -104,10 +104,10 @@ export function FactcheckPanel({
           padding: "20px",
         }}
       >
-        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--red)", marginBottom: 6 }}>
+        <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em", color: "var(--red)", marginBottom: 6 }}>
           팩트체크 실패
         </div>
-        <div style={{ fontSize: 15, color: "var(--red)", opacity: 0.8 }}>{state.message}</div>
+        <div style={{ fontSize: 14, color: "var(--red)", opacity: 0.8, letterSpacing: "-0.015em" }}>{state.message}</div>
       </div>
     );
   }
@@ -145,22 +145,22 @@ export function FactcheckPanel({
           <div>
             <div
               style={{
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: 800,
-                letterSpacing: "-0.04em",
+                letterSpacing: "-0.035em",
                 marginBottom: 4,
               }}
             >
               {s.title}
             </div>
-            <div style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.5 }}>{s.desc}</div>
+            <div style={{ fontSize: 14, color: "var(--label2)", lineHeight: 1.5, letterSpacing: "-0.015em" }}>{s.desc}</div>
           </div>
         </div>
 
         {/* 스코어 바 */}
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--label2)", marginBottom: 6 }}>
-          <span>신뢰도</span>
-          <span style={{ fontWeight: 700, color: s.color }}>{result.score} / 100</span>
+          <span style={{ fontWeight: 600 }}>신뢰도</span>
+          <span style={{ fontWeight: 700, color: s.color, fontVariantNumeric: "tabular-nums" }}>{result.score} / 100</span>
         </div>
         <div
           style={{

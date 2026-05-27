@@ -123,9 +123,9 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 20, fontWeight: 700, color: "var(--label)", marginBottom: 6, letterSpacing: "-0.03em" }}>
+            <div style={{ fontSize: 22, fontWeight: 700, color: "var(--label)", marginBottom: 6, letterSpacing: "-0.025em" }}>
               {trade.corp_name}
-              <span style={{ fontSize: 13, color: "var(--label2)", marginLeft: 7, fontWeight: 500 }}>
+              <span style={{ fontSize: 13, color: "var(--label2)", marginLeft: 7, fontWeight: 500, fontVariantNumeric: "tabular-nums" }}>
                 {trade.stock_code}
               </span>
             </div>
@@ -141,11 +141,11 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
             <button
               onClick={() => { setEditMode(!editMode); setConfirmDelete(false); }}
               style={{
-                background: editMode ? "var(--primary)" : "rgba(118,118,128,0.12)",
+                background: editMode ? "var(--primary)" : "var(--surface2)",
                 border: "none", cursor: "pointer",
                 color: editMode ? "#fff" : "var(--label2)",
-                fontSize: 12, fontWeight: 600, padding: "6px 12px",
-                borderRadius: 9,
+                fontSize: 12, fontWeight: 700, padding: "6px 14px",
+                borderRadius: 100, letterSpacing: "-0.01em",
               }}
             >
               {editMode ? "취소" : "수정"}
@@ -204,8 +204,8 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
               onClick={handleEdit}
               disabled={editSaving}
               style={{
-                padding: "11px", background: "var(--primary)", color: "#fff",
-                border: "none", borderRadius: 12, fontSize: 14, fontWeight: 600,
+                padding: "14px", background: "var(--primary)", color: "#fff",
+                border: "none", borderRadius: 14, fontSize: 16, fontWeight: 700, letterSpacing: "-0.015em",
                 cursor: "pointer", opacity: editSaving ? 0.7 : 1,
               }}
             >
@@ -225,8 +225,8 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
                   : []),
               ].map(({ label, value }) => (
                 <div key={label} style={{ background: "var(--bg)", borderRadius: 12, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 11, color: "var(--label2)", marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: "var(--label)", letterSpacing: "-0.03em" }}>{value}</div>
+                  <div style={{ fontSize: 11, color: "var(--label2)", marginBottom: 3, fontWeight: 600 }}>{label}</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{value}</div>
                 </div>
               ))}
             </div>

@@ -524,18 +524,19 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
                     const color = isUp ? "var(--red)" : isDown ? "var(--primary)" : "var(--label3)";
                     return (
                       <div key={i} style={{
-                        borderRadius: 12, padding: "11px 14px",
-                        background: "var(--surface3)",
+                        borderRadius: 12, padding: "12px 14px",
+                        background: "var(--surface2)",
                         borderLeft: `3px solid ${color}`,
-                        display: "flex", flexDirection: "column", gap: 4,
+                        display: "flex", flexDirection: "column", gap: 5,
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color }}>{h.corp_name}</span>
+                          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.022em", color }}>{h.corp_name}</span>
                           {h.change_note && (
                             <span style={{
                               fontSize: 10, fontWeight: 700, color,
                               background: isUp ? "rgba(255,59,48,0.1)" : isDown ? "rgba(0,122,255,0.1)" : "var(--surface2)",
-                              borderRadius: 5, padding: "1px 6px",
+                              borderRadius: 5, padding: "2px 6px",
+                              fontVariantNumeric: "tabular-nums",
                             }}>
                               {h.change_note}
                             </span>
@@ -547,7 +548,7 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
                             {h.status}
                           </span>
                         </div>
-                        <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.65, margin: 0 }}>{h.note}</p>
+                        <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{h.note}</p>
                       </div>
                     );
                   })}
@@ -557,20 +558,20 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
               {/* 액션 체크리스트 */}
               {s.action_items && s.action_items.length > 0 && (
                 <div style={{
-                  background: "rgba(0,122,255,0.04)", borderRadius: 14, padding: "12px 14px",
+                  background: "rgba(0,122,255,0.04)", borderRadius: 14, padding: "14px 16px",
                   border: "0.5px solid rgba(0,122,255,0.12)",
                 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)", marginBottom: 8, letterSpacing: "0.03em" }}>오늘 확인 체크리스트</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", marginBottom: 10, letterSpacing: "-0.01em" }}>오늘 확인 체크리스트</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {s.action_items.map((item, i) => (
-                      <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                      <div key={i} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
                         <div style={{
-                          width: 18, height: 18, borderRadius: 6, border: "1.5px solid rgba(0,122,255,0.35)",
+                          width: 20, height: 20, borderRadius: 6, border: "1.5px solid rgba(0,122,255,0.35)",
                           flexShrink: 0, marginTop: 1, display: "flex", alignItems: "center", justifyContent: "center",
                         }}>
-                          <span style={{ fontSize: 10, color: "var(--primary)", fontWeight: 700 }}>{i + 1}</span>
+                          <span style={{ fontSize: 11, color: "var(--primary)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
                         </div>
-                        <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.6, margin: 0 }}>{item}</p>
+                        <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.55, margin: 0, letterSpacing: "-0.015em" }}>{item}</p>
                       </div>
                     ))}
                   </div>
@@ -578,31 +579,31 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
               )}
 
               {/* 오늘 체크 + 리스크 */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "0.5px solid var(--sep)", paddingTop: 12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, borderTop: "0.5px solid var(--sep)", paddingTop: 14 }}>
                 {s.watch && (
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 9 }}>
                     <div style={{
-                      fontSize: 9, fontWeight: 700, color: "white",
+                      fontSize: 10, fontWeight: 700, color: "white",
                       background: "var(--primary)", borderRadius: 5,
-                      padding: "2px 6px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2, letterSpacing: "0.02em",
+                      padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2,
                     }}>체크</div>
-                    <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.7, margin: 0 }}>{s.watch}</p>
+                    <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{s.watch}</p>
                   </div>
                 )}
                 {s.risk && (
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 9 }}>
                     <div style={{
-                      fontSize: 9, fontWeight: 700, color: "white",
+                      fontSize: 10, fontWeight: 700, color: "white",
                       background: "var(--orange)", borderRadius: 5,
-                      padding: "2px 6px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2, letterSpacing: "0.02em",
+                      padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2,
                     }}>리스크</div>
-                    <p style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.7, margin: 0 }}>{s.risk}</p>
+                    <p style={{ fontSize: 14, color: "var(--label2)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{s.risk}</p>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.85, margin: 0, whiteSpace: "pre-wrap" }}>
+            <p style={{ fontSize: 15, color: "var(--label)", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap", letterSpacing: "-0.015em" }}>
               {briefing.briefing}
             </p>
           )}
@@ -811,23 +812,24 @@ function PremarketNewsView({ news, onRefresh, refreshing }: {
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ background: "var(--surface)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
         <div style={{
-          padding: "14px 18px 13px",
+          padding: "16px 20px 14px",
           background: "rgba(255,149,0,0.06)",
           borderBottom: "0.5px solid var(--sep)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <div style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--orange)" }} />
-            <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.03em" }}>개장 전 뉴스 요약</span>
-          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--orange)" }} />
+            <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em" }}>개장 전 뉴스 요약</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 11, color: "var(--label3)" }}>{news.generated_at}</span>
             <button
               onClick={onRefresh}
               disabled={refreshing}
               style={{
-                fontSize: 11, color: "var(--primary)", fontWeight: 700,
-                padding: "5px 12px", background: "rgba(0,122,255,0.09)", borderRadius: 9,
+                fontSize: 12, color: "var(--primary)", fontWeight: 700,
+                padding: "6px 12px", background: "rgba(0,122,255,0.10)", borderRadius: 100,
+                letterSpacing: "-0.01em",
               }}
             >
               {refreshing ? "…" : "새로고침"}
@@ -835,10 +837,10 @@ function PremarketNewsView({ news, onRefresh, refreshing }: {
           </div>
         </div>
 
-        <div style={{ padding: "14px 18px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "16px 20px 18px", display: "flex", flexDirection: "column", gap: 16 }}>
           {s ? (
             <>
-              <p style={{ fontSize: 14, fontWeight: 700, color: "var(--label)", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.5 }}>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "var(--label)", margin: 0, letterSpacing: "-0.022em", lineHeight: 1.45 }}>
                 {s.headline}
               </p>
 
@@ -848,18 +850,18 @@ function PremarketNewsView({ news, onRefresh, refreshing }: {
                     const tone = NEWS_TONE[item.tone] ?? NEWS_TONE.neutral;
                     return (
                       <div key={i} style={{
-                        borderRadius: 12, padding: "10px 13px",
+                        borderRadius: 12, padding: "12px 14px",
                         background: tone.bg,
                         borderLeft: `3px solid ${tone.color}`,
-                        display: "flex", flexDirection: "column", gap: 3,
+                        display: "flex", flexDirection: "column", gap: 5,
                       }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: tone.color }}>{item.corp_name}</span>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: tone.color, background: `${tone.color}20`, borderRadius: 5, padding: "1px 6px" }}>
+                          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.022em", color: tone.color }}>{item.corp_name}</span>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: tone.color, background: `${tone.color}20`, borderRadius: 5, padding: "2px 7px" }}>
                             {tone.label}
                           </span>
                         </div>
-                        <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.65, margin: 0 }}>{item.summary}</p>
+                        <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{item.summary}</p>
                       </div>
                     );
                   })}
@@ -867,16 +869,16 @@ function PremarketNewsView({ news, onRefresh, refreshing }: {
               )}
 
               {s.market_outlook && (
-                <div style={{ display: "flex", gap: 8, borderTop: "0.5px solid var(--sep)", paddingTop: 12 }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: "white", background: "var(--orange)", borderRadius: 5, padding: "2px 6px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2, letterSpacing: "0.02em" }}>
+                <div style={{ display: "flex", gap: 9, borderTop: "0.5px solid var(--sep)", paddingTop: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "white", background: "var(--orange)", borderRadius: 5, padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2 }}>
                     전망
                   </div>
-                  <p style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.7, margin: 0 }}>{s.market_outlook}</p>
+                  <p style={{ fontSize: 14, color: "var(--label2)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{s.market_outlook}</p>
                 </div>
               )}
             </>
           ) : (
-            <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.85, margin: 0, whiteSpace: "pre-wrap" }}>{news.summary}</p>
+            <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.65, margin: 0, whiteSpace: "pre-wrap", letterSpacing: "-0.015em" }}>{news.summary}</p>
           )}
         </div>
       </div>
