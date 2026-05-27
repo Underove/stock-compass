@@ -8,6 +8,7 @@ import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
 import { ScreenerCard } from "../components/ScreenerCard";
 import { fetchAlerts, fetchAlertWatch, markAlertsRead, deleteAlert, addAlertWatch, removeAlertWatch, searchStock, fetchMarketIndices, initAuth } from "../lib/api";
+import { isMarketOpen } from "../hooks/useRealtimePrice";
 import type { Alert, WatchStock, MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1 | 2;
@@ -64,7 +65,9 @@ export default function Home() {
       finally { if (!cancelled) setIndicesLoaded(true); }
     }
     load();
-    const id = setInterval(load, 60_000);
+    // 장 중 30초, 장외 60초 갱신
+    const tick = isMarketOpen() ? 30_000 : 60_000;
+    const id = setInterval(load, tick);
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 

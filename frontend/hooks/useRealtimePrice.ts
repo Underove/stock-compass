@@ -20,7 +20,7 @@ export function isMarketOpen(): boolean {
   const day = kst.getUTCDay();
   if (day === 0 || day === 6) return false;
   const total = kst.getUTCHours() * 60 + kst.getUTCMinutes();
-  return total >= 9 * 60 && total < 15 * 60 + 30; // 09:00–15:30 KST
+  return total >= 9 * 60 && total < 15 * 60 + 30;
 }
 
 export function isAfterHours(): boolean {
@@ -29,7 +29,7 @@ export function isAfterHours(): boolean {
   const day = kst.getUTCDay();
   if (day === 0 || day === 6) return false;
   const total = kst.getUTCHours() * 60 + kst.getUTCMinutes();
-  return total >= 15 * 60 + 30 && total < 18 * 60; // 15:30–18:00 KST
+  return total >= 15 * 60 + 30 && total < 18 * 60;
 }
 
 export function isPreMarket(): boolean {
@@ -38,41 +38,68 @@ export function isPreMarket(): boolean {
   const day = kst.getUTCDay();
   if (day === 0 || day === 6) return false;
   const total = kst.getUTCHours() * 60 + kst.getUTCMinutes();
-  return total >= 8 * 60 && total < 9 * 60; // 08:00–09:00 KST
+  return total >= 8 * 60 && total < 9 * 60;
 }
+
+const MAX_RETRY_DELAY = 30_000;
 
 export function useRealtimePrice(stockCodes: string[]): Record<string, RealtimePrice> {
   const [prices, setPrices] = useState<Record<string, RealtimePrice>>({});
   const key = stockCodes.slice().sort().join(",");
   const wsRef = useRef<WebSocket | null>(null);
+  const retryDelay = useRef(2_000);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const destroyed = useRef(false);
 
   useEffect(() => {
-    if (!stockCodes.length || !isMarketOpen()) return; // 장외시간: WS 연결 생략
+    if (!stockCodes.length || !isMarketOpen()) return;
 
-    const wsBase = API_BASE.replace(/^http/, "ws");
-    const ws = new WebSocket(`${wsBase}/api/ws/realtime`);
-    wsRef.current = ws;
+    destroyed.current = false;
+    retryDelay.current = 2_000;
 
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ subscribe: stockCodes }));
-    };
+    function connect() {
+      if (destroyed.current) return;
 
-    ws.onmessage = (e) => {
-      try {
-        const data: RealtimePrice & { error?: string } = JSON.parse(e.data);
-        if (data.error) return;
-        if (data.stock_code) {
-          setPrices(prev => ({ ...prev, [data.stock_code]: data }));
+      const wsBase = API_BASE.replace(/^http/, "ws");
+      const ws = new WebSocket(`${wsBase}/api/ws/realtime`);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        retryDelay.current = 2_000; // 연결 성공 시 딜레이 리셋
+        ws.send(JSON.stringify({ subscribe: stockCodes }));
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const data: RealtimePrice & { error?: string } = JSON.parse(e.data);
+          if (data.error) return;
+          if (data.stock_code) {
+            setPrices(prev => ({ ...prev, [data.stock_code]: data }));
+          }
+        } catch {
+          // malformed frame 무시
         }
-      } catch {
-        // ignore malformed frames
-      }
-    };
+      };
 
-    ws.onerror = () => {};
+      ws.onerror = () => {};
+
+      // 연결 종료 시 지수 백오프로 재연결
+      ws.onclose = () => {
+        wsRef.current = null;
+        if (destroyed.current) return;
+        retryTimer.current = setTimeout(() => {
+          retryDelay.current = Math.min(retryDelay.current * 2, MAX_RETRY_DELAY);
+          connect();
+        }, retryDelay.current);
+      };
+    }
+
+    connect();
 
     return () => {
-      ws.close();
+      destroyed.current = true;
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+      wsRef.current?.close();
       wsRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
