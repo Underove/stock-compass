@@ -68,6 +68,70 @@ This document is the design source-of-truth. AI coding agents and human contribu
 
 ---
 
+## Voice & Tone
+
+The single biggest reason Toss feels like Toss is its **writing**, not its CSS. UI text in N.O.V.A follows the same principles.
+
+### Conversational, not transactional
+
+Bad: "평가손익"
+Good: "오늘의 평가손익이에요"
+
+Bad: "조건에 맞는 종목이 없습니다"
+Good: "조건에 맞는 종목이 없어요"
+
+Bad: "최고" / "최저"
+Good: "가장 잘 가요" / "가장 힘들어요"
+
+### Use `~이에요 / ~해요 / ~에요` endings
+Never use `~입니다 / ~습니다 / ~합니다` in UI labels (formal-stiff). Use polite informal forms throughout.
+
+### Time anchors
+Prefix relevant labels with **"오늘의"** / **"지금"** / **"방금"** to make the data feel live and current:
+- "오늘의 AI 브리핑"
+- "지금 시세는요"
+- "방금 추가했어요"
+
+### Softer negatives
+Avoid harsh negative phrasing for losses. Frame them as observations, not failures.
+
+Bad: "큰 손실 발생"
+Good: "지금은 힘들어요"
+
+Bad: "데이터 없음"
+Good: "아직 정보가 없어요"
+
+### Cap label length
+Never exceed two lines. If a label is long, find a shorter way:
+
+Bad: "보유하고 계신 모든 종목들의 평가손익 합계입니다"
+Good: "보유 종목 N개의 평가손익이에요"
+
+### Allowed (do this)
+- 친근한 종결어미 (이에요, 해요)
+- 시점어 (오늘, 지금, 방금, 어제)
+- 부드러운 표현 (잘 가요, 힘들어요, 아쉬워요)
+- 숫자 + 한국어 양사 ("3개", "N건")
+
+### Forbidden (don't do this)
+- 호칭 (어르신, 여러분, 당신) — see `feedback_no_honorifics_no_bold`
+- 별표 markdown (`**굵게**`) — same memo
+- 영어 UPPERCASE 라벨 ("LIVE" / "PRE" 같은 짧은 상태 배지만 예외)
+- 형식 종결어미 (~입니다, ~합니다)
+- 명령형 ("클릭하세요" → 대신 "탭하면 자세히 보여드려요")
+
+### Worked examples (before → after)
+
+| Context | Sterile | Toss-feel |
+|---|---|---|
+| Empty portfolio | "데이터 없음" | "아직 종목이 없어요" |
+| Loading | "로딩 중" | "잠시만요…" |
+| Search empty | "검색 결과 없음" | "찾으시는 종목이 없어요" |
+| Confirm sell | "매도하시겠습니까?" | "정말 팔까요?" |
+| Success | "저장 완료" | "저장했어요" |
+
+---
+
 ## Typography
 
 ### Font Family
@@ -98,9 +162,13 @@ Numbers  : "JetBrains Mono", "SF Mono", "Roboto Mono", monospace  /* tabular fig
 
 ### Principles
 - **Bold (700+) is reserved for primary information.** Body text stays at 500.
-- **Negative letter-spacing on big numbers only.** `tracking-[-0.035em]` for currency, `-0.025em` for headings, 0 for body.
+- **Negative letter-spacing on big numbers only.** `tracking-[-0.045em]` for hero numbers (28px+), `-0.035em` for medium numbers (18–24px), `-0.025em` for headings, `-0.015em` for body, 0 for small/caption.
 - **Korean does not need uppercase or tracking tricks.** Don't apply `text-transform: uppercase` or wide letter-spacing to Korean labels — see `feedback_korean_label_typography`. Use weight/color for hierarchy instead.
-- **Number alignment:** Right-aligned in tables. Always use `font-feature-settings: "tnum"` or JetBrains Mono.
+- **Number alignment:** Right-aligned in tables. Use one of:
+  - **Inline React style:** `style={{ fontVariantNumeric: "tabular-nums" }}` ← preferred for one-off numbers
+  - **CSS class:** `font-feature-settings: "tnum"` ← preferred in stylesheets
+  - **Mono font:** Switch family to `"JetBrains Mono", monospace` when many numbers need to align in a dense column (asset tables, price columns)
+- **`tabular-nums` is required for any number that can change in place** — hero P&L, live prices, percent changes. Without it, the value shifts horizontally as digits change.
 
 ---
 
@@ -191,10 +259,17 @@ The patterns below describe N.O.V.A's actual components. When adding new UI, mat
 - Same geometry as primary
 - For "취소", "초기화", "닫기"-style actions
 
+### Tinted Button
+- Background `rgba(0,122,255,0.10)`, text `--primary`, weight 700
+- Sized smaller than primary: height 28–32px, padding `6px 12px`, radius 100px
+- Font: 12px weight 700
+- Sits between Primary and Ghost in visual weight
+- For inline secondary actions inside cards: "새로고침", "더 보기", "다시 시도"
+
 ### Ghost / Text Button
 - Transparent background, text `--primary`
 - Padding `8px 12px` (smaller, less prominent)
-- For "더 보기", "다시 시도", "전체 보기"-style links
+- For "더 보기", "다시 시도", "전체 보기"-style links inside paragraphs
 
 ### Chip / Filter Pill
 - Background `--surface` (inactive) / `--primary` (active)
@@ -210,6 +285,36 @@ The patterns below describe N.O.V.A's actual components. When adding new UI, mat
 - Shadow `--shadow-sm`
 - **No border** by default (shadow provides separation)
 - Used for: stock rows container, briefing card, screener results
+
+### Sentiment-Tinted Card
+**Use:** Hero KPI containers where the metric implies positive/negative sentiment (P&L, today's gain, etc).
+- Background uses 5–6% alpha tint of the semantic color:
+  - Positive (profit): `rgba(255,59,48,0.05)` (light) / `rgba(255,69,58,0.08)` (dark)
+  - Negative (loss): `rgba(0,122,255,0.05)` (light) / `rgba(10,132,255,0.08)` (dark)
+  - Neutral: `--surface2`
+- Border `0.5px solid var(--sep)`
+- Radius 16px, padding `18px`
+- The semantic color carries through to the hero number AND the tint background — they reinforce each other
+
+### Hero KPI Block
+**Use:** Display ONE critical metric prominently (today's P&L, total return, account balance). Always placed at the top of a screen or card.
+
+Anatomy (top to bottom):
+1. **Friendly label** — 12px / weight 600 / `--label2` / `letter-spacing: -0.01em` / margin-bottom 6–8px
+   - Phrase as a casual sentence: "보유 종목 N개의 평가손익이에요"
+2. **Hero number** — 36–42px / weight 800 / sentiment color / `letter-spacing: -0.045em` / `line-height: 1.05` / `fontVariantNumeric: "tabular-nums"`
+   - For percent: `{val > 0 ? "+" : ""}{val.toFixed(2)}%`
+   - For currency: `{val > 0 ? "+" : ""}{val.toLocaleString("ko-KR")}원`
+3. **Optional sub-stat row** — flexbox row of 2–3 sub cells with hairline separator
+   - Each sub cell: small label (11px / `--label3`), small name (13px / 700), small number (15px / 800 / sentiment color)
+
+Place inside a `Sentiment-Tinted Card`. Never standalone.
+
+### Status Chip (Sentiment Pill)
+- Sub-pill placed inline next to a title to signal status (e.g. "긍정적", "주의", "중립")
+- Background: 20% alpha of the sentiment color (`${sentColor}20` works as hex8 if base is hex)
+- Text: same sentiment color, 10px weight 700
+- Padding `2px 7px`, radius 6px
 
 ### List Row (Stock Row)
 - Inside a card, no individual border
@@ -299,6 +404,8 @@ The patterns below describe N.O.V.A's actual components. When adding new UI, mat
 
 ### Do
 - **Use red for up, blue for down.** Always. Even in dark mode.
+- **Rewrite every UI label in the Toss voice** before shipping — see Voice & Tone above. The biggest single difference between "Toss-like" and "sterile fintech app" is this.
+- **Use `fontVariantNumeric: "tabular-nums"` on every number that can change** — hero P&L, prices, percentages.
 - **Use weight (700/800) for hierarchy** instead of size jumps.
 - **Hide development metadata in production** — distance scores, chunk counts, vector DB messages. See `feedback_hide_dev_stats_in_ui`.
 - **Provide an escape from every modal** — X button minimum. See `feedback_modal_escape_hatch`.
