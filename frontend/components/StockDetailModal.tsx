@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { addWatchlistItem, fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, getSimilarStocks, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
 import { isAfterHours, isMarketOpen, isPreMarket, useRealtimePrice } from "../hooks/useRealtimePrice";
+import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, SimilarItem, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
 import { StockChart } from "./StockChart";
 import { CompareModal } from "./CompareModal";
@@ -255,6 +256,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
   }
 
   const cp = price?.current_price ?? null;
+  const heroFlash = usePriceFlash(cp);
   const isProfit = evalPnlPct !== null && evalPnlPct >= 0;
 
   return (
@@ -271,10 +273,10 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
           {/* 종목명 + 관심종목 + 닫기 */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 500, letterSpacing: "0.01em", marginBottom: 2 }}>
+              <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 500, marginBottom: 2, fontVariantNumeric: "tabular-nums" }}>
                 {currentItem.stock_code}
               </div>
-              <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em", lineHeight: 1.2 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.025em", lineHeight: 1.2 }}>
                 {currentItem.corp_name}
               </div>
             </div>
@@ -333,17 +335,26 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
             <Skeleton height={40} width="50%" />
           ) : price ? (
             <div style={{ display: "flex", alignItems: "flex-end", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-                <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.05em", lineHeight: 1, color: pctColor(price.change_pct) }}>
+              <div
+                className={heroFlash ? `price-flash-${heroFlash}` : undefined}
+                style={{ display: "flex", alignItems: "baseline", gap: 3 }}
+              >
+                <span style={{
+                  fontSize: 36, fontWeight: 800,
+                  letterSpacing: "-0.045em", lineHeight: 1,
+                  color: pctColor(price.change_pct),
+                  fontVariantNumeric: "tabular-nums",
+                }}>
                   {fmt(price.current_price)}
                 </span>
-                <span style={{ fontSize: 14, fontWeight: 500, color: "var(--label3)", marginBottom: 2 }}>원</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: "var(--label3)", marginBottom: 3 }}>원</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: 3 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, paddingBottom: 4 }}>
                 <span style={{
                   fontSize: 13, fontWeight: 700, color: pctColor(price.change_pct),
                   background: isProfit ? "rgba(255,59,48,0.09)" : "rgba(0,122,255,0.09)",
-                  borderRadius: 8, padding: "3px 9px",
+                  borderRadius: 100, padding: "3px 10px",
+                  fontVariantNumeric: "tabular-nums",
                 }}>
                   {isFinite(price.change_amount) ? `${price.change_amount > 0 ? "+" : ""}${fmt(price.change_amount)}` : "—"} ({isFinite(price.change_pct) ? pctSign(price.change_pct) : "—"})
                 </span>
@@ -364,15 +375,16 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
           {/* 시가·고가·저가·거래량 mini row */}
           {price && (
-            <div style={{ display: "flex", gap: 14, marginTop: 10 }}>
+            <div style={{ display: "flex", gap: 14, marginTop: 12, flexWrap: "wrap" }}>
               {[
-                { label: "시", value: fmt(price.open), color: "var(--label2)" },
-                { label: "고", value: fmt(price.high), color: "var(--red)" },
-                { label: "저", value: fmt(price.low), color: "var(--primary)" },
-                { label: "량", value: price.volume ? `${(price.volume / 1000).toFixed(0)}K` : "—", color: "var(--label2)" },
+                { label: "시가", value: fmt(price.open), color: "var(--label2)" },
+                { label: "고가", value: fmt(price.high), color: "var(--red)" },
+                { label: "저가", value: fmt(price.low), color: "var(--primary)" },
+                { label: "거래량", value: price.volume ? `${(price.volume / 1000).toFixed(0)}K` : "—", color: "var(--label2)" },
               ].map(({ label, value, color }) => (
-                <span key={label} style={{ fontSize: 11, color: "var(--label3)" }}>
-                  {label} <span style={{ color, fontWeight: 600 }}>{value}</span>
+                <span key={label} style={{ fontSize: 11, color: "var(--label3)", display: "inline-flex", gap: 4 }}>
+                  {label}
+                  <span style={{ color, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{value}</span>
                 </span>
               ))}
             </div>
