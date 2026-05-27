@@ -112,8 +112,14 @@ input,
 textarea,
 select {
   font-family: inherit;
-  font-size: max(16px, 1em) !important; /* iOS Safari 줌인 방지 — !important로 inline style 덮어씀 */
   letter-spacing: inherit;
+}
+
+/* iOS Safari 줌인 방지: 모바일에서만 최소 16px 강제 */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: max(16px, 1em) !important;
+  }
 }
 
 input:focus,

@@ -197,7 +197,8 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
                 다시 시도
               </button>
             </div>
-          ) : briefing && !briefing.sections ? (
+          ) : briefing && !briefing.sections && !briefing.portfolio_stats ? (
+            /* 포트폴리오 비어있음 */
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", gap: 16 }}>
               <div style={{
                 width: 56, height: 56, borderRadius: 18,
@@ -214,6 +215,29 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
                   종목을 추가하면 AI가 보유 현황을<br />분석해서 브리핑을 제공해요
                 </div>
               </div>
+            </div>
+          ) : briefing && !briefing.sections ? (
+            /* 포트폴리오는 있지만 AI 생성 실패 */
+            <div style={{
+              background: "var(--surface)", borderRadius: 20, padding: "28px 20px",
+              boxShadow: "var(--shadow)", textAlign: "center",
+            }}>
+              <div style={{ fontSize: 24, marginBottom: 12 }}>⚠️</div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>브리핑 생성 실패</div>
+              <div style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.7, marginBottom: 20 }}>
+                AI 서버에 일시적인 문제가 발생했어요.<br />잠시 후 다시 시도해주세요.
+              </div>
+              <button
+                onClick={() => loadBriefing(true)}
+                style={{
+                  padding: "11px 28px", borderRadius: 14,
+                  background: "var(--primary)", color: "white",
+                  fontSize: 14, fontWeight: 700,
+                  boxShadow: "0 4px 12px rgba(0,122,255,0.28)",
+                }}
+              >
+                다시 시도
+              </button>
             </div>
           ) : briefing ? (
             <BriefingView briefing={briefing} onRefresh={() => loadBriefing(true)} refreshing={loadingBriefing} />
