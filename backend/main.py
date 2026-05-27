@@ -1,4 +1,5 @@
 import logging
+import threading
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -42,11 +43,30 @@ from app.scheduler.jobs import (  # noqa: E402
 )
 
 KST = "Asia/Seoul"
+_log = logging.getLogger(__name__)
+
+
+def _seed_screener_if_empty() -> None:
+    """배포 직후 screener_snapshot이 비어 있으면 자동 시드 (백그라운드 스레드)."""
+    try:
+        from app.db.trade_db import _conn
+        with _conn() as con:
+            count = con.execute("SELECT COUNT(*) FROM screener_snapshot").fetchone()[0]
+        if count < 100:
+            _log.info("[시드] screener_snapshot %d행 → 자동 시드 시작 (기본지표 → TA)", count)
+            job_refresh_screener_fundamentals()
+            job_refresh_screener_ta()
+            _log.info("[시드] 자동 시드 완료")
+        else:
+            _log.info("[시드] screener_snapshot %d행, 시드 불필요", count)
+    except Exception as e:
+        _log.error("[시드] 스크리너 자동 시드 실패: %s", e)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    threading.Thread(target=_seed_screener_if_empty, daemon=True).start()
     scheduler = BackgroundScheduler(timezone=KST)
     # 장 마감 자동 브리핑 (평일 15:35 KST)
     scheduler.add_job(job_generate_briefing, CronTrigger(day_of_week="mon-fri", hour=15, minute=35, timezone=KST))
