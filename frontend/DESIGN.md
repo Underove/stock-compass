@@ -75,7 +75,7 @@ The single biggest reason Toss feels like Toss is its **writing**, not its CSS. 
 ### Conversational, not transactional
 
 Bad: "평가손익"
-Good: "오늘의 평가손익이에요"
+Good: "오늘의 평가손익"  /* noun-phrase header — no 이에요 */
 
 Bad: "조건에 맞는 종목이 없습니다"
 Good: "조건에 맞는 종목이 없어요"
@@ -95,8 +95,17 @@ Good: "수익률 +12.3%"
 
 Conversational ≠ personified. Friendly endings (~이에요/~해요) are good. Anthropomorphizing market data is not.
 
-### Use `~이에요 / ~해요 / ~에요` endings
-Never use `~입니다 / ~습니다 / ~합니다` in UI labels (formal-stiff). Use polite informal forms throughout.
+### Use `~이에요 / ~해요 / ~에요` endings — but only on full sentences
+Polite informal endings (`~이에요`, `~해요`) are for **sentences**, not noun-phrase labels. Attaching `~이에요` to a static label sounds forced.
+
+- ✅ Sentence (verb-led): "저장했어요" / "잠시만요" / "잠시 후 다시 시도해 주세요"
+- ✅ Sentence (with subject): "오늘의 환율을 알려드릴게요"
+- ❌ Noun-phrase label: "오늘의 평가손익이에요" — drop the 이에요
+- ✅ Noun-phrase label: "오늘의 평가손익" / "보유 종목 N개의 평가손익"
+
+**Rule of thumb:** If the string is a header above a number/stat, leave it as a noun phrase. If it's a message ABOUT something happening (loading, saved, error), use full-sentence ending.
+
+Also never use `~입니다 / ~습니다 / ~합니다` (formal-stiff).
 
 ### Time anchors
 Prefix relevant labels with **"오늘의"** / **"지금"** / **"방금"** to make the data feel live and current:
@@ -111,7 +120,7 @@ Bad: "큰 손실 발생"
 Good: "지금 -8.5% 손실이에요"
 
 Bad: "데이터 없음"
-Good: "아직 정보가 없어요"
+Good: "아직 정보가 없어요"  /* full-sentence — 어요 OK */
 
 ### Cap label length
 Never exceed two lines. If a label is long, find a shorter way:

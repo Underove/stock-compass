@@ -429,7 +429,7 @@ function StatsBar({ stats }: { stats: PortfolioStats }) {
       marginBottom: 14,
     }}>
       <div style={{ fontSize: 12, color: "var(--label2)", fontWeight: 600, marginBottom: 6, letterSpacing: "-0.01em" }}>
-        보유 종목 {stats.stock_count}개의 평가손익이에요
+        보유 종목 {stats.stock_count}개의 평가손익
       </div>
       <div style={{
         fontSize: 38, fontWeight: 800, lineHeight: 1.05,
