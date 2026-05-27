@@ -1,5 +1,6 @@
 """포트폴리오 CRUD + 현재가·차트 + AI 코멘터리."""
 import json
+import sqlite3
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -385,6 +386,67 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
     except Exception:
         pass
     return result
+
+
+def _compute_insight(snap: dict) -> dict | None:
+    """screener_snapshot 행에서 가장 두드러진 시그널 1개 반환.
+    tone: positive=빨강(상승신호), negative=파랑(하락신호), neutral=회색(관찰).
+    """
+    rsi = snap.get("rsi")
+    if rsi is not None:
+        if rsi < 30:
+            return {"text": f"RSI {rsi:.0f} · 과매도 구간", "tone": "positive"}
+        if rsi > 70:
+            return {"text": f"RSI {rsi:.0f} · 과매수 구간", "tone": "negative"}
+
+    ma = snap.get("ma_status")
+    if ma == "golden":
+        return {"text": "단기 이평선 골든크로스", "tone": "positive"}
+    if ma == "dead":
+        return {"text": "단기 이평선 데드크로스", "tone": "negative"}
+
+    vol_ratio = snap.get("volume_ratio")
+    if vol_ratio is not None and vol_ratio >= 2.0:
+        return {"text": f"거래량 평소의 {vol_ratio:.1f}배", "tone": "neutral"}
+
+    foreign = snap.get("foreign_net_buy")
+    if foreign is not None:
+        if foreign > 10000:
+            return {"text": "외국인 대량 순매수", "tone": "positive"}
+        if foreign < -10000:
+            return {"text": "외국인 대량 순매도", "tone": "negative"}
+
+    disc = snap.get("disclosure_30d") or 0
+    if disc >= 3:
+        return {"text": f"최근 공시 활발 (30일 {disc}건)", "tone": "neutral"}
+
+    return None
+
+
+@router.get("/portfolio/insights")
+def get_portfolio_insights(username: str = Depends(get_current_user)):
+    """보유 종목별 인라인 한 줄 인사이트. 룰 베이스 (LLM 호출 없음)."""
+    from app.db.trade_db import _conn
+    items = _load(username)
+    codes = [i["stock_code"] for i in items]
+    if not codes:
+        return {"insights": {}}
+
+    placeholders = ",".join(["?"] * len(codes))
+    with _conn() as con:
+        con.row_factory = sqlite3.Row
+        rows = con.execute(
+            f"SELECT * FROM screener_snapshot WHERE stock_code IN ({placeholders})",
+            codes,
+        ).fetchall()
+
+    insights: dict[str, dict] = {}
+    for row in rows:
+        snap = dict(row)
+        ins = _compute_insight(snap)
+        if ins:
+            insights[snap["stock_code"]] = ins
+    return {"insights": insights}
 
 
 @router.get("/portfolio/disclosures/{stock_code}")

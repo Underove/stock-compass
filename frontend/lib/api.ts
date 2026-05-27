@@ -108,6 +108,17 @@ export const search = (query: string, n_results = 5) =>
     n_results,
   });
 
+export type StockInsight = { text: string; tone: "positive" | "negative" | "neutral" };
+
+export async function fetchPortfolioInsights(): Promise<Record<string, StockInsight>> {
+  try {
+    const data = await getJSON<{ insights: Record<string, StockInsight> }>("/api/portfolio/insights");
+    return data.insights ?? {};
+  } catch {
+    return {};
+  }
+}
+
 export const ask = (question: string, n_chunks = 5) =>
   postJSON<{ answer: string; sources: Source[]; companies_synced: CompanySynced[] }>(
     "/api/ask",

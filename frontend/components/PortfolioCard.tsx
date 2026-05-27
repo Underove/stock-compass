@@ -7,6 +7,7 @@ import {
   addWatchlistItem,
   fetchChartData,
   fetchPortfolioAlerts,
+  fetchPortfolioInsights,
   fetchStockPrice,
   listPortfolio,
   listWatchlist,
@@ -15,6 +16,7 @@ import {
   searchStock,
   updatePortfolioItem,
 } from "../lib/api";
+import type { StockInsight } from "../lib/api";
 import { useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { RealtimePrice } from "../hooks/useRealtimePrice";
 import { usePriceFlash } from "../hooks/usePriceFlash";
@@ -508,12 +510,13 @@ function TradePanel({ item, onSave, onDelete, onCancel }: {
 
 // ─── 종목 행 ──────────────────────────────────────────────────────────────────
 
-function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePrice, isEditing, sparkPoints, onCompare }: {
+function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePrice, isEditing, sparkPoints, onCompare, insight }: {
   item: PortfolioItem; onClick: () => void; onEdit: () => void;
   onPriceLoaded: (code: string, price: StockPrice) => void;
   alertCount: number; realtimePrice?: RealtimePrice; isEditing: boolean;
   sparkPoints?: number[];
   onCompare?: () => void;
+  insight?: StockInsight;
 }) {
   const [price, setPrice] = useState<StockPrice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -564,6 +567,22 @@ function StockRow({ item, onClick, onEdit, onPriceLoaded, alertCount, realtimePr
           {evalPnl !== null && (
             <div style={{ fontSize: 11, fontWeight: 600, color: accentColor, marginTop: 1 }}>
               {evalPnl > 0 ? "+" : ""}{fmt(evalPnl)}원
+            </div>
+          )}
+          {insight && (
+            <div style={{
+              fontSize: 11, fontWeight: 600, marginTop: 3,
+              color: insight.tone === "positive" ? "var(--red)"
+                    : insight.tone === "negative" ? "var(--primary)"
+                    : "var(--label3)",
+              display: "flex", alignItems: "center", gap: 4,
+              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>
+              <span style={{
+                width: 3, height: 3, borderRadius: "50%",
+                background: "currentColor", flexShrink: 0,
+              }} />
+              {insight.text}
             </div>
           )}
         </div>
@@ -1037,6 +1056,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
   const [selected, setSelected] = useState<PortfolioItem | null>(null);
   const [prices, setPrices] = useState<Record<string, StockPrice>>({});
   const [alerts, setAlerts] = useState<Record<string, number>>({});
+  const [insights, setInsights] = useState<Record<string, StockInsight>>({});
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [watchlistAdd, setWatchlistAdd] = useState<WatchlistItem | null>(null);
   const [watchlistSelected, setWatchlistSelected] = useState<WatchlistItem | null>(null);
@@ -1059,6 +1079,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
   useEffect(() => {
     listPortfolio().then(setItems).catch(() => {});
     fetchPortfolioAlerts().then(setAlerts).catch(() => {});
+    fetchPortfolioInsights().then(setInsights).catch(() => {});
   }, []);
 
   const handlePriceLoaded = useCallback((code: string, price: StockPrice) => {
@@ -1188,6 +1209,7 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
                     realtimePrice={realtimePrices[item.stock_code]}
                     isEditing={editingCode === item.stock_code}
                     sparkPoints={sparklines[item.stock_code]}
+                    insight={insights[item.stock_code]}
                     onCompare={() => { setCompareCode(item.stock_code); setCompareName(item.corp_name); setCompareOpen(true); }}
                   />
                   {editingCode === item.stock_code && (
