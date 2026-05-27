@@ -125,11 +125,11 @@ function TradeRow({ trade, onClick }: { trade: Trade; onClick: () => void }) {
             padding: "2px 6px", borderRadius: 6,
             background: b.bg, color: b.color,
           }}>{b.label}</span>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--label)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.022em", color: "var(--label)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {trade.corp_name}
           </span>
         </div>
-        <div style={{ fontSize: 11, color: "var(--label2)" }}>
+        <div style={{ fontSize: 11, color: "var(--label2)", fontVariantNumeric: "tabular-nums" }}>
           {trade.quantity.toLocaleString()}주 · {trade.price.toLocaleString()}원
           <span style={{ marginLeft: 8, color: "var(--label3)" }}>{mmdd} {time}</span>
         </div>
@@ -137,7 +137,7 @@ function TradeRow({ trade, onClick }: { trade: Trade; onClick: () => void }) {
 
       {/* 총액 */}
       <div style={{ flexShrink: 0, textAlign: "right" }}>
-        <div style={{ fontSize: 13, color: "var(--label)", fontWeight: 600 }}>
+        <div style={{ fontSize: 13, color: "var(--label)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
           {(trade.price * trade.quantity).toLocaleString()}원
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function TradeJournal({ portfolio }: Props) {
   if (loading) {
     return (
       <div style={{ padding: "24px 0", textAlign: "center", color: "var(--label2)", fontSize: 14 }}>
-        불러오는 중…
+        잠시만요…
       </div>
     );
   }
@@ -238,33 +238,35 @@ export default function TradeJournal({ portfolio }: Props) {
       <div style={{ background: "var(--surface)", borderRadius: 16, padding: "16px", boxShadow: "var(--shadow-sm)", border: "0.5px solid var(--sep)" }}>
         {/* Toggle + Period */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div style={{ display: "flex", gap: 4, background: "var(--bg)", borderRadius: 9, padding: 3 }}>
+          <div style={{ display: "flex", gap: 4, background: "var(--bg)", borderRadius: 100, padding: 3 }}>
             {(["value", "pnl"] as GraphMode[]).map((m) => (
               <button
                 key={m}
                 onClick={() => setGraphMode(m)}
                 style={{
-                  padding: "5px 12px", borderRadius: 6, border: "none", cursor: "pointer",
-                  fontSize: 12, fontWeight: 600,
+                  padding: "5px 14px", borderRadius: 100, border: "none", cursor: "pointer",
+                  fontSize: 12, fontWeight: graphMode === m ? 700 : 600,
                   background: graphMode === m ? "var(--primary)" : "transparent",
                   color: graphMode === m ? "#fff" : "var(--label2)",
                   transition: "background 0.15s",
+                  letterSpacing: "-0.01em",
                 }}
               >
                 {m === "value" ? "총 평가액" : "실현 손익"}
               </button>
             ))}
           </div>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ display: "flex", gap: 4, background: "var(--bg)", borderRadius: 100, padding: 3 }}>
             {PERIODS.map(({ label, value }) => (
               <button
                 key={value}
                 onClick={() => setPeriod(value)}
                 style={{
-                  padding: "4px 9px", borderRadius: 6, border: "none", cursor: "pointer",
-                  fontSize: 11, fontWeight: 600,
+                  padding: "4px 10px", borderRadius: 100, border: "none", cursor: "pointer",
+                  fontSize: 11, fontWeight: period === value ? 700 : 600,
                   background: period === value ? "var(--primary)" : "transparent",
                   color: period === value ? "#fff" : "var(--label2)",
+                  letterSpacing: "-0.01em",
                 }}
               >
                 {label}
@@ -275,22 +277,30 @@ export default function TradeJournal({ portfolio }: Props) {
 
         {/* Summary Stat */}
         {graphMode === "value" && latestSnap && (
-          <div style={{ marginBottom: 8 }}>
-            <span style={{ fontSize: 20, fontWeight: 700, color: "var(--label)", letterSpacing: "-0.04em" }}>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{
+              fontSize: 22, fontWeight: 800, color: "var(--label)",
+              letterSpacing: "-0.035em",
+              fontVariantNumeric: "tabular-nums",
+            }}>
               {latestSnap.total_value.toLocaleString()}원
             </span>
             {valueGrowthPct != null && (
-              <span style={{ fontSize: 13, fontWeight: 600, marginLeft: 8, color: pnlColor(valueGrowthPct) }}>
+              <span style={{
+                fontSize: 13, fontWeight: 700, marginLeft: 8, color: pnlColor(valueGrowthPct),
+                fontVariantNumeric: "tabular-nums",
+              }}>
                 {valueGrowthPct >= 0 ? "+" : ""}{valueGrowthPct.toFixed(2)}%
               </span>
             )}
           </div>
         )}
         {graphMode === "pnl" && (
-          <div style={{ marginBottom: 8 }}>
+          <div style={{ marginBottom: 10 }}>
             <span style={{
-              fontSize: 20, fontWeight: 700, letterSpacing: "-0.04em",
+              fontSize: 22, fontWeight: 800, letterSpacing: "-0.035em",
               color: totalRealized === 0 ? "var(--label)" : pnlColor(totalRealized),
+              fontVariantNumeric: "tabular-nums",
             }}>
               {totalRealized > 0 ? "+" : ""}{formatWon(totalRealized)}원
             </span>
@@ -324,8 +334,8 @@ export default function TradeJournal({ portfolio }: Props) {
 
       {/* Trade List */}
       <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "var(--label)", marginBottom: 8 }}>
-          거래 이력 {total > 0 && <span style={{ color: "var(--label2)", fontWeight: 400 }}>({total}건)</span>}
+        <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.022em", color: "var(--label)", marginBottom: 10 }}>
+          거래 이력 {total > 0 && <span style={{ color: "var(--label3)", fontWeight: 500, fontSize: 13 }}>({total}건)</span>}
         </div>
         {trades.length === 0 ? (
           <div style={{ padding: "20px 0", textAlign: "center", color: "var(--label2)", fontSize: 13 }}>
