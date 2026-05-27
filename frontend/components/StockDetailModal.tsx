@@ -9,9 +9,9 @@ import type { Candle, CommentarySections, CrossStatus, DisclosureItem, Fundament
 import { StockChart } from "./StockChart";
 import { CompareModal } from "./CompareModal";
 
-type Period = "1M" | "3M" | "6M";
+type Period = "1W" | "1M" | "3M" | "6M" | "1Y";
 type Tab = "price" | "technical" | "ai";
-const PERIOD_DAYS: Record<Period, number> = { "1M": 30, "3M": 90, "6M": 180 };
+const PERIOD_DAYS: Record<Period, number> = { "1W": 7, "1M": 30, "3M": 90, "6M": 180, "1Y": 365 };
 
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
 function pctColor(pct: number) {
@@ -464,8 +464,8 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 <div style={{ padding: "16px 16px 48px" }}>
                   <div style={{ background: "var(--surface)", borderRadius: 20, padding: "18px 20px", boxShadow: "var(--shadow)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700 }}>보유 현황 수정</span>
-                      <button onClick={() => setEditMode(false)} style={{ fontSize: 13, color: "var(--label2)", padding: "4px 10px", background: "var(--surface2)", borderRadius: 8, fontWeight: 600 }}>취소</button>
+                      <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em" }}>보유 현황 수정</span>
+                      <button onClick={() => setEditMode(false)} style={{ fontSize: 13, color: "var(--label2)", padding: "5px 12px", background: "var(--surface2)", borderRadius: 100, fontWeight: 700, letterSpacing: "-0.01em" }}>취소</button>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       <div style={{ display: "flex", gap: 8 }}>
@@ -479,14 +479,14 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                       <button
                         onClick={saveEdit}
                         disabled={saving || !editQty || !editPrice}
-                        style={{ width: "100%", padding: "13px", background: saving ? "var(--label3)" : "var(--primary)", color: "white", borderRadius: 12, fontSize: 15, fontWeight: 700 }}
+                        style={{ width: "100%", padding: "14px", background: saving ? "var(--label3)" : "var(--primary)", color: "white", borderRadius: 14, fontSize: 16, fontWeight: 700, letterSpacing: "-0.015em" }}
                       >
                         {saving ? "저장 중…" : "저장"}
                       </button>
                       <button
                         onClick={deleteItem}
                         disabled={saving}
-                        style={{ width: "100%", padding: "12px", background: "rgba(255,59,48,0.07)", color: "var(--red)", borderRadius: 12, fontSize: 14, fontWeight: 600 }}
+                        style={{ width: "100%", padding: "13px", background: "rgba(255,59,48,0.07)", color: "var(--red)", borderRadius: 14, fontSize: 15, fontWeight: 700, letterSpacing: "-0.015em" }}
                       >
                         종목 삭제
                       </button>
@@ -498,17 +498,18 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   {/* ── 차트 히어로 ── */}
                   <div style={{ background: "var(--surface)", padding: "12px 16px 10px", borderBottom: "0.5px solid var(--sep)" }}>
                     {/* 기간 선택 */}
-                    <div style={{ display: "flex", gap: 0, background: "var(--bg)", borderRadius: 10, padding: 2, marginBottom: 12, alignSelf: "flex-start" }}>
-                      {(["1M", "3M", "6M"] as Period[]).map(p => (
+                    <div style={{ display: "flex", gap: 0, background: "var(--bg)", borderRadius: 100, padding: 3, marginBottom: 12, alignSelf: "flex-start" }}>
+                      {(["1W", "1M", "3M", "6M", "1Y"] as Period[]).map(p => (
                         <button
                           key={p}
                           onClick={() => setPeriod(p)}
                           style={{
-                            padding: "5px 16px", borderRadius: 8, fontSize: 12, fontWeight: period === p ? 700 : 500,
+                            padding: "5px 10px", borderRadius: 100, fontSize: 12, fontWeight: period === p ? 700 : 500,
                             background: period === p ? "var(--surface)" : "transparent",
                             color: period === p ? "var(--label)" : "var(--label3)",
                             boxShadow: period === p ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
                             transition: "all 0.15s",
+                            letterSpacing: "-0.01em",
                           }}
                         >
                           {p}
@@ -523,7 +524,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                       <StockChart candles={candles} height={240} buyPrice={currentItem.buy_price} liveCandle={liveCandle} />
                     ) : (
                       <div style={{ height: 240, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--label2)", fontSize: 14 }}>
-                        차트 데이터 없음
+                        차트 데이터가 없어요
                       </div>
                     )}
 
