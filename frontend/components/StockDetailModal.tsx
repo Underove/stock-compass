@@ -406,7 +406,10 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   <Divider />
                   <div style={{ flex: 1, textAlign: "right" }}>
                     <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 4, fontWeight: 500 }}>손익</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: pctColor(evalPnlPct) }}>
+                    <div style={{
+                      fontSize: 13, fontWeight: 700, color: pctColor(evalPnlPct),
+                      fontVariantNumeric: "tabular-nums",
+                    }}>
                       {evalPnl > 0 ? "+" : ""}{fmt(evalPnl)}원 <span style={{ fontSize: 12 }}>({pctSign(evalPnlPct)})</span>
                     </div>
                   </div>
@@ -415,7 +418,11 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
             </div>
             <button
               onClick={() => { setEditMode(true); setEditQty(currentItem.quantity.toString()); setEditPrice(currentItem.buy_price.toString()); setEditTargetPrice(currentItem.target_price?.toString() ?? ""); setEditStopLoss(currentItem.stop_loss?.toString() ?? ""); }}
-              style={{ fontSize: 12, color: "var(--label2)", fontWeight: 600, padding: "4px 10px", background: "var(--surface2)", borderRadius: 8, flexShrink: 0, marginLeft: 12 }}
+              style={{
+                fontSize: 12, color: "var(--label2)", fontWeight: 700,
+                padding: "5px 12px", background: "var(--surface2)", borderRadius: 100,
+                flexShrink: 0, marginLeft: 12,
+              }}
             >
               수정
             </button>
@@ -932,7 +939,7 @@ function StatCol({ label, value, center, right }: { label: string; value: string
   return (
     <div style={{ flex: 1, textAlign: center ? "center" : right ? "right" : "left" }}>
       <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 4, fontWeight: 500 }}>{label}</div>
-      <div style={{ fontSize: 13, fontWeight: 700 }}>{value}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{value}</div>
     </div>
   );
 }

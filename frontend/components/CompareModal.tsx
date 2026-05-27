@@ -240,10 +240,10 @@ function StockSlot({
           overflowY: "auto",
         }}>
           {searching && (
-            <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--label3)" }}>검색 중...</div>
+            <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--label3)" }}>찾고 있어요…</div>
           )}
           {!searching && results.length === 0 && query.trim() && (
-            <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--label3)" }}>결과 없음</div>
+            <div style={{ padding: "10px 14px", fontSize: 12, color: "var(--label3)" }}>찾으시는 종목이 없어요</div>
           )}
           {results.map(r => (
             <div
