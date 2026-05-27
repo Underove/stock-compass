@@ -9,8 +9,11 @@ import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
 import { ScreenerCard } from "../components/ScreenerCard";
 import { fetchAlerts, fetchAlertWatch, markAlertsRead, deleteAlert, addAlertWatch, removeAlertWatch, searchStock, fetchMarketIndices, initAuth } from "../lib/api";
+import { haptic } from "../hooks/useHaptic";
+import { showToast } from "../hooks/useToast";
 import { isMarketOpen, useRealtimePrice } from "../hooks/useRealtimePrice";
 import { usePriceFlash } from "../hooks/usePriceFlash";
+import { useFocusRefresh } from "../hooks/useFocusRefresh";
 import type { Alert, WatchStock, MarketIndex, MarketStatus } from "../lib/types";
 
 type MobilePanel = 0 | 1 | 2;
@@ -103,10 +106,26 @@ export default function Home() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  // 앱 포커스 복귀 시 알림·시세·portfolio 자동 갱신
+  useFocusRefresh(() => {
+    fetchAlerts().then(setAlerts).catch(() => {});
+    fetchMarketIndices().then(d => setIndices(d.indices)).catch(() => {});
+    setPortfolioVersion(v => v + 1);
+  });
+
   if (status === "loading" || status === "unauthenticated" || !authReady) {
     return (
-      <div style={{ minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
-        <div style={{ fontSize: 13, color: "var(--label2)" }}>로딩 중…</div>
+      <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, background: "var(--bg)" }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 12,
+          background: "linear-gradient(135deg, #007AFF, #5856D6)",
+          color: "white", display: "flex", alignItems: "center", justifyContent: "center",
+          fontWeight: 800, fontSize: 12, letterSpacing: "0.06em",
+          animation: "pulse 1.6s ease-in-out infinite",
+        }}>
+          N.O.V.A
+        </div>
+        <div style={{ fontSize: 12, color: "var(--label3)", letterSpacing: "-0.01em" }}>준비 중이에요</div>
       </div>
     );
   }
@@ -125,6 +144,7 @@ export default function Home() {
         backdropFilter: "blur(28px)",
         WebkitBackdropFilter: "blur(28px)",
         borderBottom: "0.5px solid var(--sep)",
+        boxShadow: "0 1px 0 rgba(0,0,0,0.02), 0 4px 16px -8px rgba(0,0,0,0.06)",
         flexShrink: 0,
         zIndex: 10,
         gap: 16,
@@ -229,6 +249,8 @@ export default function Home() {
             await markAlertsRead(ids);
             setAlerts([]);
             setShowAlerts(false);
+            haptic("light");
+            showToast("알림을 모두 읽었어요", "info");
           }}
           onDelete={async (id) => {
             await deleteAlert(id);

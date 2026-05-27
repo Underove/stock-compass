@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { Briefcase, FileText, FileX2, Megaphone, Newspaper, ShieldAlert, TrendingUp, Users } from "lucide-react";
 
 import { addWatchlistItem, fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, getSimilarStocks, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
+import { haptic } from "../hooks/useHaptic";
+import { showToast } from "../hooks/useToast";
 import { isAfterHours, isMarketOpen, isPreMarket, useRealtimePrice } from "../hooks/useRealtimePrice";
 import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { Candle, CommentarySections, CrossStatus, DisclosureItem, FundamentalData, NewsItem, PortfolioItem, ShortSellingData, SimilarItem, StockPrice, TechnicalData, TradingFlowItem } from "../lib/types";
@@ -335,7 +337,11 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   try {
                     await addWatchlistItem({ stock_code: currentItem.stock_code, corp_name: currentItem.corp_name });
                     setWatchlistAdded(true);
-                  } catch {}
+                    haptic("success");
+                    showToast(`${currentItem.corp_name} 관심종목에 추가했어요`, "success");
+                  } catch {
+                    showToast("관심종목 추가에 실패했어요", "error");
+                  }
                 }}
                 style={{
                   width: 32, height: 32, borderRadius: "50%",
@@ -796,7 +802,11 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   <textarea
                     value={note}
                     onChange={e => setNote(e.target.value)}
-                    onBlur={() => saveNote(currentItem.stock_code, note).catch(() => {})}
+                    onBlur={() => {
+                      saveNote(currentItem.stock_code, note)
+                        .then(() => { if (note.trim()) showToast("메모를 저장했어요", "success"); })
+                        .catch(() => showToast("메모 저장에 실패했어요", "error"));
+                    }}
                     placeholder="매수 이유, 전략, 주의사항 등을 적어보세요…"
                     rows={4}
                     style={{

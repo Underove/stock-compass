@@ -23,6 +23,8 @@ import type { RealtimePrice } from "../hooks/useRealtimePrice";
 import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { PortfolioItem, SearchResult, StockPrice, WatchlistItem } from "../lib/types";
 import { useCountUp } from "../hooks/useCountUp";
+import { haptic } from "../hooks/useHaptic";
+import { showToast } from "../hooks/useToast";
 import { StockDetailModal } from "./StockDetailModal";
 import { CompareModal } from "./CompareModal";
 import TradeJournal from "./TradeJournal";
@@ -738,15 +740,28 @@ function WatchlistTab({ onAddToPortfolio, onSelectItem }: { onAddToPortfolio: (i
   }, [query]);
 
   async function addItem(r: SearchResult) {
-    await addWatchlistItem({ stock_code: r.stock_code, corp_name: r.corp_name });
-    const updated = await listWatchlist();
-    setItems(updated);
-    setQuery(""); setSearchResults([]);
+    try {
+      await addWatchlistItem({ stock_code: r.stock_code, corp_name: r.corp_name });
+      const updated = await listWatchlist();
+      setItems(updated);
+      setQuery(""); setSearchResults([]);
+      haptic("success");
+      showToast(`${r.corp_name} 추가했어요`, "success");
+    } catch {
+      showToast("관심종목 추가에 실패했어요", "error");
+    }
   }
 
   async function removeItem(stock_code: string) {
-    await removeWatchlistItem(stock_code);
-    setItems(prev => prev.filter(i => i.stock_code !== stock_code));
+    const target = items.find(i => i.stock_code === stock_code);
+    try {
+      await removeWatchlistItem(stock_code);
+      setItems(prev => prev.filter(i => i.stock_code !== stock_code));
+      haptic("light");
+      if (target) showToast(`${target.corp_name} 삭제했어요`, "info");
+    } catch {
+      showToast("삭제에 실패했어요", "error");
+    }
   }
 
   return (
@@ -1234,19 +1249,32 @@ export function PortfolioCard({ onPortfolioChange }: { onPortfolioChange?: () =>
   }, []);
 
   async function handleAdd(item: PortfolioItem) {
-    await addPortfolioItem(item);
-    setItems(await listPortfolio());
-    fetchPortfolioAlerts().then(setAlerts).catch(() => {});
-    onPortfolioChange?.();
+    try {
+      await addPortfolioItem(item);
+      setItems(await listPortfolio());
+      fetchPortfolioAlerts().then(setAlerts).catch(() => {});
+      onPortfolioChange?.();
+      haptic("success");
+      showToast(`${item.corp_name} 추가했어요`, "success");
+    } catch {
+      showToast("종목 추가에 실패했어요", "error");
+    }
   }
 
   async function handleDelete(stock_code: string) {
-    await removePortfolioItem(stock_code);
-    setItems(prev => prev.filter(i => i.stock_code !== stock_code));
-    setPrices(prev => { const { [stock_code]: _p, ...rest } = prev; return rest; });
-    setAlerts(prev => { const { [stock_code]: _a, ...rest } = prev; return rest; });
-    if (editingCode === stock_code) setEditingCode(null);
-    onPortfolioChange?.();
+    const target = items.find(i => i.stock_code === stock_code);
+    try {
+      await removePortfolioItem(stock_code);
+      setItems(prev => prev.filter(i => i.stock_code !== stock_code));
+      setPrices(prev => { const { [stock_code]: _p, ...rest } = prev; return rest; });
+      setAlerts(prev => { const { [stock_code]: _a, ...rest } = prev; return rest; });
+      if (editingCode === stock_code) setEditingCode(null);
+      onPortfolioChange?.();
+      haptic("light");
+      if (target) showToast(`${target.corp_name} 삭제했어요`, "info");
+    } catch {
+      showToast("삭제에 실패했어요", "error");
+    }
   }
 
   async function handleEdit(stock_code: string, quantity: number, buyPrice: number) {
