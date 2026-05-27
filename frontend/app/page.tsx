@@ -258,13 +258,13 @@ export default function Home() {
 
         {/* ── 왼쪽: 내 지갑 ── */}
         <div className={`dashboard-panel dashboard-panel--highlight ${mobilePanel === 0 ? "dashboard-panel--active" : ""}`}>
-          <PanelHeader title="내 지갑" subtitle="수익률 · 관심종목 · 자산배분" />
+          <PanelHeader title="내 지갑" subtitle="내 주식 · 관심종목 · 배분 · 일지" />
           <PortfolioCard onPortfolioChange={() => setPortfolioVersion(v => v + 1)} />
         </div>
 
         {/* ── 오른쪽: AI 비서 ── */}
         <div className={`dashboard-panel ${mobilePanel === 1 ? "dashboard-panel--active" : ""}`}>
-          <PanelHeader title="AI 비서" subtitle="브리핑 · 뉴스 · 채팅" />
+          <PanelHeader title="AI 비서" subtitle="AI 브리핑 · 뉴스 · 채팅 · 팩트체크" />
           <ChatCard portfolioVersion={portfolioVersion} />
         </div>
 
