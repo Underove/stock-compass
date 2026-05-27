@@ -47,18 +47,39 @@ _log = logging.getLogger(__name__)
 
 
 def _seed_screener_if_empty() -> None:
-    """배포 직후 screener_snapshot이 비어 있으면 자동 시드 (백그라운드 스레드)."""
+    """배포 직후 screener_snapshot이 비어 있으면 JSON 시드 파일로 즉시 로드."""
+    import json
+    from pathlib import Path
     try:
         from app.db.trade_db import _conn
         with _conn() as con:
             count = con.execute("SELECT COUNT(*) FROM screener_snapshot").fetchone()[0]
-        if count < 100:
-            _log.info("[시드] screener_snapshot %d행 → 자동 시드 시작 (기본지표 → TA)", count)
+        if count >= 100:
+            _log.info("[시드] screener_snapshot %d행, 시드 불필요", count)
+            return
+
+        seed_path = Path(__file__).resolve().parent / "data" / "seeds" / "screener_snapshot.json"
+        if seed_path.exists():
+            _log.info("[시드] screener_snapshot %d행 → JSON 시드 로드 시작", count)
+            with open(seed_path, encoding="utf-8") as f:
+                rows = json.load(f)
+            with _conn() as con:
+                con.executemany(
+                    """INSERT OR REPLACE INTO screener_snapshot
+                       (stock_code, corp_name, sector, market_cap, per, pbr,
+                        momentum_20d, rsi, ma_status, has_ta, updated_at,
+                        disclosure_30d, volume_ratio, foreign_net_buy)
+                       VALUES (:stock_code, :corp_name, :sector, :market_cap, :per, :pbr,
+                               :momentum_20d, :rsi, :ma_status, :has_ta, :updated_at,
+                               :disclosure_30d, :volume_ratio, :foreign_net_buy)""",
+                    rows,
+                )
+            _log.info("[시드] JSON 시드 %d행 로드 완료", len(rows))
+        else:
+            _log.warning("[시드] 시드 파일 없음 → KIS API 자동 시드 시작 (30~60분 소요)")
             job_refresh_screener_fundamentals()
             job_refresh_screener_ta()
-            _log.info("[시드] 자동 시드 완료")
-        else:
-            _log.info("[시드] screener_snapshot %d행, 시드 불필요", count)
+            _log.info("[시드] KIS API 자동 시드 완료")
     except Exception as e:
         _log.error("[시드] 스크리너 자동 시드 실패: %s", e)
 

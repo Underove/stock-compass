@@ -26,3 +26,6 @@ apscheduler>=3.10.0
 
 # 인증
 PyJWT>=2.8.0
+
+# OpenAI
+openai>=1.30.0

@@ -157,6 +157,131 @@ TOOL_DECLARATIONS = [
 
 GEMINI_TOOLS = [types.Tool(function_declarations=TOOL_DECLARATIONS)]
 
+OPENAI_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "get_stock_price",
+            "description": "종목코드로 주식 현재가·등락률·거래량을 조회한다. 특정 종목 가격이 필요할 때 호출.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "stock_code": {
+                        "type": "string",
+                        "description": "KRX 종목코드 6자리. 예: 005930(삼성전자), 000660(SK하이닉스)",
+                    },
+                },
+                "required": ["stock_code"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_portfolio",
+            "description": "사용자의 보유 포트폴리오 전체를 조회한다. 종목별 현재가·손익·수량 포함. 포트폴리오 관련 질문 시 반드시 호출.",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_recent_news",
+            "description": "네이버 뉴스에서 최근 뉴스 3건을 검색한다. 최신 이슈·시장 동향 질문 시 호출.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "검색 질의. 예: '삼성전자 실적', 'KOSPI 오늘'",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_technical_indicators",
+            "description": "종목의 RSI·MACD·이동평균(MA5/20/60)·볼린저밴드 등 기술적 지표를 조회한다. 기술적 분석 질문 시 호출.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "stock_code": {
+                        "type": "string",
+                        "description": "KRX 종목코드 6자리",
+                    },
+                },
+                "required": ["stock_code"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_dart_disclosures",
+            "description": "DART에서 회사명으로 최근 공시 3건을 조회한다. 공시·IR·재무 관련 최신 정보가 필요할 때 호출.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "corp_name": {
+                        "type": "string",
+                        "description": "회사명. 예: '삼성전자', 'SK하이닉스'",
+                    },
+                },
+                "required": ["corp_name"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "screen_stocks",
+            "description": "섹터·RSI·MA·PER 조건으로 종목을 스크리닝한다. '반도체 RSI 과매도', '저PER 골든크로스', '바이오 소형주' 같은 요청 시 호출.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sector": {
+                        "type": "string",
+                        "description": "앱 섹터명. 예: 반도체, 바이오·제약, IT·플랫폼, 자동차, 금융·보험, 화학·소재, 조선·방산, 게임·엔터, 소비재·유통, 2차전지·전기차",
+                    },
+                    "rsi_max": {
+                        "type": "number",
+                        "description": "RSI 상한값. 과매도 필터 시 30 사용",
+                    },
+                    "rsi_min": {
+                        "type": "number",
+                        "description": "RSI 하한값. 과매수 필터 시 70 사용",
+                    },
+                    "ma_status": {
+                        "type": "string",
+                        "enum": ["golden", "dead", "above", "below"],
+                        "description": "MA5/20 상태. golden=골든크로스, dead=데드크로스",
+                    },
+                    "per_min": {
+                        "type": "number",
+                        "description": "PER 하한값",
+                    },
+                    "per_max": {
+                        "type": "number",
+                        "description": "PER 상한값. 저PER 필터 시 사용. 예: 15 이하",
+                    },
+                    "market_cap_max": {
+                        "type": "number",
+                        "description": "시가총액 상한 (억 원). 소형주 필터 시 사용",
+                    },
+                },
+                "required": [],
+            },
+        },
+    },
+]
+
 
 # ─── 도구 실행 dispatcher ────────────────────────────────────────────────────
 

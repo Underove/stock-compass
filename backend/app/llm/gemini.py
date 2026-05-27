@@ -58,7 +58,11 @@ def generate_answer(
     temperature: float = 0.3,
     _retries: int = 2,
 ) -> str:
-    """프롬프트를 Gemini에 보내고 자연어 답변을 받음. 503 과부하 시 재시도."""
+    """프롬프트를 LLM에 보내고 자연어 답변을 받음. openai_api_key 설정 시 OpenAI 사용."""
+    if settings.openai_api_key:
+        from app.llm.openai_llm import generate_answer as _openai_generate
+        return _openai_generate(prompt, system_instruction=system_instruction, temperature=temperature, _retries=_retries)
+
     client = get_client()
     config = types.GenerateContentConfig(
         system_instruction=system_instruction,
@@ -78,7 +82,7 @@ def generate_answer(
             msg = str(e)
             is_transient = "503" in msg or "UNAVAILABLE" in msg or "429" in msg or "RESOURCE_EXHAUSTED" in msg
             if is_transient and attempt < _retries:
-                wait = 2 ** attempt  # 1s, 2s
+                wait = 2 ** attempt
                 logger.warning("Gemini 일시 오류 (재시도 %d/%d): %s", attempt + 1, _retries, msg[:120])
                 time.sleep(wait)
                 continue
@@ -126,11 +130,15 @@ def generate_with_tools(
     temperature: float = 0.3,
     max_tool_calls: int = 3,
 ) -> str:
-    """RAG 프롬프트를 Gemini에 보내고 Function Calling 루프 후 최종 텍스트 반환.
+    """RAG 프롬프트를 LLM에 보내고 Function Calling 루프 후 최종 텍스트 반환. openai_api_key 설정 시 OpenAI 사용.
 
     도구 호출이 있으면 execute_tool()로 실행 → 결과를 컨텍스트에 추가 → 재호출.
     최대 max_tool_calls회까지만 반복. 503/429 에러는 generate_answer()와 동일하게 재시도.
     """
+    if settings.openai_api_key:
+        from app.llm.openai_llm import generate_with_tools as _openai_generate_with_tools
+        return _openai_generate_with_tools(prompt, system_instruction=system_instruction, username=username, temperature=temperature, max_tool_calls=max_tool_calls)
+
     import sys
     from app.tools import GEMINI_TOOLS, execute_tool as _execute_tool  # noqa: PLC0415
 
