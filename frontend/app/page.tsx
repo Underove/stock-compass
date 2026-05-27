@@ -272,7 +272,7 @@ export default function Home() {
 
         {/* ── 스크리너 ── */}
         <div className={`dashboard-panel ${mobilePanel === 2 ? "dashboard-panel--active" : ""}`}>
-          <PanelHeader title="종목 스크리너" subtitle="조건 필터링으로 종목 발굴" />
+          <PanelHeader title="종목 스크리너" subtitle="원하는 조건으로 종목 찾기" />
           <div style={{ flex: 1, overflowY: "auto", padding: "12px 12px 32px" }}>
             <ScreenerCard />
           </div>
@@ -386,7 +386,7 @@ function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
       flexShrink: 0,
       display: "flex", alignItems: "center", justifyContent: "space-between",
     }}>
-      <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.04em" }}>{title}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em" }}>{title}</div>
       <div className="panel-header-subtitle" style={{ fontSize: 12, color: "var(--label2)", fontWeight: 500 }}>{subtitle}</div>
     </div>
   );
