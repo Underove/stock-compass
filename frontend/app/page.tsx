@@ -258,13 +258,13 @@ export default function Home() {
 
         {/* ── 왼쪽: 내 지갑 ── */}
         <div className={`dashboard-panel dashboard-panel--highlight ${mobilePanel === 0 ? "dashboard-panel--active" : ""}`}>
-          <PanelHeader title="포트폴리오" subtitle="보유 종목 · 관심종목 · 배분" />
+          <PanelHeader title="내 지갑" subtitle="보유 종목 · 관심종목 · 배분" />
           <PortfolioCard onPortfolioChange={() => setPortfolioVersion(v => v + 1)} />
         </div>
 
-        {/* ── 오른쪽: AI 인사이트 ── */}
+        {/* ── 오른쪽: AI 비서 ── */}
         <div className={`dashboard-panel ${mobilePanel === 1 ? "dashboard-panel--active" : ""}`}>
-          <PanelHeader title="AI 인사이트" subtitle="브리핑 · 채팅 · 팩트체크" />
+          <PanelHeader title="AI 비서" subtitle="브리핑 · 채팅 · 팩트체크" />
           <ChatCard portfolioVersion={portfolioVersion} />
         </div>
 
@@ -289,7 +289,7 @@ export default function Home() {
             <line x1="8" y1="21" x2="16" y2="21" />
             <line x1="12" y1="17" x2="12" y2="21" />
           </svg>
-          포트폴리오
+          지갑
         </button>
         <button
           className={mobilePanel === 1 ? "active" : ""}
@@ -298,7 +298,7 @@ export default function Home() {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          AI 인사이트
+          AI
         </button>
         <button
           className={mobilePanel === 2 ? "active" : ""}
