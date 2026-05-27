@@ -132,9 +132,9 @@ export default function Home() {
           <img src="/nova.png" alt="NOVA" style={{ width: 36, height: 36, borderRadius: 9, display: "block" }} />
           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
             <span style={{ fontSize: 16, fontWeight: 800, letterSpacing: "0.08em", lineHeight: 1.1 }}>N.O.V.A</span>
-            <span style={{ fontSize: 10, fontWeight: 500, color: "var(--label2)", letterSpacing: "-0.01em", lineHeight: 1 }}>AI 기반 투자 인사이트 플랫폼</span>
+            <span className="nova-tagline" style={{ fontSize: 10, fontWeight: 500, color: "var(--label2)", letterSpacing: "-0.01em", lineHeight: 1 }}>AI 기반 투자 인사이트 플랫폼</span>
           </div>
-          {marketStatus && <MarketStatusBadge status={marketStatus} />}
+          <span className="header-market-status">{marketStatus && <MarketStatusBadge status={marketStatus} />}</span>
         </div>
 
         {/* 우측: 지수 + 구분선 + 아이콘 */}
@@ -216,6 +216,7 @@ export default function Home() {
 
       {/* 모바일 전용 지수 스트립 — 헤더 바로 아래 */}
       <div className="mobile-ticker-strip" style={{ justifyContent: "flex-start" }}>
+        {marketStatus && <MarketStatusBadge status={marketStatus} />}
         {!indicesLoaded && (
           <>
             <div className="index-skeleton" style={{ width: 110 }} />
@@ -349,21 +350,22 @@ function MarketBadge({ index, compact }: { index: MarketIndex; compact?: boolean
     <div
       className={compact ? undefined : "market-index-item"}
       style={{
-        display: "flex", alignItems: "center", gap: 6,
+        display: "flex", alignItems: "center", gap: 5,
         background: "var(--surface2)",
-        borderRadius: 9, padding: compact ? "3px 10px" : "4px 10px",
+        borderRadius: 9, padding: compact ? "4px 8px" : "4px 10px",
         border: "0.5px solid var(--sep)",
+        flexShrink: 0,
       }}
     >
-      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--label2)", letterSpacing: "0" }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: "var(--label)", letterSpacing: "0" }}>
         {index.name}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}>
+      <span style={{ fontSize: compact ? 13 : 13, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}>
         {index.value.toLocaleString("ko-KR")}
       </span>
       <span style={{
         fontSize: 11, fontWeight: 700, color,
-        background: bg, borderRadius: 5, padding: "1px 5px",
+        background: bg, borderRadius: 5, padding: "1px 4px",
       }}>
         {sign}{Math.abs(index.change_pct).toFixed(2)}%
       </span>
@@ -380,7 +382,7 @@ function PanelHeader({ title, subtitle }: { title: string; subtitle: string }) {
       display: "flex", alignItems: "center", justifyContent: "space-between",
     }}>
       <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.04em" }}>{title}</div>
-      <div style={{ fontSize: 12, color: "var(--label2)", fontWeight: 500 }}>{subtitle}</div>
+      <div className="panel-header-subtitle" style={{ fontSize: 12, color: "var(--label2)", fontWeight: 500 }}>{subtitle}</div>
     </div>
   );
 }

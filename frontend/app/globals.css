@@ -201,7 +201,7 @@ textarea:focus {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  height: 36px;
+  height: 40px;
   padding: 0 16px;
   background: var(--header-bg);
   border-bottom: 0.5px solid var(--sep);
@@ -251,7 +251,7 @@ textarea:focus {
 
   .mobile-tab-bar {
     display: flex;
-    height: 56px;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
     background: var(--bg);
     border-top: 0.5px solid var(--sep);
     flex-shrink: 0;
@@ -267,7 +267,7 @@ textarea:focus {
     align-items: center;
     justify-content: center;
     gap: 3px;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     color: var(--label3);
     padding: 0;
@@ -282,15 +282,26 @@ textarea:focus {
   }
 
   .mobile-tab-bar button svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
   }
 
-  /* 헤더 지수 — 모바일에서 숨기고 스트립으로 대체 */
+  /* 헤더 지수 + 태그라인 + 장 상태 배지 — 모바일에서 숨기고 스트립으로 대체 */
   .market-index-item {
     display: none !important;
   }
   .market-index-sep {
+    display: none !important;
+  }
+  .nova-tagline {
+    display: none !important;
+  }
+  .header-market-status {
+    display: none !important;
+  }
+
+  /* 패널 헤더 부제 — 모바일에서 숨김 (내부 탭바가 콘텐츠 안내) */
+  .panel-header-subtitle {
     display: none !important;
   }
 
@@ -300,19 +311,23 @@ textarea:focus {
     align-items: center;
     justify-content: flex-start;
     gap: 8px;
-    height: 36px;
+    height: 40px;
     padding: 0 16px;
     background: var(--header-bg);
     border-bottom: 0.5px solid var(--sep);
     flex-shrink: 0;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mobile-ticker-strip::-webkit-scrollbar { display: none; }
+
+  /* 스트립 높이만큼 패널 높이 보정 (safe area 포함) */
+  .dashboard-panel {
+    min-height: calc(100dvh - 52px - 40px - 56px - env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  /* 스트립 높이만큼 패널 높이 보정 */
-  .dashboard-panel {
-    min-height: calc(100dvh - 52px - 36px - 56px) !important;
-  }
 
   /* 작은 아이콘 버튼 탭 타겟 보정 — 시각적 크기는 유지하되 터치 영역 확장 */
   .touch-target {

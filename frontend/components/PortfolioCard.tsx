@@ -90,8 +90,8 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
             key={t.key}
             onClick={() => onChange(t.key)}
             style={{
-              flex: 1, padding: "6px 4px",
-              fontSize: 12, fontWeight: active === t.key ? 700 : 500,
+              flex: 1, padding: "7px 4px",
+              fontSize: 13, fontWeight: active === t.key ? 700 : 500,
               color: active === t.key ? "white" : "var(--label2)",
               background: active === t.key ? "var(--primary)" : "transparent",
               borderRadius: 9,
