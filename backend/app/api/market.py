@@ -1,6 +1,7 @@
 """KOSPI / KOSDAQ 실시간 지수 + 장 상태."""
 import datetime
 import logging
+import time
 
 import httpx
 from fastapi import APIRouter
@@ -15,6 +16,11 @@ _NAVER_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
     "Referer": "https://finance.naver.com/",
 }
+
+# 5초 캐시 — Naver API 과부하 방지
+_indices_cache: dict = {}
+_indices_cache_ts: float = 0.0
+_CACHE_TTL = 5.0
 
 
 _KST = datetime.timezone(datetime.timedelta(hours=9))
@@ -43,11 +49,9 @@ def _get_market_status() -> dict:
     return {"status": "closed", "label": "장 마감"}
 
 
-@router.get("/market/indices")
-def get_market_indices():
-    """KOSPI·KOSDAQ 지수값 + 장 상태 반환 (네이버 증권 API)."""
+def _fetch_indices_fresh() -> dict:
+    """Naver API에서 지수 데이터 직접 조회."""
     indices: dict = {}
-
     for name, code in _NAVER_CODES.items():
         try:
             r = httpx.get(
@@ -57,17 +61,11 @@ def get_market_indices():
             )
             r.raise_for_status()
             d = r.json()
-
-            close_str = str(d.get("closePrice", "0")).replace(",", "")
-            close = float(close_str)
-            change_str = str(d.get("compareToPreviousClosePrice", "0")).replace(",", "")
-            change_abs = float(change_str)
-            ratio_str = str(d.get("fluctuationsRatio", "0")).replace(",", "")
-            ratio = float(ratio_str)
-
+            close = float(str(d.get("closePrice", "0")).replace(",", ""))
+            change_abs = float(str(d.get("compareToPreviousClosePrice", "0")).replace(",", ""))
+            ratio = float(str(d.get("fluctuationsRatio", "0")).replace(",", ""))
             trend = (d.get("compareToPreviousPrice") or {}).get("name", "RISING")
             sign = -1 if trend in ("FALLING", "DECLINE") else 1
-
             indices[name] = {
                 "name": name,
                 "value": round(close, 2),
@@ -76,8 +74,20 @@ def get_market_indices():
             }
         except Exception as e:
             logger.warning("지수 조회 실패 (%s): %s", name, e)
+    return indices
 
-    return {"indices": indices, "market_status": _get_market_status()}
+
+@router.get("/market/indices")
+def get_market_indices():
+    """KOSPI·KOSDAQ 지수값 + 장 상태 반환 (5초 캐시)."""
+    global _indices_cache, _indices_cache_ts
+    now = time.monotonic()
+    if not _indices_cache or now - _indices_cache_ts > _CACHE_TTL:
+        fresh = _fetch_indices_fresh()
+        if fresh:
+            _indices_cache = fresh
+            _indices_cache_ts = now
+    return {"indices": _indices_cache, "market_status": _get_market_status()}
 
 
 _logo_cache: dict[str, bytes] = {}

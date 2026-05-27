@@ -65,8 +65,8 @@ export default function Home() {
       finally { if (!cancelled) setIndicesLoaded(true); }
     }
     load();
-    // 장 중 30초, 장외 60초 갱신
-    const tick = isMarketOpen() ? 30_000 : 60_000;
+    // 장 중 5초, 장외 60초 갱신
+    const tick = isMarketOpen() ? 5_000 : 60_000;
     const id = setInterval(load, tick);
     return () => { cancelled = true; clearInterval(id); };
   }, []);
