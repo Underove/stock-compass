@@ -1309,18 +1309,19 @@ function CommentaryCard({
   return (
     <div style={{ background: "var(--surface)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
       <div style={{
-        padding: "13px 18px 11px",
+        padding: "14px 20px 12px",
         background: cfg.bg,
         borderBottom: "0.5px solid var(--sep)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 7, height: 7, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
-          <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em" }}>AI 시황 해설</span>
+          <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.022em" }}>AI 시황 해설</span>
           {sections && (
             <span style={{
               fontSize: 10, fontWeight: 700, color: cfg.color,
               background: `${cfg.dot}20`, borderRadius: 6, padding: "2px 7px",
+              letterSpacing: "-0.01em",
             }}>
               {cfg.label}
             </span>
@@ -1330,15 +1331,16 @@ function CommentaryCard({
           onClick={onRefresh}
           disabled={loading}
           style={{
-            fontSize: 11, color: "var(--primary)", fontWeight: 700,
-            padding: "5px 12px", background: "rgba(0,122,255,0.09)", borderRadius: 9,
+            fontSize: 12, color: "var(--primary)", fontWeight: 700,
+            padding: "6px 12px", background: "rgba(0,122,255,0.10)", borderRadius: 100,
+            letterSpacing: "-0.01em",
           }}
         >
           {loading ? "…" : "새로고침"}
         </button>
       </div>
 
-      <div style={{ padding: "12px 18px 16px" }}>
+      <div style={{ padding: "14px 20px 16px" }}>
         {loading ? (
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[100, 92, 76, 60].map((w, i) => (
@@ -1346,11 +1348,11 @@ function CommentaryCard({
             ))}
           </div>
         ) : sections ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--label)", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.5 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "var(--label)", margin: 0, letterSpacing: "-0.022em", lineHeight: 1.45 }}>
               {sections.headline}
             </p>
-            <p style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.8, margin: 0 }}>
+            <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.65, margin: 0, letterSpacing: "-0.015em" }}>
               {sections.trend}
             </p>
             {sections.signal && (
@@ -1359,18 +1361,18 @@ function CommentaryCard({
                 borderLeft: "3px solid var(--primary)",
                 display: "flex", flexDirection: "column", gap: 4,
               }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "var(--primary)", letterSpacing: "0.04em" }}>기술 신호</div>
-                <p style={{ fontSize: 13, color: "var(--primary)", lineHeight: 1.7, margin: 0 }}>{sections.signal}</p>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--primary)" }}>기술 신호</div>
+                <p style={{ fontSize: 13, color: "var(--primary)", lineHeight: 1.65, margin: 0, letterSpacing: "-0.01em" }}>{sections.signal}</p>
               </div>
             )}
             {sections.note && (
               <div style={{ display: "flex", gap: 8, borderTop: "0.5px solid var(--sep)", paddingTop: 10 }}>
                 <div style={{
-                  fontSize: 9, fontWeight: 700, color: "white",
+                  fontSize: 10, fontWeight: 700, color: "white",
                   background: "var(--orange)", borderRadius: 5,
-                  padding: "2px 6px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2, letterSpacing: "0.02em",
+                  padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2,
                 }}>포인트</div>
-                <p style={{ fontSize: 12, color: "var(--label2)", lineHeight: 1.7, margin: 0 }}>{sections.note}</p>
+                <p style={{ fontSize: 13, color: "var(--label2)", lineHeight: 1.65, margin: 0, letterSpacing: "-0.015em" }}>{sections.note}</p>
               </div>
             )}
           </div>
