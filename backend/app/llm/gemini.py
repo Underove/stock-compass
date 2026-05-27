@@ -20,7 +20,7 @@ execute_tool = None  # type: ignore[assignment]
 def get_client() -> genai.Client:
     if not settings.gemini_api_key:
         raise RuntimeError("GEMINI_API_KEY가 .env에 설정되지 않았습니다")
-    return genai.Client(api_key=settings.gemini_api_key, http_options={"timeout": 90})
+    return genai.Client(api_key=settings.gemini_api_key)
 
 
 EMBEDDING_BATCH_SIZE = 25  # Gemini가 큰 배치를 거부하면 SDK 에러 메시지가 망가짐
