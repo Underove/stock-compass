@@ -114,6 +114,60 @@ export const ask = (question: string, n_chunks = 5) =>
     { question, n_chunks },
   );
 
+export type AskStreamEvent =
+  | { type: "metadata"; sources: Source[]; companies_synced: CompanySynced[] }
+  | { type: "token"; text: string }
+  | { type: "done" }
+  | { type: "error"; message: string };
+
+export async function* askStream(
+  question: string,
+  n_chunks = 5,
+  signal?: AbortSignal,
+): AsyncGenerator<AskStreamEvent, void, void> {
+  const res = await fetch(`${API_BASE}/api/ask/stream`, {
+    method: "POST",
+    headers: authHeaders({ "Content-Type": "application/json" }),
+    body: JSON.stringify({ question, n_chunks }),
+    signal,
+  });
+  if (!res.ok || !res.body) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `요청 실패 (HTTP ${res.status})`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let sepIdx;
+    while ((sepIdx = buffer.indexOf("\n\n")) !== -1) {
+      const block = buffer.slice(0, sepIdx);
+      buffer = buffer.slice(sepIdx + 2);
+      let event = "message";
+      let dataLine = "";
+      for (const line of block.split("\n")) {
+        if (line.startsWith("event:")) event = line.slice(6).trim();
+        else if (line.startsWith("data:")) dataLine += line.slice(5).trim();
+      }
+      if (!dataLine) continue;
+      let parsed: { sources?: Source[]; companies_synced?: CompanySynced[]; text?: string; message?: string };
+      try { parsed = JSON.parse(dataLine); } catch { continue; }
+      if (event === "metadata") {
+        yield { type: "metadata", sources: parsed.sources ?? [], companies_synced: parsed.companies_synced ?? [] };
+      } else if (event === "token") {
+        yield { type: "token", text: parsed.text ?? "" };
+      } else if (event === "done") {
+        yield { type: "done" };
+      } else if (event === "error") {
+        yield { type: "error", message: parsed.message ?? "알 수 없는 오류" };
+      }
+    }
+  }
+}
+
 export const runFactcheck = (upload_id: string) =>
   postJSON<FactcheckResult>("/api/factcheck/run", { upload_id });
 

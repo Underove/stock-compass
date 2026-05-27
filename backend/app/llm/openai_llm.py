@@ -124,3 +124,110 @@ def generate_with_tools(
     if response:
         return (response.choices[0].message.content or "").strip()
     return "답변을 생성할 수 없습니다."
+
+
+def generate_with_tools_stream(
+    prompt: str,
+    system_instruction: str | None = None,
+    username: str | None = None,
+    temperature: float = 0.3,
+    max_tool_calls: int = 3,
+    model: str | None = None,
+):
+    """Function Calling 루프를 돌면서 최종 답변 토큰을 스트리밍.
+
+    제너레이터로 ('token' | 'done' | 'error', data) 튜플을 yield.
+    - token: 생성된 텍스트 조각 (str)
+    - done: 완성된 전체 답변 (str)
+    - error: 에러 메시지 (str)
+    """
+    from app.tools import OPENAI_TOOLS, execute_tool
+
+    client = get_client()
+    _model = model or settings.openai_model
+    messages: list[dict] = []
+    if system_instruction:
+        messages.append({"role": "system", "content": system_instruction})
+    messages.append({"role": "user", "content": prompt})
+
+    full_answer = ""
+
+    for _iteration in range(max_tool_calls + 1):
+        try:
+            stream = client.chat.completions.create(
+                model=_model,
+                messages=messages,
+                tools=OPENAI_TOOLS,
+                temperature=temperature,
+                stream=True,
+            )
+        except Exception as e:
+            logger.warning("OpenAI stream 호출 실패: %s", str(e)[:120])
+            yield ("error", "AI 서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.")
+            return
+
+        accumulated_tool_calls: dict[int, dict] = {}
+        content_buffer = ""
+        finish_reason: str | None = None
+
+        for chunk in stream:
+            if not chunk.choices:
+                continue
+            choice = chunk.choices[0]
+            delta = choice.delta
+
+            if delta.content:
+                content_buffer += delta.content
+                full_answer += delta.content
+                yield ("token", delta.content)
+
+            if delta.tool_calls:
+                for tc in delta.tool_calls:
+                    idx = tc.index
+                    if idx not in accumulated_tool_calls:
+                        accumulated_tool_calls[idx] = {"id": "", "name": "", "arguments": ""}
+                    if tc.id:
+                        accumulated_tool_calls[idx]["id"] = tc.id
+                    if tc.function:
+                        if tc.function.name:
+                            accumulated_tool_calls[idx]["name"] = tc.function.name
+                        if tc.function.arguments:
+                            accumulated_tool_calls[idx]["arguments"] += tc.function.arguments
+
+            if choice.finish_reason:
+                finish_reason = choice.finish_reason
+
+        if finish_reason != "tool_calls" or not accumulated_tool_calls:
+            yield ("done", full_answer)
+            return
+
+        tool_calls_list = [
+            {
+                "id": tc["id"],
+                "type": "function",
+                "function": {"name": tc["name"], "arguments": tc["arguments"]},
+            }
+            for tc in accumulated_tool_calls.values()
+        ]
+        messages.append({
+            "role": "assistant",
+            "content": content_buffer or None,
+            "tool_calls": tool_calls_list,
+        })
+
+        for tc in accumulated_tool_calls.values():
+            try:
+                fn_args = json.loads(tc["arguments"]) if tc["arguments"] else {}
+            except json.JSONDecodeError:
+                fn_args = {}
+            try:
+                fn_result = execute_tool(tc["name"], fn_args, username or "")
+            except Exception as e:
+                fn_result = {"error": str(e)}
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc["id"],
+                "content": json.dumps(fn_result, ensure_ascii=False),
+            })
+
+    yield ("done", full_answer)

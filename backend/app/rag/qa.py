@@ -70,17 +70,14 @@ def _query_collection(collection, question: str, n: int) -> tuple[list[str], lis
     )
 
 
-def answer_with_context(
+def retrieve_for_answer(
     question: str,
     n_chunks: int = 5,
-    username: str | None = None,
     profile_context: str | None = None,
 ) -> dict:
-    """trusted 우선 쿼터 + user_uploads 보조로 검색 → 거리순 정렬 → tool-calling LLM 답변.
+    """검색·정렬·프롬프트 빌드만 수행. 답변 생성은 호출자가 처리.
 
-    질문에 새 회사명이 있으면 검색 전에 자동 sync.
-    profile_context가 있으면 사용자 투자 성향을 프롬프트에 주입.
-    포트폴리오·뉴스는 이제 도구(Function Calling)로 AI가 필요 시 조회.
+    반환값: { prompt, sources, companies_synced, chunks, metadatas }
     """
     newly_synced: list[dict] = []
     try:
@@ -115,7 +112,6 @@ def answer_with_context(
     distances = [picked_dist[i] for i in order]
 
     rag_ctx = build_context(chunks, metadatas) if chunks else ""
-
     parts = [p for p in [profile_context, rag_ctx] if p]
     full_ctx = "\n\n---\n\n".join(parts) if parts else ""
 
@@ -123,12 +119,6 @@ def answer_with_context(
         prompt = f"[참고 자료]\n{full_ctx}\n\n[질문]\n{question}"
     else:
         prompt = f"[질문]\n{question}"
-
-    answer = generate_with_tools(
-        prompt,
-        system_instruction=SYSTEM_INSTRUCTION,
-        username=username,
-    )
 
     sources = [
         {
@@ -138,11 +128,32 @@ def answer_with_context(
         }
         for chunk, meta, dist in zip(chunks, metadatas, distances)
     ]
+    companies_synced = [
+        {"corp_name": c["corp_name"], "stock_code": c["stock_code"]}
+        for c in newly_synced
+    ]
+    return {
+        "prompt": prompt,
+        "sources": sources,
+        "companies_synced": companies_synced,
+    }
+
+
+def answer_with_context(
+    question: str,
+    n_chunks: int = 5,
+    username: str | None = None,
+    profile_context: str | None = None,
+) -> dict:
+    """동기 RAG + tool-calling LLM 답변."""
+    retrieved = retrieve_for_answer(question, n_chunks=n_chunks, profile_context=profile_context)
+    answer = generate_with_tools(
+        retrieved["prompt"],
+        system_instruction=SYSTEM_INSTRUCTION,
+        username=username,
+    )
     return {
         "answer": answer,
-        "sources": sources,
-        "companies_synced": [
-            {"corp_name": c["corp_name"], "stock_code": c["stock_code"]}
-            for c in newly_synced
-        ],
+        "sources": retrieved["sources"],
+        "companies_synced": retrieved["companies_synced"],
     }

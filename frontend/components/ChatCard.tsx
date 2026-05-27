@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { ask, fetchPortfolioBriefing, fetchPremarketNews, generatePremarketNews } from "../lib/api";
+import { askStream, fetchPortfolioBriefing, fetchPremarketNews, generatePremarketNews } from "../lib/api";
 import type { PremarketNews } from "../lib/api";
 import type { ChatTurn, CompanySynced, PortfolioBriefing, PortfolioStats, Source } from "../lib/types";
 import { ProfileSettings } from "./ProfileSettings";
@@ -98,14 +98,26 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
     setInput("");
     setIsAsking(true);
     try {
-      const data = await ask(question);
-      setTurns(prev =>
-        prev.map(t =>
-          t.id === turnId
-            ? { ...t, answer: data.answer, sources: data.sources, companies_synced: data.companies_synced ?? [] }
-            : t,
-        ),
-      );
+      let accumulated = "";
+      for await (const ev of askStream(question)) {
+        if (ev.type === "metadata") {
+          setTurns(prev => prev.map(t =>
+            t.id === turnId
+              ? { ...t, sources: ev.sources, companies_synced: ev.companies_synced }
+              : t,
+          ));
+        } else if (ev.type === "token") {
+          accumulated += ev.text;
+          const snapshot = accumulated;
+          setTurns(prev => prev.map(t =>
+            t.id === turnId ? { ...t, answer: snapshot } : t,
+          ));
+        } else if (ev.type === "done") {
+          break;
+        } else if (ev.type === "error") {
+          throw new Error(ev.message);
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "알 수 없는 오류";
       setTurns(prev => prev.map(t => t.id === turnId ? { ...t, error: message } : t));

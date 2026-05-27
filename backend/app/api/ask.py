@@ -1,12 +1,15 @@
+import asyncio
+import json
 import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.api.auth import get_current_user
 from app.db.trade_db import get_profile, update_ai_memo
 from app.llm.gemini import generate_answer
-from app.rag.qa import answer_with_context
+from app.rag.qa import SYSTEM_INSTRUCTION, answer_with_context, retrieve_for_answer
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -103,4 +106,88 @@ def ask(req: AskRequest, bg: BackgroundTasks, username: str = Depends(get_curren
         answer=result["answer"],
         sources=[AskSource(**s) for s in result["sources"]],
         companies_synced=[CompanySynced(**c) for c in result.get("companies_synced", [])],
+    )
+
+
+def _sse(event: str, data: dict | str) -> str:
+    payload = data if isinstance(data, str) else json.dumps(data, ensure_ascii=False)
+    return f"event: {event}\ndata: {payload}\n\n"
+
+
+@router.post("/ask/stream")
+async def ask_stream(
+    req: AskRequest,
+    bg: BackgroundTasks,
+    username: str = Depends(get_current_user),
+):
+    """SSE 스트리밍 답변. 이벤트: metadata → token(다수) → done | error."""
+    if not req.question.strip():
+        raise HTTPException(400, "질문을 입력해주세요")
+
+    profile = get_profile(username)
+    profile_ctx = _build_profile_context(profile)
+
+    async def event_stream():
+        full_answer = ""
+        try:
+            retrieved = await asyncio.to_thread(
+                retrieve_for_answer,
+                req.question,
+                n_chunks=req.n_chunks,
+                profile_context=profile_ctx,
+            )
+        except Exception as e:
+            yield _sse("error", {"message": f"자료 검색 실패: {type(e).__name__}"})
+            return
+
+        # 1) 메타데이터 (출처·자동수집 회사) 즉시 전송
+        yield _sse("metadata", {
+            "sources": retrieved["sources"],
+            "companies_synced": retrieved["companies_synced"],
+        })
+
+        # 2) 토큰 스트리밍 (제너레이터를 to_thread로 wrap)
+        from app.llm.openai_llm import generate_with_tools_stream
+
+        def _producer(queue: asyncio.Queue, loop: asyncio.AbstractEventLoop):
+            try:
+                for ev_type, data in generate_with_tools_stream(
+                    retrieved["prompt"],
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    username=username,
+                ):
+                    asyncio.run_coroutine_threadsafe(queue.put((ev_type, data)), loop)
+            except Exception as e:
+                asyncio.run_coroutine_threadsafe(queue.put(("error", str(e))), loop)
+            finally:
+                asyncio.run_coroutine_threadsafe(queue.put(("__end__", "")), loop)
+
+        queue: asyncio.Queue = asyncio.Queue()
+        loop = asyncio.get_running_loop()
+        loop.run_in_executor(None, _producer, queue, loop)
+
+        while True:
+            ev_type, data = await queue.get()
+            if ev_type == "__end__":
+                break
+            if ev_type == "token":
+                yield _sse("token", {"text": data})
+            elif ev_type == "done":
+                full_answer = data
+                yield _sse("done", {})
+                break
+            elif ev_type == "error":
+                yield _sse("error", {"message": data})
+                break
+
+        if full_answer:
+            bg.add_task(_update_memo_background, username, req.question, full_answer)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
     )
