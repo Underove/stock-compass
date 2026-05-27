@@ -308,7 +308,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
   const isProfit = evalPnlPct !== null && evalPnlPct >= 0;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 100, display: "flex", flexDirection: "column" }}>
+    <div className="modal-enter" style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 100, display: "flex", flexDirection: "column" }}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0 }}>
 
         {/* ── 상단 헤더 ── */}

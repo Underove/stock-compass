@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, ScrollText } from "lucide-react";
 import type { PortfolioItem, PortfolioSnapshot, Trade, TradeDiagnose, TradeSummaryItem } from "../lib/types";
 import { fetchPortfolioSnapshots, fetchTradeDiagnose, fetchTrades, fetchTradeSummary } from "../lib/api";
+import { useCountUp } from "../hooks/useCountUp";
 import TradeDetailModal from "./TradeDetailModal";
 
 type GraphMode = "value" | "pnl";
@@ -220,6 +221,7 @@ export default function TradeJournal({ portfolio }: Props) {
   const currentChartData = graphMode === "value" ? valueChartData : pnlChartData;
 
   const totalRealized = useMemo(() => summary.reduce((a, s) => a + s.realized_pnl, 0), [summary]);
+  const animTotalRealized = useCountUp(totalRealized);
   const latestSnap = snapshots[snapshots.length - 1];
   const valueGrowthPct = useMemo(() => {
     if (filteredSnaps.length < 2) return null;
@@ -319,7 +321,7 @@ export default function TradeJournal({ portfolio }: Props) {
               color: totalRealized === 0 ? "var(--label)" : pnlColor(totalRealized),
               fontVariantNumeric: "tabular-nums",
             }}>
-              {totalRealized > 0 ? "+" : ""}{formatWon(totalRealized)}원
+              {animTotalRealized > 0 ? "+" : ""}{formatWon(animTotalRealized)}원
             </span>
             <span style={{ fontSize: 11, color: "var(--label2)", marginLeft: 8 }}>
               누적 실현 손익 · {summary.length}건

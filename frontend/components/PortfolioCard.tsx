@@ -22,6 +22,7 @@ import { useRealtimePrice } from "../hooks/useRealtimePrice";
 import type { RealtimePrice } from "../hooks/useRealtimePrice";
 import { usePriceFlash } from "../hooks/usePriceFlash";
 import type { PortfolioItem, SearchResult, StockPrice, WatchlistItem } from "../lib/types";
+import { useCountUp } from "../hooks/useCountUp";
 import { StockDetailModal } from "./StockDetailModal";
 import { CompareModal } from "./CompareModal";
 import TradeJournal from "./TradeJournal";
@@ -129,6 +130,10 @@ function SummaryCard({ items, prices }: { items: PortfolioItem[]; prices: Record
   const isProfit = totalPnl >= 0;
   const isTodayProfit = todayPnl >= 0;
 
+  const animTotal = useCountUp(totalCurrent);
+  const animPct = useCountUp(totalPnlPct);
+  const animToday = useCountUp(todayPnl);
+
   function fmtShort(n: number) {
     const abs = Math.abs(n);
     if (abs >= 1e8) return `${(n / 1e8).toFixed(1)}억`;
@@ -137,28 +142,29 @@ function SummaryCard({ items, prices }: { items: PortfolioItem[]; prices: Record
 
   const cellStyle: React.CSSProperties = { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 };
   const labelStyle: React.CSSProperties = { fontSize: 11, color: "var(--label2)", fontWeight: 600 };
+  const valueStyle: React.CSSProperties = { fontSize: 14, fontWeight: 800, letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" };
 
   return (
     <div style={{ margin: "12px 16px 4px", background: "var(--surface)", borderRadius: 16, boxShadow: "var(--shadow)" }}>
       <div style={{ display: "flex", padding: "12px 8px" }}>
         <div style={cellStyle}>
           <span style={labelStyle}>총 평가</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: "var(--label)", letterSpacing: "-0.03em" }}>
-            {fmtShort(totalCurrent)}
+          <span style={{ ...valueStyle, color: "var(--label)" }}>
+            {fmtShort(animTotal)}
           </span>
         </div>
         <div style={{ width: "0.5px", background: "var(--sep)", alignSelf: "stretch" }} />
         <div style={cellStyle}>
           <span style={labelStyle}>수익률</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: isProfit ? "var(--red)" : "var(--primary)", letterSpacing: "-0.03em" }}>
-            {totalPnlPct > 0 ? "+" : ""}{totalPnlPct.toFixed(2)}%
+          <span style={{ ...valueStyle, color: isProfit ? "var(--red)" : "var(--primary)" }}>
+            {animPct > 0 ? "+" : ""}{animPct.toFixed(2)}%
           </span>
         </div>
         <div style={{ width: "0.5px", background: "var(--sep)", alignSelf: "stretch" }} />
         <div style={cellStyle}>
           <span style={labelStyle}>오늘변동</span>
-          <span style={{ fontSize: 14, fontWeight: 800, color: isTodayProfit ? "var(--red)" : "var(--primary)", letterSpacing: "-0.03em" }}>
-            {todayPnl > 0 ? "+" : ""}{fmtShort(todayPnl)}
+          <span style={{ ...valueStyle, color: isTodayProfit ? "var(--red)" : "var(--primary)" }}>
+            {animToday > 0 ? "+" : ""}{fmtShort(animToday)}
           </span>
         </div>
       </div>

@@ -342,12 +342,14 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
     <>
       {/* 백드롭 */}
       <div
+        className="modal-backdrop-enter"
         onClick={onClose}
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 199 }}
       />
 
       {/* 바텀 시트 패널 */}
       <div
+        className="modal-enter"
         style={{
           position: "fixed",
           inset: 0,

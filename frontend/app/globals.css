@@ -93,19 +93,29 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-button {
+button,
+a[role="button"],
+a.tap-feedback,
+.tap-feedback {
   cursor: pointer;
+  transition: opacity 0.18s cubic-bezier(0.2, 0, 0.13, 1), transform 0.18s cubic-bezier(0.2, 0, 0.13, 1);
+}
+
+button {
   border: none;
   background: none;
   font-family: inherit;
   font-size: inherit;
   letter-spacing: inherit;
-  transition: opacity 0.14s ease, transform 0.1s ease;
 }
 
-button:active:not(:disabled) {
-  opacity: 0.68;
-  transform: scale(0.97);
+button:active:not(:disabled),
+a[role="button"]:active,
+a.tap-feedback:active,
+.tap-feedback:active {
+  opacity: 0.72;
+  transform: scale(0.96);
+  transition-duration: 0.08s;
 }
 
 input,
@@ -167,6 +177,26 @@ textarea:focus {
 @keyframes shimmer {
   0% { background-position: -200% center; }
   100% { background-position: 200% center; }
+}
+
+/* Toss 스타일 모달 — 아래에서 spring 올라옴 */
+@keyframes modalSlideUp {
+  0%   { opacity: 0; transform: translateY(40px) scale(0.98); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1.005); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes modalBackdropIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-enter {
+  animation: modalSlideUp 0.36s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.modal-backdrop-enter {
+  animation: modalBackdropIn 0.24s ease-out;
 }
 
 @keyframes scaleIn {
