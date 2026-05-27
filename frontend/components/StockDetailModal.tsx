@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Briefcase, FileText, Megaphone, Receipt, ShieldAlert, TrendingUp, Users } from "lucide-react";
 
 import { addWatchlistItem, fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, getSimilarStocks, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
 import { isAfterHours, isMarketOpen, isPreMarket, useRealtimePrice } from "../hooks/useRealtimePrice";
@@ -36,6 +37,27 @@ function fmtFlow(n: number) {
   if (abs >= 1e6) return `${(n / 1e6).toFixed(0)}백만`;
   return fmt(n);
 }
+
+type DisclosureType = "earnings" | "insider" | "treasury" | "merger" | "audit" | "etc";
+
+function classifyDisclosure(report_nm: string): DisclosureType {
+  const n = report_nm || "";
+  if (n.includes("분기보고서") || n.includes("반기보고서") || n.includes("사업보고서") || n.includes("매출액") || n.includes("영업실적") || n.includes("결산")) return "earnings";
+  if (n.includes("임원") || n.includes("주요주주") || n.includes("최대주주") || n.includes("소유상황")) return "insider";
+  if (n.includes("자기주식") || n.includes("자사주")) return "treasury";
+  if (n.includes("합병") || n.includes("분할") || n.includes("주식교환") || n.includes("영업양수") || n.includes("영업양도")) return "merger";
+  if (n.includes("감사") || n.includes("내부회계")) return "audit";
+  return "etc";
+}
+
+const DISCLOSURE_ICON_CFG: Record<DisclosureType, { Icon: typeof TrendingUp; color: string; bg: string }> = {
+  earnings: { Icon: TrendingUp,  color: "#34C759", bg: "rgba(52,199,89,0.12)" },
+  insider:  { Icon: Users,       color: "#FF9500", bg: "rgba(255,149,0,0.12)" },
+  treasury: { Icon: Megaphone,   color: "#007AFF", bg: "rgba(0,122,255,0.12)" },
+  merger:   { Icon: Briefcase,   color: "#5856D6", bg: "rgba(88,86,214,0.12)" },
+  audit:    { Icon: ShieldAlert, color: "#FF3B30", bg: "rgba(255,59,48,0.12)" },
+  etc:      { Icon: FileText,    color: "#8E8E93", bg: "rgba(142,142,147,0.12)" },
+};
 
 type Props = {
   item: PortfolioItem;
@@ -862,7 +884,11 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   </div>
                 ) : (
                   <div>
-                    {disclosures.slice(0, 8).map((d, i) => (
+                    {disclosures.slice(0, 8).map((d, i) => {
+                      const dt = classifyDisclosure(d.report_nm);
+                      const dcfg = DISCLOSURE_ICON_CFG[dt];
+                      const DIcon = dcfg.Icon;
+                      return (
                       <div key={d.rcept_no}>
                         {i > 0 && <div style={{ height: "0.5px", background: "var(--sep)", marginLeft: 20 }} />}
                         <a
@@ -871,6 +897,14 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                           rel="noopener noreferrer"
                           style={{ display: "flex", alignItems: "flex-start", padding: "12px 20px", gap: 12, textDecoration: "none" }}
                         >
+                          <div style={{
+                            width: 28, height: 28, borderRadius: 8,
+                            background: dcfg.bg, color: dcfg.color,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            flexShrink: 0, marginTop: 1,
+                          }}>
+                            <DIcon size={14} strokeWidth={2.2} />
+                          </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
                               fontSize: 13, color: "var(--label)", lineHeight: 1.45, fontWeight: 700,
@@ -903,7 +937,8 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                           </div>
                         </a>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

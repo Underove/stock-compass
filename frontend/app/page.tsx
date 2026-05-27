@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Activity, Bell, FileText, Moon, ShieldAlert, Sun, Target, TrendingDown, TrendingUp } from "lucide-react";
 
 import { ChatCard } from "../components/ChatCard";
 import { PortfolioCard } from "../components/PortfolioCard";
@@ -164,16 +165,7 @@ export default function Home() {
               transition: "color 0.15s",
             }}
           >
-            {theme === "dark" ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
+            {theme === "dark" ? <Sun size={18} strokeWidth={2.0} /> : <Moon size={18} strokeWidth={2.0} />}
           </button>
           {session?.user?.image && (
             <div style={{ position: "relative" }}>
@@ -400,11 +392,9 @@ function AlertBell({ alerts, show, onToggle }: {
     <button
       onClick={onToggle}
       style={{ position: "relative", width: 36, height: 36, borderRadius: 10, background: show ? "rgba(0,122,255,0.1)" : "transparent", display: "flex", alignItems: "center", justifyContent: "center" }}
+      aria-label="알림"
     >
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={count > 0 ? "var(--orange)" : "var(--label3)"} strokeWidth="2" strokeLinecap="round">
-        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-      </svg>
+      <Bell size={18} strokeWidth={2.2} color={count > 0 ? "var(--orange)" : "var(--label3)"} />
       {count > 0 && (
         <div style={{
           position: "absolute", top: 3, right: 3,
@@ -462,6 +452,16 @@ function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAd
     dead_cross: "데드크로스",
     target: "목표가",
     stop_loss: "손절가",
+  };
+  const ALERT_ICON: Record<string, typeof Target> = {
+    dart: FileText,
+    volume_spike: Activity,
+    rsi_overbought: TrendingUp,
+    rsi_oversold: TrendingDown,
+    golden_cross: TrendingUp,
+    dead_cross: TrendingDown,
+    target: Target,
+    stop_loss: ShieldAlert,
   };
 
   return (
@@ -541,11 +541,19 @@ function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAd
           {alerts.map((a, i) => {
             const color = ALERT_COLOR[a.type] ?? "var(--label2)";
             const label = ALERT_LABEL[a.type] ?? a.type;
+            const AlertIcon = ALERT_ICON[a.type] ?? Bell;
             return (
               <div key={a.id}>
                 {i > 0 && <div style={{ height: "0.5px", background: "var(--sep)", marginLeft: 16 }} />}
                 <div style={{ padding: "10px 12px 10px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
-                  <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
+                  <div style={{
+                    width: 26, height: 26, borderRadius: 7,
+                    background: `${color === "var(--primary)" ? "rgba(0,122,255,0.12)" : color === "var(--orange)" ? "rgba(255,149,0,0.12)" : color === "var(--green)" ? "rgba(52,199,89,0.12)" : color === "var(--red)" ? "rgba(255,59,48,0.12)" : "rgba(191,90,242,0.12)"}`,
+                    color, display: "flex", alignItems: "center", justifyContent: "center",
+                    flexShrink: 0, marginTop: 2,
+                  }}>
+                    <AlertIcon size={13} strokeWidth={2.3} />
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 3 }}>{label}</div>
                     <div style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.45, letterSpacing: "-0.015em" }}>{a.message}</div>

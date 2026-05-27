@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
 import { askStream, fetchPortfolioBriefing, fetchPremarketNews, generatePremarketNews } from "../lib/api";
 import type { PremarketNews } from "../lib/api";
 import type { ChatTurn, CompanySynced, PortfolioBriefing, PortfolioStats, Source } from "../lib/types";
@@ -583,20 +584,28 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
                 {s.watch && (
                   <div style={{ display: "flex", gap: 9 }}>
                     <div style={{
+                      display: "flex", alignItems: "center", gap: 4,
                       fontSize: 10, fontWeight: 700, color: "white",
                       background: "var(--primary)", borderRadius: 5,
                       padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2,
-                    }}>체크</div>
+                    }}>
+                      <CheckCircle2 size={11} strokeWidth={2.5} />
+                      체크
+                    </div>
                     <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{s.watch}</p>
                   </div>
                 )}
                 {s.risk && (
                   <div style={{ display: "flex", gap: 9 }}>
                     <div style={{
+                      display: "flex", alignItems: "center", gap: 4,
                       fontSize: 10, fontWeight: 700, color: "white",
                       background: "var(--orange)", borderRadius: 5,
                       padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2,
-                    }}>리스크</div>
+                    }}>
+                      <AlertTriangle size={11} strokeWidth={2.5} />
+                      리스크
+                    </div>
                     <p style={{ fontSize: 14, color: "var(--label2)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{s.risk}</p>
                   </div>
                 )}
@@ -874,7 +883,8 @@ function PremarketNewsView({ news, onRefresh, refreshing }: {
 
               {s.market_outlook && (
                 <div style={{ display: "flex", gap: 9, borderTop: "0.5px solid var(--sep)", paddingTop: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: "white", background: "var(--orange)", borderRadius: 5, padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: "white", background: "var(--orange)", borderRadius: 5, padding: "2px 7px", flexShrink: 0, alignSelf: "flex-start", marginTop: 2 }}>
+                    <TrendingUp size={11} strokeWidth={2.5} />
                     전망
                   </div>
                   <p style={{ fontSize: 14, color: "var(--label2)", lineHeight: 1.6, margin: 0, letterSpacing: "-0.015em" }}>{s.market_outlook}</p>

@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>N.O.V.A — Symbol Application Preview</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #F2F2F7; --surface: #FFFFFF; --surface2: rgba(118,118,128,0.10);
+      --surface3: rgba(118,118,128,0.16); --primary: #007AFF; --green: #34C759;
+      --orange: #FF9500; --red: #FF3B30; --purple: #5856D6;
+      --label: #000000; --label2: #6C6C70; --label3: #AEAEB2;
+      --sep: rgba(60,60,67,0.12); --shadow: 0 2px 10px rgba(0,0,0,0.07);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #E5E5EA; color: var(--label); font-family: "Pretendard Variable", -apple-system, sans-serif; font-size: 15px; letter-spacing: -0.022em; padding: 24px; }
+    .stage { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
+    .col { display: flex; flex-direction: column; gap: 12px; }
+    .col-title { font-size: 12px; font-weight: 800; color: var(--label2); letter-spacing: 0.05em; text-transform: uppercase; text-align: center; padding-bottom: 8px; }
+
+    .phone {
+      width: 380px; background: var(--bg);
+      border-radius: 32px; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      display: flex; flex-direction: column;
+    }
+    .phone-label { font-size: 11px; font-weight: 700; color: var(--label2); text-align: center; padding: 6px 0; background: var(--surface2); }
+
+    /* ── Header ── */
+    .header {
+      height: 52px; padding: 0 16px; display: flex;
+      align-items: center; justify-content: space-between;
+      background: var(--surface); border-bottom: 0.5px solid var(--sep);
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 8px; }
+    .logo {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: linear-gradient(135deg, #007AFF, #5856D6);
+      color: white; font-weight: 800; font-size: 11px; letter-spacing: 0.05em;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand { font-size: 15px; font-weight: 800; letter-spacing: 0.06em; }
+    .header-actions { display: flex; align-items: center; gap: 4px; }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: none; cursor: pointer;
+      color: var(--label); position: relative;
+    }
+    .icon-btn:hover { background: var(--surface2); }
+    .icon-btn .badge {
+      position: absolute; top: 6px; right: 6px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--red); border: 1.5px solid var(--surface);
+    }
+    .avatar {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: linear-gradient(135deg, #FF9500, #FF3B30);
+      color: white; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Tab Bar ── */
+    .tabbar {
+      display: flex; padding: 4px; gap: 2px;
+      background: var(--surface); margin: 12px 16px; border-radius: 12px;
+      box-shadow: var(--shadow);
+    }
+    .tab {
+      flex: 1; padding: 8px 0; display: flex; flex-direction: column;
+      align-items: center; gap: 3px; border-radius: 9px;
+      color: var(--label2); font-size: 10px; font-weight: 700;
+      letter-spacing: -0.01em; transition: all 0.15s;
+    }
+    .tab.active { background: var(--primary); color: white; box-shadow: 0 2px 6px rgba(0,122,255,0.3); }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface); border-radius: 18px;
+      margin: 0 16px 12px; overflow: hidden; box-shadow: var(--shadow);
+    }
+    .card-head {
+      padding: 12px 16px 10px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 0.5px solid var(--sep);
+    }
+    .card-head-left { display: flex; align-items: center; gap: 8px; }
+    .card-head-icon {
+      width: 24px; height: 24px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; color: white;
+    }
+    .card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.022em; }
+    .card-body { padding: 14px 16px 16px; }
+
+    /* ── AI 브리핑 with category icons ── */
+    .briefing-row {
+      display: flex; gap: 8px; padding: 8px 0; align-items: flex-start;
+      border-top: 0.5px solid var(--sep);
+    }
+    .briefing-row:first-child { border-top: none; padding-top: 0; }
+    .briefing-icon {
+      width: 22px; height: 22px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .briefing-text { font-size: 13px; color: var(--label); line-height: 1.55; letter-spacing: -0.015em; }
+    .briefing-label { font-size: 10px; font-weight: 700; color: var(--label2); letter-spacing: 0.02em; margin-bottom: 2px; }
+
+    /* ── 종목 row with action icons ── */
+    .stock-row {
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      border-top: 0.5px solid var(--sep);
+    }
+    .stock-row:first-child { border-top: none; }
+    .stock-info { flex: 1; min-width: 0; }
+    .stock-name { font-size: 14px; font-weight: 700; letter-spacing: -0.022em; }
+    .stock-meta { font-size: 11px; color: var(--label2); margin-top: 2px; }
+    .stock-price-block { text-align: right; }
+    .stock-price { font-size: 14px; font-weight: 800; letter-spacing: -0.025em; font-variant-numeric: tabular-nums; }
+    .stock-change { font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .stock-actions { display: flex; gap: 2px; }
+    .action-btn {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface2); color: var(--label2); cursor: pointer;
+    }
+
+    /* ── 공시 row with type icon ── */
+    .disclosure-row {
+      padding: 11px 16px; display: flex; align-items: flex-start; gap: 10px;
+      border-top: 0.5px solid var(--sep);
+    }
+    .disclosure-row:first-child { border-top: none; }
+    .disclosure-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .disclosure-content { flex: 1; min-width: 0; }
+    .disclosure-title { font-size: 13px; font-weight: 700; color: var(--label); line-height: 1.4; }
+    .disclosure-summary { font-size: 12px; color: var(--label2); margin-top: 3px; line-height: 1.45; }
+    .disclosure-date { font-size: 10px; color: var(--label3); font-weight: 600; margin-top: 4px; }
+
+    /* ── Empty state ── */
+    .empty {
+      padding: 32px 20px; text-align: center;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .empty-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--surface2); color: var(--label3);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .empty-title { font-size: 14px; font-weight: 700; color: var(--label); }
+    .empty-sub { font-size: 12px; color: var(--label2); line-height: 1.5; }
+    .empty-cta {
+      margin-top: 6px; padding: 8px 18px; border-radius: 100px;
+      background: var(--primary); color: white; font-size: 12px; font-weight: 700;
+    }
+
+    /* ── Quick actions ── */
+    .quick-actions {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 8px; padding: 12px 16px;
+    }
+    .quick-action {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      padding: 12px 8px; background: var(--surface);
+      border-radius: 12px; box-shadow: var(--shadow);
+    }
+    .quick-action-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center; color: white;
+    }
+    .quick-action-label { font-size: 11px; font-weight: 700; color: var(--label); }
+
+    /* ── Sentiment chip group ── */
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 16px 14px; }
+    .sentiment-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 100px;
+      font-size: 11px; font-weight: 700; letter-spacing: -0.01em;
+    }
+
+    /* ── 스크리너 sector chip ── */
+    .sector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 12px 16px; }
+    .sector-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 10px; border-radius: 10px;
+      background: var(--surface2); color: var(--label);
+      font-size: 11px; font-weight: 700; cursor: pointer;
+    }
+    .sector-chip.active { background: rgba(0,122,255,0.12); color: var(--primary); }
+
+    /* Notes */
+    .notes {
+      max-width: 1200px; margin: 32px auto 0; padding: 20px;
+      background: var(--surface); border-radius: 16px; box-shadow: var(--shadow);
+      font-size: 13px; line-height: 1.7;
+    }
+    .notes h3 { margin: 0 0 10px; font-size: 15px; }
+    .notes ul { margin: 0; padding-left: 18px; }
+    .notes li { margin-bottom: 6px; }
+    .notes code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="stage">
+  <!-- ── 좌측: 헤더 + 탭 + AI 브리핑 ── -->
+  <div class="col">
+    <div class="col-title">상단부 (Header / Tab / AI Briefing)</div>
+    <div class="phone">
+      <div class="phone-label">홈 화면 상단</div>
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-wrap">
+          <div class="logo">N.O.V.A</div>
+        </div>
+        <div class="header-actions">
+          <button class="icon-btn" aria-label="검색"><i data-lucide="search" style="width:20px;height:20px"></i></button>
+          <button class="icon-btn" aria-label="알림"><i data-lucide="bell" style="width:20px;height:20px"></i><span class="badge"></span></button>
+          <button class="icon-btn" aria-label="프로필"><div class="avatar">U</div></button>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div class="tabbar">
+        <button class="tab active">
+          <i data-lucide="wallet" style="width:18px;height:18px"></i>
+          <span>지갑</span>
+        </button>
+        <button class="tab">
+          <i data-lucide="sparkles" style="width:18px;height:18px"></i>
+          <span>AI 비서</span>
+        </button>
+        <button class="tab">
+          <i data-lucide="search" style="width:18px;height:18px"></i>
+          <span>스크리너</span>
+        </button>
+        <button class="tab">
+          <i data-lucide="star" style="width:18px;height:18px"></i>
+          <span>관심종목</span>
+        </button>
+      </div>
+
+      <!-- AI Briefing with category icons -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background: linear-gradient(135deg, #5856D6, #007AFF);">
+              <i data-lucide="sparkles" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">오늘의 AI 브리핑</div>
+          </div>
+          <div style="font-size:10px;color:var(--label3);font-weight:600">14:32</div>
+        </div>
+        <div class="card-body">
+          <div style="font-size:13px;line-height:1.6;color:var(--label);margin-bottom:14px;letter-spacing:-0.015em">
+            반도체 강세로 포트폴리오 분위기 좋아요. SK하이닉스 +5%로 두드러져요.
+          </div>
+
+          <div class="briefing-row">
+            <div class="briefing-icon" style="background:rgba(0,122,255,0.12);color:var(--primary)">
+              <i data-lucide="check-circle-2" style="width:14px;height:14px"></i>
+            </div>
+            <div>
+              <div class="briefing-label" style="color:var(--primary)">체크</div>
+              <div class="briefing-text">반도체 업종 흐름이 이어지는지 마감 후 확인해보세요</div>
+            </div>
+          </div>
+
+          <div class="briefing-row">
+            <div class="briefing-icon" style="background:rgba(255,149,0,0.12);color:var(--orange)">
+              <i data-lucide="alert-triangle" style="width:14px;height:14px"></i>
+            </div>
+            <div>
+              <div class="briefing-label" style="color:var(--orange)">리스크</div>
+              <div class="briefing-text">LG에너지솔루션 비중 42% — 한 종목 집중도가 높아요</div>
+            </div>
+          </div>
+
+          <div class="briefing-row">
+            <div class="briefing-icon" style="background:rgba(52,199,89,0.12);color:var(--green)">
+              <i data-lucide="trending-up" style="width:14px;height:14px"></i>
+            </div>
+            <div>
+              <div class="briefing-label" style="color:var(--green)">전망</div>
+              <div class="briefing-text">메모리 사이클 회복 신호가 보이는 구간이에요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4 quick actions -->
+      <div class="quick-actions">
+        <button class="quick-action">
+          <div class="quick-action-icon" style="background:var(--primary)"><i data-lucide="plus" style="width:18px;height:18px"></i></div>
+          <div class="quick-action-label">종목 추가</div>
+        </button>
+        <button class="quick-action">
+          <div class="quick-action-icon" style="background:var(--green)"><i data-lucide="receipt" style="width:18px;height:18px"></i></div>
+          <div class="quick-action-label">매매 기록</div>
+        </button>
+        <button class="quick-action">
+          <div class="quick-action-icon" style="background:var(--purple)"><i data-lucide="bar-chart-3" style="width:18px;height:18px"></i></div>
+          <div class="quick-action-label">분석</div>
+        </button>
+        <button class="quick-action">
+          <div class="quick-action-icon" style="background:var(--orange)"><i data-lucide="file-text" style="width:18px;height:18px"></i></div>
+          <div class="quick-action-label">자료 업로드</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 중앙: 종목 카드 + 액션 ── -->
+  <div class="col">
+    <div class="col-title">종목 / 공시 / 알림</div>
+    <div class="phone">
+      <div class="phone-label">종목 리스트 + 액션</div>
+
+      <!-- 종목 카드 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--green)">
+              <i data-lucide="briefcase" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">내 지갑</div>
+          </div>
+          <button class="icon-btn" style="width:28px;height:28px" aria-label="추가">
+            <i data-lucide="plus" style="width:16px;height:16px;color:var(--primary)"></i>
+          </button>
+        </div>
+
+        <div class="stock-row">
+          <div class="stock-info">
+            <div class="stock-name">삼성전자</div>
+            <div class="stock-meta">100주 · 295,000원</div>
+          </div>
+          <div class="stock-price-block">
+            <div class="stock-price">307,000</div>
+            <div class="stock-change" style="color:var(--red)">+4.07%</div>
+          </div>
+        </div>
+
+        <div class="stock-row">
+          <div class="stock-info">
+            <div class="stock-name">SK하이닉스</div>
+            <div class="stock-meta">50주 · 138,000원</div>
+          </div>
+          <div class="stock-price-block">
+            <div class="stock-price">145,000</div>
+            <div class="stock-change" style="color:var(--red)">+5.07%</div>
+          </div>
+        </div>
+
+        <div class="stock-row" style="padding:10px 16px;background:rgba(0,122,255,0.04);justify-content:flex-end;gap:6px">
+          <button class="action-btn" title="목표가/손절가"><i data-lucide="target" style="width:15px;height:15px"></i></button>
+          <button class="action-btn" title="메모"><i data-lucide="pencil" style="width:15px;height:15px"></i></button>
+          <button class="action-btn" title="차트"><i data-lucide="line-chart" style="width:15px;height:15px"></i></button>
+          <button class="action-btn" title="매매 기록"><i data-lucide="receipt" style="width:15px;height:15px"></i></button>
+          <button class="action-btn" title="삭제" style="color:var(--red)"><i data-lucide="trash-2" style="width:15px;height:15px"></i></button>
+        </div>
+      </div>
+
+      <!-- 공시 with type icons -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--purple)">
+              <i data-lucide="file-text" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">최근 공시</div>
+          </div>
+          <div style="font-size:11px;color:var(--label3);font-weight:600">30일</div>
+        </div>
+
+        <div class="disclosure-row">
+          <div class="disclosure-icon" style="background:rgba(52,199,89,0.12);color:var(--green)">
+            <i data-lucide="trending-up" style="width:14px;height:14px"></i>
+          </div>
+          <div class="disclosure-content">
+            <div class="disclosure-title">분기보고서 (2026.1Q)</div>
+            <div class="disclosure-summary">매출 79조원 영업이익 9.2조원으로 전년 대비 65% 늘었어요</div>
+            <div class="disclosure-date">2026.04.30</div>
+          </div>
+        </div>
+
+        <div class="disclosure-row">
+          <div class="disclosure-icon" style="background:rgba(255,149,0,0.12);color:var(--orange)">
+            <i data-lucide="users" style="width:14px;height:14px"></i>
+          </div>
+          <div class="disclosure-content">
+            <div class="disclosure-title">임원·주요주주 특정증권등 소유상황보고서</div>
+            <div class="disclosure-summary">조미선 상무, 보유 120주 늘어 3,409주예요</div>
+            <div class="disclosure-date">2026.05.26</div>
+          </div>
+        </div>
+
+        <div class="disclosure-row">
+          <div class="disclosure-icon" style="background:rgba(0,122,255,0.12);color:var(--primary)">
+            <i data-lucide="megaphone" style="width:14px;height:14px"></i>
+          </div>
+          <div class="disclosure-content">
+            <div class="disclosure-title">주요사항보고서 (자기주식취득결정)</div>
+            <div class="disclosure-summary">2,000억원 규모 자사주 매입 결정했어요</div>
+            <div class="disclosure-date">2026.05.20</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 알림 type icons -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--orange)">
+              <i data-lucide="bell" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">알림</div>
+          </div>
+        </div>
+
+        <div class="disclosure-row">
+          <div class="disclosure-icon" style="background:rgba(52,199,89,0.12);color:var(--green)">
+            <i data-lucide="target" style="width:14px;height:14px"></i>
+          </div>
+          <div class="disclosure-content">
+            <div class="disclosure-title">목표가 도달 — 삼성전자</div>
+            <div class="disclosure-summary">307,000원으로 목표가 305,000원 넘었어요</div>
+          </div>
+        </div>
+
+        <div class="disclosure-row">
+          <div class="disclosure-icon" style="background:rgba(0,122,255,0.12);color:var(--primary)">
+            <i data-lucide="trending-down" style="width:14px;height:14px"></i>
+          </div>
+          <div class="disclosure-content">
+            <div class="disclosure-title">RSI 과매도 — 카카오</div>
+            <div class="disclosure-summary">RSI 28로 과매도 구간이에요</div>
+          </div>
+        </div>
+
+        <div class="disclosure-row">
+          <div class="disclosure-icon" style="background:rgba(255,149,0,0.12);color:var(--orange)">
+            <i data-lucide="activity" style="width:14px;height:14px"></i>
+          </div>
+          <div class="disclosure-content">
+            <div class="disclosure-title">거래량 급증 — SK하이닉스</div>
+            <div class="disclosure-summary">평소의 3.2배 거래량이에요</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 우측: 스크리너 + 빈 상태 + 시황 칩 ── -->
+  <div class="col">
+    <div class="col-title">스크리너 / 칩 / Empty state</div>
+    <div class="phone">
+      <div class="phone-label">필터 + 칩 + 빈 상태</div>
+
+      <!-- 스크리너 섹터 칩 -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--primary)">
+              <i data-lucide="sliders-horizontal" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">스크리너 — 섹터</div>
+          </div>
+          <button style="font-size:11px;color:var(--primary);font-weight:700;background:none;border:none">초기화</button>
+        </div>
+
+        <div class="sector-grid">
+          <button class="sector-chip active"><i data-lucide="cpu" style="width:13px;height:13px"></i>반도체</button>
+          <button class="sector-chip"><i data-lucide="battery-charging" style="width:13px;height:13px"></i>2차전지</button>
+          <button class="sector-chip"><i data-lucide="pill" style="width:13px;height:13px"></i>바이오</button>
+          <button class="sector-chip"><i data-lucide="banknote" style="width:13px;height:13px"></i>금융</button>
+          <button class="sector-chip"><i data-lucide="car" style="width:13px;height:13px"></i>자동차</button>
+          <button class="sector-chip"><i data-lucide="film" style="width:13px;height:13px"></i>엔터</button>
+        </div>
+      </div>
+
+      <!-- AI 시황 sentiment chips -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--red)">
+              <i data-lucide="message-square-quote" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">AI 시황 해설</div>
+          </div>
+        </div>
+        <div class="chip-row">
+          <span class="sentiment-chip" style="background:rgba(255,59,48,0.12);color:var(--red)">
+            <i data-lucide="trending-up" style="width:12px;height:12px"></i>강세
+          </span>
+          <span class="sentiment-chip" style="background:rgba(0,122,255,0.12);color:var(--primary)">
+            <i data-lucide="trending-down" style="width:12px;height:12px"></i>약세
+          </span>
+          <span class="sentiment-chip" style="background:var(--surface2);color:var(--label2)">
+            <i data-lucide="minus" style="width:12px;height:12px"></i>중립
+          </span>
+        </div>
+        <div style="padding:0 16px 16px;font-size:13px;line-height:1.6;color:var(--label);letter-spacing:-0.015em">
+          삼성전자 2.68% 상승, 307,000원대예요. RSI(상대강도지수) 65로 강세 구간이에요.
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--label3)">
+              <i data-lucide="newspaper" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">관련 뉴스</div>
+          </div>
+        </div>
+        <div class="empty">
+          <div class="empty-icon">
+            <i data-lucide="newspaper" style="width:28px;height:28px"></i>
+          </div>
+          <div class="empty-title">관련 뉴스가 없어요</div>
+          <div class="empty-sub">최근 24시간 안에 발견된 뉴스가 없어요.<br/>잠시 후 다시 확인해보세요.</div>
+          <button class="empty-cta">
+            <i data-lucide="refresh-cw" style="width:11px;height:11px;display:inline-block;vertical-align:middle;margin-right:4px;margin-top:-2px"></i>
+            새로고침
+          </button>
+        </div>
+      </div>
+
+      <!-- 관심종목 empty -->
+      <div class="card">
+        <div class="card-head">
+          <div class="card-head-left">
+            <div class="card-head-icon" style="background:var(--orange)">
+              <i data-lucide="star" style="width:14px;height:14px"></i>
+            </div>
+            <div class="card-title">관심종목</div>
+          </div>
+        </div>
+        <div class="empty">
+          <div class="empty-icon" style="background:rgba(255,149,0,0.10);color:var(--orange)">
+            <i data-lucide="star" style="width:28px;height:28px"></i>
+          </div>
+          <div class="empty-title">관심종목이 없어요</div>
+          <div class="empty-sub">상단 검색에서 종목을 추가하면<br/>여기에 모아 볼 수 있어요</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <h3>적용 영역</h3>
+  <ul>
+    <li><b>헤더</b>: <code>search</code> · <code>bell</code> + 빨간 dot badge · 아바타 (3개)</li>
+    <li><b>탭바</b>: <code>wallet</code> 지갑 / <code>sparkles</code> AI / <code>search</code> 스크리너 / <code>star</code> 관심종목</li>
+    <li><b>카드 헤더</b>: 각 카드 좌측에 24px gradient/solid 아이콘 박스 — 한눈에 카테고리 구분</li>
+    <li><b>AI 브리핑 카테고리</b>: <code>check-circle-2</code> 체크 / <code>alert-triangle</code> 리스크 / <code>trending-up</code> 전망 — 색칩 옆 정량 의미 강화</li>
+    <li><b>종목 액션</b>: <code>target</code> 목표가 · <code>pencil</code> 메모 · <code>line-chart</code> 차트 · <code>receipt</code> 매매 · <code>trash-2</code> 삭제 — 텍스트 버튼보다 컴팩트</li>
+    <li><b>공시 타입</b>: 실적은 <code>trending-up</code>, 임원지분은 <code>users</code>, 자사주는 <code>megaphone</code> 등 — 스캔성 ↑</li>
+    <li><b>알림 타입</b>: target_hit/rsi/volume_spike별 다른 아이콘 + 색상 tint</li>
+    <li><b>스크리너 섹터 칩</b>: <code>cpu</code> 반도체 / <code>battery-charging</code> 2차전지 / <code>pill</code> 바이오 등 — 시각 인식 빠름</li>
+    <li><b>Sentiment 칩</b>: 강세 ↗ / 약세 ↘ / 중립 — / 화살표로 즉시 인지</li>
+    <li><b>Empty state</b>: 이모지 대신 line icon으로 일관된 톤</li>
+    <li><b>Quick action 4버튼</b>: <code>plus</code> 종목추가 · <code>receipt</code> 매매기록 · <code>bar-chart-3</code> 분석 · <code>file-text</code> 자료업로드</li>
+  </ul>
+
+  <h3 style="margin-top:18px">라이브러리: Lucide React</h3>
+  <ul>
+    <li>설치: <code>npm i lucide-react</code> (8KB tree-shake, 1400+ 아이콘)</li>
+    <li>현재 inline SVG 21곳 + 이모지 → 점진적 교체. 이모지는 데코 자리만(✨ AI 표시) 유지</li>
+    <li>스트로크 1.5~2px — Toss 톤과 결 일치</li>
+    <li>색상은 <code>color</code> 속성 상속. 크기는 width/height 인라인</li>
+  </ul>
+</div>
+
+<script>lucide.createIcons();</script>
+</body>
+</html>
