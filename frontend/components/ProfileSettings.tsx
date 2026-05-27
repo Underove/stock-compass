@@ -190,7 +190,7 @@ export function ProfileSettings({ onClose }: { onClose: () => void }) {
           </div>
           {sectors.length >= MAX_SECTORS && (
             <p style={{ fontSize: 11, color: "var(--label3)", margin: 0 }}>
-              최대 {MAX_SECTORS}개까지 선택 가능합니다
+              최대 {MAX_SECTORS}개까지 고를 수 있어요
             </p>
           )}
         </Section>

@@ -10,19 +10,19 @@ const SIGNAL: Record<
     color: "var(--green)",
     bg: "rgba(52,199,89,0.12)",
     title: "확인된 사실",
-    desc: "공식 자료가 이 정보를 뒷받침합니다.",
+    desc: "공식 자료가 이 정보를 뒷받침해요.",
   },
   yellow: {
     color: "var(--orange)",
     bg: "rgba(255,149,0,0.12)",
     title: "검증 부족 주의",
-    desc: "확인 가능한 공식 근거가 부족합니다.",
+    desc: "확인 가능한 공식 근거가 부족해요.",
   },
   red: {
     color: "var(--red)",
     bg: "rgba(255,59,48,0.12)",
     title: "허위 정보 위험",
-    desc: "공식 자료와 모순되는 내용이 있습니다.",
+    desc: "공식 자료와 모순되는 내용이 있어요.",
   },
 };
 

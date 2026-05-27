@@ -369,7 +369,7 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !isAsking) send(); }}
-                placeholder="메시지를 입력하세요"
+                placeholder="메시지를 입력해주세요"
                 disabled={isAsking}
                 style={{
                   flex: 1, background: "transparent",

@@ -271,7 +271,7 @@ export default function TradeDetailModal({ trade, currentPrice, onClose, onMemoS
               <textarea
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
-                placeholder="거래 메모를 입력하세요"
+                placeholder="거래 메모를 적어보세요"
                 rows={3}
                 style={{
                   width: "100%", resize: "none", boxSizing: "border-box",

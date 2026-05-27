@@ -760,7 +760,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   </div>
                 ) : news.length === 0 ? (
                   <div style={{ padding: "24px 18px", textAlign: "center", color: "var(--label2)", fontSize: 14 }}>
-                    관련 뉴스가 없습니다.
+                    관련 뉴스가 없어요
                   </div>
                 ) : (
                   <div>
@@ -819,7 +819,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   </div>
                 ) : disclosures.length === 0 ? (
                   <div style={{ padding: "24px 18px", textAlign: "center", color: "var(--label2)", fontSize: 14 }}>
-                    최근 30일간 공시가 없습니다.
+                    최근 30일간 공시가 없어요
                   </div>
                 ) : (
                   <div>
