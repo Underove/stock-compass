@@ -320,10 +320,18 @@ The patterns below describe N.O.V.A's actual components. When adding new UI, mat
 ### Hero KPI Block
 **Use:** Display ONE critical metric prominently (today's P&L, total return, account balance). Always placed at the top of a screen or card.
 
+**Size by context (important):**
+- **Dashboard/panel hero** (e.g. AI 브리핑 StatsBar) → 36–42px
+- **Modal/sheet hero** (e.g. StockDetailModal current price) → 28–32px
+- **Card-level metric** (e.g. portfolio row total) → 22–26px
+
+The big number must fit comfortably under the title — never compete with it. If the screen already has a 22px title above, drop the hero to ~30px max.
+
 Anatomy (top to bottom):
-1. **Friendly label** — 12px / weight 600 / `--label2` / `letter-spacing: -0.01em` / margin-bottom 6–8px
-   - Phrase as a casual sentence: "보유 종목 N개의 평가손익이에요"
-2. **Hero number** — 36–42px / weight 800 / sentiment color / `letter-spacing: -0.045em` / `line-height: 1.05` / `fontVariantNumeric: "tabular-nums"`
+1. **Noun-phrase label** — 12px / weight 600 / `--label2` / `letter-spacing: -0.01em` / margin-bottom 6–8px
+   - Use a noun-phrase header, not a sentence: "오늘의 평가손익" / "보유 종목 N개의 평가손익"
+   - See Voice & Tone section for the noun-phrase rule
+2. **Hero number** — see size table above / weight 800 / sentiment color / `letter-spacing: -0.045em` (large) or `-0.035em` (medium) / `line-height: 1.05` / `fontVariantNumeric: "tabular-nums"`
    - For percent: `{val > 0 ? "+" : ""}{val.toFixed(2)}%`
    - For currency: `{val > 0 ? "+" : ""}{val.toLocaleString("ko-KR")}원`
 3. **Optional sub-stat row** — flexbox row of 2–3 sub cells with hairline separator

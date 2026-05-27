@@ -340,8 +340,8 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 style={{ display: "flex", alignItems: "baseline", gap: 3 }}
               >
                 <span style={{
-                  fontSize: 36, fontWeight: 800,
-                  letterSpacing: "-0.045em", lineHeight: 1,
+                  fontSize: 30, fontWeight: 800,
+                  letterSpacing: "-0.04em", lineHeight: 1,
                   color: pctColor(price.change_pct),
                   fontVariantNumeric: "tabular-nums",
                 }}>
