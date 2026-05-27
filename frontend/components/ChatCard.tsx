@@ -420,35 +420,52 @@ const SENTIMENT_CONFIG = {
 function StatsBar({ stats }: { stats: PortfolioStats }) {
   const isProfit = stats.total_pnl_pct >= 0;
   const color = isProfit ? "var(--red)" : "var(--primary)";
+  const tintBg = isProfit ? "rgba(255,59,48,0.05)" : "rgba(0,122,255,0.05)";
   return (
     <div style={{
-      display: "flex", gap: 0,
-      background: "var(--surface3)", borderRadius: 14,
-      overflow: "hidden", marginBottom: 16,
+      background: tintBg, borderRadius: 16,
+      padding: "18px 18px 14px",
+      border: "0.5px solid var(--sep)",
+      marginBottom: 14,
     }}>
-      <div style={{ flex: 1, padding: "10px 14px", textAlign: "center", borderRight: "0.5px solid var(--sep)" }}>
-        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>평가손익</div>
-        <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em", color }}>
-          {stats.total_pnl_pct > 0 ? "+" : ""}{stats.total_pnl_pct.toFixed(2)}%
-        </div>
+      <div style={{ fontSize: 12, color: "var(--label2)", fontWeight: 600, marginBottom: 6, letterSpacing: "-0.01em" }}>
+        보유 종목 {stats.stock_count}개의 평가손익이에요
       </div>
-      <div style={{ flex: 1, padding: "10px 14px", textAlign: "center", borderRight: "0.5px solid var(--sep)" }}>
-        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>최고</div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--red)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {stats.best.corp_name}
-        </div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--red)" }}>
-          {stats.best.pnl_pct > 0 ? "+" : ""}{stats.best.pnl_pct.toFixed(1)}%
-        </div>
+      <div style={{
+        fontSize: 38, fontWeight: 800, lineHeight: 1.05,
+        letterSpacing: "-0.045em", color,
+        fontVariantNumeric: "tabular-nums",
+        marginBottom: 16,
+      }}>
+        {stats.total_pnl_pct > 0 ? "+" : ""}{stats.total_pnl_pct.toFixed(2)}%
       </div>
-      <div style={{ flex: 1, padding: "10px 14px", textAlign: "center" }}>
-        <div style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600, marginBottom: 3 }}>최저</div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-          {stats.worst.corp_name}
-        </div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)" }}>
-          {stats.worst.pnl_pct > 0 ? "+" : ""}{stats.worst.pnl_pct.toFixed(1)}%
-        </div>
+      <div style={{
+        display: "flex", gap: 8,
+        paddingTop: 14, borderTop: "0.5px solid var(--sep)",
+      }}>
+        <BestWorstCell label="가장 잘 가요" name={stats.best.corp_name} pct={stats.best.pnl_pct} tone="up" />
+        <div style={{ width: "0.5px", background: "var(--sep)" }} />
+        <BestWorstCell label="가장 힘들어요" name={stats.worst.corp_name} pct={stats.worst.pnl_pct} tone="down" />
+      </div>
+    </div>
+  );
+}
+
+function BestWorstCell({ label, name, pct, tone }: {
+  label: string; name: string; pct: number; tone: "up" | "down";
+}) {
+  const color = tone === "up" ? "var(--red)" : "var(--primary)";
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 11, color: "var(--label3)", marginBottom: 6, fontWeight: 600, letterSpacing: "-0.01em" }}>{label}</div>
+      <div style={{
+        fontSize: 13, fontWeight: 700, marginBottom: 3, letterSpacing: "-0.02em",
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+      }}>
+        {name}
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 800, color, letterSpacing: "-0.025em", fontVariantNumeric: "tabular-nums" }}>
+        {pct > 0 ? "+" : ""}{pct.toFixed(1)}%
       </div>
     </div>
   );
@@ -469,29 +486,31 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
       {/* ── 헤더 카드 ── */}
       <div style={{ background: "var(--surface)", borderRadius: 20, overflow: "hidden", boxShadow: "var(--shadow)" }}>
         <div style={{
-          padding: "14px 18px 13px",
+          padding: "16px 20px 14px",
           background: sentCfg.bg,
           borderBottom: "0.5px solid var(--sep)",
           display: "flex", alignItems: "center", justifyContent: "space-between",
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: sentCfg.dot }} />
-            <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.03em" }}>AI 브리핑</span>
+            <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.025em" }}>오늘의 AI 브리핑</span>
             <span style={{
               fontSize: 10, fontWeight: 700, color: sentCfg.color,
               background: `${sentCfg.dot}20`, borderRadius: 6, padding: "2px 7px",
+              letterSpacing: "-0.01em",
             }}>
               {sentCfg.label}
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 11, color: "var(--label3)" }}>{briefing.generated_at}</span>
             <button
               onClick={onRefresh}
               disabled={refreshing}
               style={{
-                fontSize: 11, color: "var(--primary)", fontWeight: 700,
-                padding: "5px 12px", background: "rgba(0,122,255,0.09)", borderRadius: 9,
+                fontSize: 12, color: "var(--primary)", fontWeight: 700,
+                padding: "6px 12px", background: "rgba(0,122,255,0.10)", borderRadius: 100,
+                letterSpacing: "-0.01em",
               }}
             >
               {refreshing ? "…" : "새로고침"}
@@ -499,14 +518,17 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
           </div>
         </div>
 
-        <div style={{ padding: "14px 18px 16px" }}>
+        <div style={{ padding: "16px 20px 18px" }}>
           {/* 포트폴리오 스냅샷 */}
           {briefing.portfolio_stats && <StatsBar stats={briefing.portfolio_stats} />}
 
           {s ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {/* 요약 */}
-              <p style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.85, margin: 0 }}>
+              <p style={{
+                fontSize: 15, color: "var(--label)", lineHeight: 1.65, margin: 0,
+                letterSpacing: "-0.015em", fontWeight: 500,
+              }}>
                 {s.summary}
               </p>
 
