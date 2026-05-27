@@ -11,8 +11,8 @@ type Props = {
   liveCandle?: Candle;
 };
 
-function calcMA(candles: Candle[], period: number): { time: string; value: number }[] {
-  const result: { time: string; value: number }[] = [];
+function calcMA(candles: Candle[], period: number): { time: string | number; value: number }[] {
+  const result: { time: string | number; value: number }[] = [];
   for (let i = period - 1; i < candles.length; i++) {
     let sum = 0;
     for (let j = i - period + 1; j <= i; j++) sum += candles[j].close;
@@ -71,14 +71,17 @@ export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Prop
           barSpacing: 6,
           fixLeftEdge: true,
           fixRightEdge: true,
+          timeVisible: true,    // intraday(분봉) HH:MM 표시
+          secondsVisible: false,
           tickMarkFormatter: (time: number | string | { year: number; month: number; day: number }) => {
             if (typeof time === "object") return `${time.month}/${time.day}`;
             if (typeof time === "string") {
               const parts = time.split("-");
               return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
             }
+            // number(unix seconds) — 분봉이면 HH:MM
             const d = new Date(time * 1000);
-            return `${d.getMonth() + 1}/${d.getDate()}`;
+            return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
           },
         },
         handleScroll: { mouseWheel: true, pressedMouseMove: true },
@@ -102,7 +105,7 @@ export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Prop
         c => isFinite(c.open) && isFinite(c.high) && isFinite(c.low) && isFinite(c.close)
       );
       const candleData = validCandles.map((c) => ({
-        time: c.time as `${number}-${number}-${number}`,
+        time: c.time as never,
         open: c.open,
         high: c.high,
         low: c.low,
@@ -133,7 +136,7 @@ export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Prop
           lastValueVisible: false,
           crosshairMarkerVisible: false,
         });
-        ma5.setData(ma5Data.map(d => ({ time: d.time as `${number}-${number}-${number}`, value: d.value })));
+        ma5.setData(ma5Data.map(d => ({ time: d.time as never, value: d.value })));
       }
 
       // ── MA20 ──
@@ -146,7 +149,7 @@ export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Prop
           lastValueVisible: false,
           crosshairMarkerVisible: false,
         });
-        ma20.setData(ma20Data.map(d => ({ time: d.time as `${number}-${number}-${number}`, value: d.value })));
+        ma20.setData(ma20Data.map(d => ({ time: d.time as never, value: d.value })));
       }
 
       // ── 거래량 히스토그램 ──
@@ -163,7 +166,7 @@ export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Prop
 
       volumeSeries.setData(
         validCandles.map((c) => ({
-          time: c.time as `${number}-${number}-${number}`,
+          time: c.time as never,
           value: isFinite(c.volume) ? c.volume : 0,
           color: c.close >= c.open ? "rgba(255,59,48,0.35)" : "rgba(0,122,255,0.35)",
         })),
@@ -196,7 +199,8 @@ export function StockChart({ candles, height = 260, buyPrice, liveCandle }: Prop
     if (!liveCandle || !candleSeriesRef.current) return;
     if (!isFinite(liveCandle.open) || !isFinite(liveCandle.close)) return;
     candleSeriesRef.current.update({
-      time: liveCandle.time as `${number}-${number}-${number}`,
+      // lightweight-charts: time은 BusinessDay 문자열 또는 UTCTimestamp(number) 모두 허용
+      time: liveCandle.time as never,
       open: liveCandle.open,
       high: liveCandle.high,
       low: liveCandle.low,

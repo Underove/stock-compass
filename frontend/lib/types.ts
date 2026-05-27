@@ -145,7 +145,7 @@ export type StockPrice = {
 };
 
 export type Candle = {
-  time: string;
+  time: string | number;  // string "YYYY-MM-DD" (daily) or number unix-seconds (intraday)
   open: number;
   high: number;
   low: number;

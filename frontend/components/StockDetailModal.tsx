@@ -9,9 +9,11 @@ import type { Candle, CommentarySections, CrossStatus, DisclosureItem, Fundament
 import { StockChart } from "./StockChart";
 import { CompareModal } from "./CompareModal";
 
-type Period = "1W" | "1M" | "3M" | "6M" | "1Y";
+type Period = "1m" | "5m" | "1W" | "1M" | "3M" | "6M" | "1Y";
+
+const PERIOD_INTERVAL: Partial<Record<Period, "1m" | "5m">> = { "1m": "1m", "5m": "5m" };
 type Tab = "price" | "technical" | "ai";
-const PERIOD_DAYS: Record<Period, number> = { "1W": 7, "1M": 30, "3M": 90, "6M": 180, "1Y": 365 };
+const PERIOD_DAYS: Record<Period, number> = { "1m": 1, "5m": 1, "1W": 7, "1M": 30, "3M": 90, "6M": 180, "1Y": 365 };
 
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
 function pctColor(pct: number) {
@@ -132,9 +134,21 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
   // ── 차트 ──────────────────────────────────────────────────────────────────
   useEffect(() => {
+    let cancelled = false;
+    const interval = PERIOD_INTERVAL[period];
     setLoadingChart(true);
-    fetchChartData(currentItem.stock_code, PERIOD_DAYS[period])
-      .then(setCandles).catch(() => {}).finally(() => setLoadingChart(false));
+    const load = () =>
+      fetchChartData(currentItem.stock_code, PERIOD_DAYS[period], interval)
+        .then(c => { if (!cancelled) setCandles(c); })
+        .catch(() => {})
+        .finally(() => { if (!cancelled) setLoadingChart(false); });
+    load();
+    // 분봉 모드는 30초마다 자동 갱신 (실시간 반영)
+    if (interval) {
+      const id = setInterval(load, 30_000);
+      return () => { cancelled = true; clearInterval(id); };
+    }
+    return () => { cancelled = true; };
   }, [currentItem.stock_code, period]);
 
   // ── 시황 해설: 최초 로드 + 정규장 중 3분마다 갱신 ─────────────────────────
@@ -204,8 +218,20 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
   const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10); // KST "YYYY-MM-DD"
   const isTradingHours = isMarketOpen() || isAfterHours() || isPreMarket();
+  const isMinuteMode = PERIOD_INTERVAL[period] !== undefined;
+  const lastCandle = candles.length > 0 ? candles[candles.length - 1] : null;
   const liveCandle: Candle | undefined =
-    price && isTradingHours && isFinite(price.open) && price.open > 0
+    isMinuteMode && price && lastCandle && isMarketOpen()
+      ? {
+          // 분봉 모드: 마지막 캔들 time 유지, close만 실시간 가격으로 갱신
+          time: lastCandle.time,
+          open: lastCandle.open,
+          high: Math.max(lastCandle.high, price.current_price),
+          low: Math.min(lastCandle.low, price.current_price),
+          close: price.current_price,
+          volume: lastCandle.volume,
+        }
+      : !isMinuteMode && price && isTradingHours && isFinite(price.open) && price.open > 0
       ? {
           time: todayStr,
           open: price.open,
@@ -499,7 +525,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   <div style={{ background: "var(--surface)", padding: "12px 16px 10px", borderBottom: "0.5px solid var(--sep)" }}>
                     {/* 기간 선택 */}
                     <div style={{ display: "flex", gap: 0, background: "var(--bg)", borderRadius: 100, padding: 3, marginBottom: 12, alignSelf: "flex-start" }}>
-                      {(["1W", "1M", "3M", "6M", "1Y"] as Period[]).map(p => (
+                      {(["1m", "5m", "1W", "1M", "3M", "6M", "1Y"] as Period[]).map(p => (
                         <button
                           key={p}
                           onClick={() => setPeriod(p)}

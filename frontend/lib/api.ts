@@ -257,9 +257,12 @@ export async function fetchStockPrice(stock_code: string): Promise<StockPrice> {
   return getJSON<StockPrice>(`/api/portfolio/price/${stock_code}`);
 }
 
-export async function fetchChartData(stock_code: string, days = 90): Promise<Candle[]> {
+export async function fetchChartData(stock_code: string, days = 90, interval?: "1m" | "5m"): Promise<Candle[]> {
+  const qs = interval
+    ? `interval=${interval}`
+    : `days=${days}`;
   const data = await getJSON<{ candles: Candle[] }>(
-    `/api/portfolio/chart/${stock_code}?days=${days}`,
+    `/api/portfolio/chart/${stock_code}?${qs}`,
   );
   return data.candles;
 }
