@@ -360,7 +360,7 @@ function StatsBar({ stats }: { stats: PortfolioStats }) {
   return (
     <div style={{
       display: "flex", gap: 0,
-      background: "var(--bg)", borderRadius: 14,
+      background: "var(--surface3)", borderRadius: 14,
       overflow: "hidden", marginBottom: 16,
     }}>
       <div style={{ flex: 1, padding: "10px 14px", textAlign: "center", borderRight: "0.5px solid var(--sep)" }}>
@@ -457,7 +457,7 @@ function BriefingView({ briefing, onRefresh, refreshing }: {
                     return (
                       <div key={i} style={{
                         borderRadius: 12, padding: "11px 14px",
-                        background: "var(--bg)",
+                        background: "var(--surface3)",
                         borderLeft: `3px solid ${color}`,
                         display: "flex", flexDirection: "column", gap: 4,
                       }}>
