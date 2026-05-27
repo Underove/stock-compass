@@ -344,7 +344,18 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
             "worst": {"corp_name": sorted_by_pnl[0]["corp_name"], "pnl_pct": sorted_by_pnl[0]["pnl_pct"]},
         }
 
+    # 비중 정보 추가 — 리밸런싱 권고용
+    weight_lines: list[str] = []
+    if stock_pnls and sum(s["current_value"] for s in stock_pnls) > 0:
+        total_cv = sum(s["current_value"] for s in stock_pnls)
+        sorted_by_w = sorted(stock_pnls, key=lambda s: -s["current_value"])
+        for s in sorted_by_w[:5]:
+            pct = (s["current_value"] / total_cv) * 100
+            weight_lines.append(f"  · {s['corp_name']}: 비중 {pct:.1f}%")
+
     portfolio_text = "\n".join(lines)
+    if weight_lines:
+        portfolio_text += "\n\n[종목 비중 (상위 5종목)]\n" + "\n".join(weight_lines)
 
     BRIEFING_SYSTEM = """당신은 한국 주식 포트폴리오 AI 브리핑 시스템입니다.
 반드시 아래 JSON 형식으로만 출력하세요. 다른 텍스트는 절대 출력하지 마세요.
@@ -365,7 +376,11 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
 - highlights는 가장 주목할 1~3개 종목만. change_note는 "금일 +X.X%" 형식으로 간결하게.
 - status 값은 반드시 '상승', '하락', '보합' 중 하나.
 - action_items는 오늘 투자자가 직접 확인해볼 수 있는 2~3가지 구체적 체크리스트. 투자 권유 금지.
-- risk는 분산 부족, 특정 섹터 쏠림, 손실 위험 등 실질적 유의사항.
+- risk는 분산 부족, 특정 섹터 쏠림, 손실 위험 등 실질적 유의사항. 다음 룰 적용:
+  · 한 종목이 전체 포트폴리오의 40% 이상이면 "한 종목 집중 — 분산 고려해보세요" 류 한 줄 권고.
+  · 비슷한 섹터 종목이 3개 이상이거나 한 섹터에 60% 이상이면 "섹터 집중 — 다른 섹터 분산 고려" 권고.
+  · -10% 이하 손실 종목이 3개 이상이면 "전반적 약세 — 손절 기준 재점검" 류 권고.
+  · 위 조건 모두 해당 없으면 일반 시장 리스크 문장.
 - 투자 권유·매수·매도 추천 절대 금지.
 - 별표(*) 사용 금지. 큰따옴표 안 텍스트에는 작은따옴표 사용.
 - 전문 용어는 괄호로 쉽게 풀어 설명."""
@@ -574,8 +589,8 @@ def get_portfolio_movers(username: str = Depends(get_current_user)):
 
 
 @router.get("/portfolio/disclosures/{stock_code}")
-def get_disclosures(stock_code: str, days: int = 30):
-    """종목코드 기준 최근 DART 공시 목록 조회."""
+def get_disclosures(stock_code: str, days: int = 30, with_summary: bool = True):
+    """종목코드 기준 최근 DART 공시 목록 조회. with_summary=True면 AI 한 줄 요약 포함 (캐시)."""
     try:
         companies = download_corp_codes()
     except Exception:
@@ -597,9 +612,77 @@ def get_disclosures(stock_code: str, days: int = 30):
             "flr_nm": d.get("flr_nm", ""),
             "rcept_no": d.get("rcept_no", ""),
             "url": f"https://dart.fss.or.kr/dsaf001/main.do?rcpNo={d.get('rcept_no', '')}",
+            "ai_summary": None,
         }
         for d in raw
     ]
+
+    if with_summary and disclosures:
+        from app.db.trade_db import get_disclosure_summaries, save_disclosure_summary
+        from app.collectors.dart import fetch_disclosure_body
+        rcept_nos = [d["rcept_no"] for d in disclosures if d["rcept_no"]]
+        cached = get_disclosure_summaries(rcept_nos)
+
+        # 캐시 hit
+        for d in disclosures:
+            if d["rcept_no"] in cached:
+                d["ai_summary"] = cached[d["rcept_no"]]
+
+        # 캐시 miss는 본문 fetch + 배치 LLM
+        misses = [d for d in disclosures if d["rcept_no"] and not d["ai_summary"]]
+        if misses:
+            try:
+                bodies = []
+                for d in misses[:5]:  # 한 번에 최대 5건만 처리 (API 호출 부담)
+                    body = fetch_disclosure_body(d["rcept_no"])
+                    if body and len(body) > 200:
+                        bodies.append((d["rcept_no"], d["report_nm"], body[:3000]))
+
+                if bodies:
+                    SYS = """공시 본문 여러 개를 받아서 각각 한 줄로 요약합니다.
+요약 규칙:
+- 1~2문장, 최대 50자 이내
+- 핵심 사실만 (수치 포함 시 단위 명확하게)
+- 친근한 종결어미 (~이에요/~해요), 형식체(~합니다) 금지
+- 별표(*) / 호칭 금지
+
+출력은 JSON 배열: [{"rcept_no": "...", "summary": "..."}, ...]"""
+
+                    prompt_parts = []
+                    for rcept_no, report_nm, body in bodies:
+                        prompt_parts.append(f"[rcept_no: {rcept_no}]\n[제목: {report_nm}]\n[본문 요약 대상]\n{body}\n")
+                    prompt = "\n---\n".join(prompt_parts)
+
+                    raw_text = generate_answer(prompt, system_instruction=SYS, temperature=0.2)
+                    parsed = parse_json_response(raw_text, default={})
+                    # parse_json_response는 dict default — list로 다시 시도
+                    if not isinstance(parsed, list):
+                        # raw에서 직접 list 추출
+                        import re as _re
+                        m = _re.search(r"\[[\s\S]*\]", raw_text)
+                        if m:
+                            try:
+                                parsed = json.loads(m.group())
+                            except Exception:
+                                parsed = []
+                        else:
+                            parsed = []
+
+                    if isinstance(parsed, list):
+                        for item in parsed:
+                            if not isinstance(item, dict):
+                                continue
+                            rno = item.get("rcept_no", "")
+                            summ = (item.get("summary") or "").strip()
+                            if rno and summ:
+                                save_disclosure_summary(rno, summ)
+                                for d in disclosures:
+                                    if d["rcept_no"] == rno:
+                                        d["ai_summary"] = summ
+                                        break
+            except Exception:
+                pass  # 요약 실패해도 공시 목록 자체는 반환
+
     return {"stock_code": stock_code, "disclosures": disclosures}
 
 

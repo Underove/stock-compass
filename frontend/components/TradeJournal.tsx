@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import type { PortfolioItem, PortfolioSnapshot, Trade, TradeSummaryItem } from "../lib/types";
-import { fetchPortfolioSnapshots, fetchTrades, fetchTradeSummary } from "../lib/api";
+import type { PortfolioItem, PortfolioSnapshot, Trade, TradeDiagnose, TradeSummaryItem } from "../lib/types";
+import { fetchPortfolioSnapshots, fetchTradeDiagnose, fetchTrades, fetchTradeSummary } from "../lib/api";
 import TradeDetailModal from "./TradeDetailModal";
 
 type GraphMode = "value" | "pnl";
@@ -156,6 +156,8 @@ export default function TradeJournal({ portfolio }: Props) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Trade | null>(null);
+  const [diagnose, setDiagnose] = useState<TradeDiagnose | null>(null);
+  const [diagnoseLoading, setDiagnoseLoading] = useState(false);
 
   const priceMap = useMemo(() => {
     const m: Record<string, number> = {};
@@ -177,6 +179,20 @@ export default function TradeJournal({ portfolio }: Props) {
     }).catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetchTradeDiagnose().then(setDiagnose).catch(() => {});
+  }, []);
+
+  async function refreshDiagnose() {
+    setDiagnoseLoading(true);
+    try {
+      const d = await fetchTradeDiagnose(true);
+      setDiagnose(d);
+    } finally {
+      setDiagnoseLoading(false);
+    }
+  }
 
   const filteredSnaps = useMemo(() => {
     const cutoff = new Date();
@@ -332,6 +348,11 @@ export default function TradeJournal({ portfolio }: Props) {
         )}
       </div>
 
+      {/* AI 매매 패턴 진단 */}
+      {diagnose && (
+        <DiagnoseCard diagnose={diagnose} onRefresh={refreshDiagnose} loading={diagnoseLoading} />
+      )}
+
       {/* Trade List */}
       <div>
         <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: "-0.022em", color: "var(--label)", marginBottom: 10 }}>
@@ -368,6 +389,68 @@ export default function TradeJournal({ portfolio }: Props) {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function DiagnoseCard({ diagnose, onRefresh, loading }: {
+  diagnose: TradeDiagnose;
+  onRefresh: () => void;
+  loading: boolean;
+}) {
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, rgba(0,122,255,0.06), rgba(88,86,214,0.04))",
+      border: "0.5px solid rgba(0,122,255,0.20)",
+      borderRadius: 16,
+      padding: "14px 16px",
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, color: "var(--primary)", fontWeight: 700, letterSpacing: "-0.01em" }}>
+          ✨ AI 매매 패턴 진단
+        </span>
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          style={{
+            fontSize: 11, color: "var(--primary)", fontWeight: 700,
+            padding: "5px 12px", background: "rgba(0,122,255,0.10)", borderRadius: 100,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {loading ? "분석 중…" : "다시 분석"}
+        </button>
+      </div>
+      <p style={{
+        fontSize: 14, fontWeight: 600, color: "var(--label)",
+        lineHeight: 1.55, letterSpacing: "-0.015em", margin: "0 0 12px",
+      }}>
+        {diagnose.diagnosis}
+      </p>
+      {diagnose.patterns.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {diagnose.patterns.map((p, i) => {
+            const color = p.tone === "positive" ? "var(--red)" : p.tone === "negative" ? "var(--primary)" : "var(--label3)";
+            const bg = p.tone === "positive" ? "rgba(255,59,48,0.06)" : p.tone === "negative" ? "rgba(0,122,255,0.06)" : "var(--surface2)";
+            return (
+              <div key={i} style={{
+                background: bg, borderRadius: 10, padding: "9px 12px",
+                borderLeft: `3px solid ${color}`,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color, letterSpacing: "-0.01em", marginBottom: 3 }}>
+                  {p.label}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--label2)", lineHeight: 1.5, letterSpacing: "-0.015em" }}>
+                  {p.detail}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <div style={{ fontSize: 10, color: "var(--label3)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
+        매매 {diagnose.trade_count}건 분석 · {diagnose.generated_at}
+      </div>
     </div>
   );
 }

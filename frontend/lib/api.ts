@@ -14,6 +14,7 @@ import type {
   PortfolioMover,
   PortfolioOneliner,
   PortfolioSnapshot,
+  TradeDiagnose,
   SavedFilter,
   ScreenerItem,
   ScreenerParams,
@@ -118,6 +119,14 @@ export async function fetchPortfolioInsights(): Promise<Record<string, StockInsi
     return data.insights ?? {};
   } catch {
     return {};
+  }
+}
+
+export async function fetchTradeDiagnose(force = false): Promise<TradeDiagnose | null> {
+  try {
+    return await getJSON<TradeDiagnose>(`/api/trades/diagnose${force ? "?force=true" : ""}`);
+  } catch {
+    return null;
   }
 }
 

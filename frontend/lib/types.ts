@@ -144,6 +144,19 @@ export type StockPrice = {
   session?: "open" | "pre" | "after" | "closed";
 };
 
+export type TradePattern = {
+  label: string;
+  detail: string;
+  tone: "positive" | "negative" | "neutral";
+};
+
+export type TradeDiagnose = {
+  diagnosis: string;
+  patterns: TradePattern[];
+  trade_count: number;
+  generated_at: string;
+};
+
 export type PortfolioOneliner = {
   headline: string;
   tone: "positive" | "negative" | "neutral";
@@ -195,6 +208,7 @@ export type DisclosureItem = {
   flr_nm: string;
   rcept_no: string;
   url: string;
+  ai_summary?: string | null;
 };
 
 export type AnalysisResult = {

@@ -101,6 +101,12 @@ def init_db() -> None:
                 corp_name   TEXT    NOT NULL,
                 PRIMARY KEY (username, stock_code)
             );
+
+            CREATE TABLE IF NOT EXISTS disclosure_summary (
+                rcept_no    TEXT    PRIMARY KEY,
+                summary     TEXT    NOT NULL,
+                created_at  TEXT    DEFAULT CURRENT_TIMESTAMP
+            );
         """)
         # 기존 DB 마이그레이션 — 없으면 추가
         for ddl in (
@@ -543,4 +549,29 @@ def remove_alert_watch(username: str, stock_code: str) -> None:
         con.execute(
             "DELETE FROM alert_watch WHERE username=? AND stock_code=?",
             (username, stock_code),
+        )
+
+
+# ─── 공시 AI 요약 캐시 ────────────────────────────────────────────────────────
+
+def get_disclosure_summaries(rcept_nos: list[str]) -> dict[str, str]:
+    """rcept_no 리스트로 캐시된 요약 일괄 조회."""
+    if not rcept_nos:
+        return {}
+    placeholders = ",".join(["?"] * len(rcept_nos))
+    with _conn() as con:
+        rows = con.execute(
+            f"SELECT rcept_no, summary FROM disclosure_summary WHERE rcept_no IN ({placeholders})",
+            rcept_nos,
+        ).fetchall()
+    return {r[0]: r[1] for r in rows}
+
+
+def save_disclosure_summary(rcept_no: str, summary: str) -> None:
+    if not rcept_no or not summary:
+        return
+    with _conn() as con:
+        con.execute(
+            "INSERT OR REPLACE INTO disclosure_summary(rcept_no, summary) VALUES(?, ?)",
+            (rcept_no, summary),
         )

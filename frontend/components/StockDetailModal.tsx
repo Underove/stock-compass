@@ -869,17 +869,28 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                           href={d.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ display: "flex", alignItems: "center", padding: "12px 20px", gap: 12, textDecoration: "none" }}
+                          style={{ display: "flex", alignItems: "flex-start", padding: "12px 20px", gap: 12, textDecoration: "none" }}
                         >
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
-                              fontSize: 13, color: "var(--label)", lineHeight: 1.45, fontWeight: 600,
+                              fontSize: 13, color: "var(--label)", lineHeight: 1.45, fontWeight: 700,
+                              letterSpacing: "-0.02em",
                               overflow: "hidden", display: "-webkit-box",
                               WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
                             }}>
                               {d.report_nm}
                             </div>
-                            <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 3 }}>{d.flr_nm}</div>
+                            {d.ai_summary && (
+                              <div style={{
+                                fontSize: 12, color: "var(--label2)", marginTop: 4, lineHeight: 1.5,
+                                letterSpacing: "-0.015em", fontWeight: 500,
+                                display: "flex", alignItems: "flex-start", gap: 5,
+                              }}>
+                                <span style={{ color: "var(--primary)", fontWeight: 700, flexShrink: 0 }}>✨</span>
+                                <span>{d.ai_summary}</span>
+                              </div>
+                            )}
+                            <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 4 }}>{d.flr_nm}</div>
                           </div>
                           <div style={{ flexShrink: 0, textAlign: "right" }}>
                             <div style={{
