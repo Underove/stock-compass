@@ -81,7 +81,19 @@ Bad: "조건에 맞는 종목이 없습니다"
 Good: "조건에 맞는 종목이 없어요"
 
 Bad: "최고" / "최저"
-Good: "가장 잘 가요" / "가장 힘들어요"
+Good: "수익 1위" / "손실 1위"
+
+### Don't personify financial data
+
+Stocks are not people. Don't say "가장 잘 가요" / "가장 힘들어요" — it reads as awkward marketing-speak in a financial context.
+
+Bad: "오늘 가장 잘 가요" / "가장 힘들어요"
+Good: "수익 1위" / "손실 1위"
+
+Bad: "이 종목이 효자예요"
+Good: "수익률 +12.3%"
+
+Conversational ≠ personified. Friendly endings (~이에요/~해요) are good. Anthropomorphizing market data is not.
 
 ### Use `~이에요 / ~해요 / ~에요` endings
 Never use `~입니다 / ~습니다 / ~합니다` in UI labels (formal-stiff). Use polite informal forms throughout.
@@ -93,10 +105,10 @@ Prefix relevant labels with **"오늘의"** / **"지금"** / **"방금"** to mak
 - "방금 추가했어요"
 
 ### Softer negatives
-Avoid harsh negative phrasing for losses. Frame them as observations, not failures.
+Avoid harsh negative phrasing for losses. Frame them as observations, not failures — but stick to data language, not emotion.
 
 Bad: "큰 손실 발생"
-Good: "지금은 힘들어요"
+Good: "지금 -8.5% 손실이에요"
 
 Bad: "데이터 없음"
 Good: "아직 정보가 없어요"

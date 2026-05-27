@@ -443,9 +443,9 @@ function StatsBar({ stats }: { stats: PortfolioStats }) {
         display: "flex", gap: 8,
         paddingTop: 14, borderTop: "0.5px solid var(--sep)",
       }}>
-        <BestWorstCell label="가장 잘 가요" name={stats.best.corp_name} pct={stats.best.pnl_pct} tone="up" />
+        <BestWorstCell label="수익 1위" name={stats.best.corp_name} pct={stats.best.pnl_pct} tone="up" />
         <div style={{ width: "0.5px", background: "var(--sep)" }} />
-        <BestWorstCell label="가장 힘들어요" name={stats.worst.corp_name} pct={stats.worst.pnl_pct} tone="down" />
+        <BestWorstCell label="손실 1위" name={stats.worst.corp_name} pct={stats.worst.pnl_pct} tone="down" />
       </div>
     </div>
   );
