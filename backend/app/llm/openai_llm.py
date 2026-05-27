@@ -22,8 +22,10 @@ def generate_answer(
     system_instruction: str | None = None,
     temperature: float = 0.3,
     _retries: int = 2,
+    model: str | None = None,
 ) -> str:
     client = get_client()
+    _model = model or settings.openai_model
     messages: list[dict] = []
     if system_instruction:
         messages.append({"role": "system", "content": system_instruction})
@@ -33,7 +35,7 @@ def generate_answer(
     for attempt in range(_retries + 1):
         try:
             response = client.chat.completions.create(
-                model=settings.openai_model,
+                model=_model,
                 messages=messages,
                 temperature=temperature,
             )
@@ -57,10 +59,12 @@ def generate_with_tools(
     username: str | None = None,
     temperature: float = 0.3,
     max_tool_calls: int = 3,
+    model: str | None = None,
 ) -> str:
     from app.tools import OPENAI_TOOLS, execute_tool
 
     client = get_client()
+    _model = model or settings.openai_model
     messages: list[dict] = []
     if system_instruction:
         messages.append({"role": "system", "content": system_instruction})
@@ -74,7 +78,7 @@ def generate_with_tools(
         for attempt in range(_retries + 1):
             try:
                 response = client.chat.completions.create(
-                    model=settings.openai_model,
+                    model=_model,
                     messages=messages,
                     tools=OPENAI_TOOLS,
                     temperature=temperature,

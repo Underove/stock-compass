@@ -365,7 +365,7 @@ def get_portfolio_briefing(force: bool = False, username: str = Depends(get_curr
 {portfolio_text}"""
 
     try:
-        raw = generate_answer(prompt, system_instruction=BRIEFING_SYSTEM, temperature=0.25)
+        raw = generate_answer(prompt, system_instruction=BRIEFING_SYSTEM, temperature=0.25, model=settings.openai_model_pro)
         sections = parse_json_response(raw, default=None)
         if not sections or not isinstance(sections.get("summary"), str):
             sections = None

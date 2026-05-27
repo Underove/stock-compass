@@ -57,11 +57,12 @@ def generate_answer(
     system_instruction: str | None = None,
     temperature: float = 0.3,
     _retries: int = 2,
+    model: str | None = None,
 ) -> str:
     """프롬프트를 LLM에 보내고 자연어 답변을 받음. openai_api_key 설정 시 OpenAI 사용."""
     if settings.openai_api_key:
         from app.llm.openai_llm import generate_answer as _openai_generate
-        return _openai_generate(prompt, system_instruction=system_instruction, temperature=temperature, _retries=_retries)
+        return _openai_generate(prompt, system_instruction=system_instruction, temperature=temperature, _retries=_retries, model=model)
 
     client = get_client()
     config = types.GenerateContentConfig(

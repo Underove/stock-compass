@@ -357,6 +357,7 @@ def job_premarket_news_summary() -> None:
     try:
         from app.collectors.web_search import search_news
         from app.llm.gemini import generate_answer, parse_json_response
+        from app.config import settings as _settings
 
         all_stocks: dict[str, str] = {}
         for f in DATA_DIR.glob("portfolio_*.json"):
@@ -412,6 +413,7 @@ def job_premarket_news_summary() -> None:
             f"아래 뉴스를 바탕으로 개장 전 브리핑 JSON을 작성하세요.\n\n{news_text}",
             system_instruction=SYSTEM,
             temperature=0.2,
+            model=_settings.openai_model_pro,
         )
         sections = parse_json_response(raw, default={})
         now = _now_kst()

@@ -21,7 +21,8 @@ class Settings(BaseSettings):
     kis_is_mock: bool = True
 
     openai_api_key: str = ""
-    openai_model: str = "gpt-4.5"
+    openai_model: str = "gpt-5.4-mini"
+    openai_model_pro: str = "gpt-5.4"
 
     jwt_secret: str = "change-me-in-production"
 
