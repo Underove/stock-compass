@@ -201,7 +201,7 @@ textarea:focus {
 .dashboard-grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 340px 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 1px;
   overflow: hidden;
   background: var(--sep);
@@ -345,9 +345,9 @@ textarea:focus {
   }
   .mobile-ticker-strip::-webkit-scrollbar { display: none; }
 
-  /* 모바일 패널 높이 (헤더 52px + 탭바 56px + safe-area) */
+  /* 스트립 높이만큼 패널 높이 보정 (safe area 포함) */
   .dashboard-panel {
-    min-height: calc(100dvh - 52px - 56px - env(safe-area-inset-bottom, 0px)) !important;
+    min-height: calc(100dvh - 52px - 40px - 56px - env(safe-area-inset-bottom, 0px)) !important;
   }
 
 
