@@ -610,15 +610,15 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
               {/* ── 재무 지표 ── */}
               {loadingFundamental ? (
-                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
                   <Skeleton height={14} width="30%" />
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 12 }}>
                     {[1,2,3,4].map(i => <Skeleton key={i} height={60} />)}
                   </div>
                 </div>
               ) : fundamental ? (
-                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>재무 지표</div>
+                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
+                  <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em", marginBottom: 14 }}>재무 지표</div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                     {([
                       { label: "PER", value: fundamental.per !== null ? `${fundamental.per.toFixed(1)}배` : "—", note: "주가 / 순이익", accent: "rgba(0,122,255,0.08)", dot: "var(--primary)" },
@@ -631,7 +631,11 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                           <div style={{ width: 5, height: 5, borderRadius: "50%", background: dot, flexShrink: 0 }} />
                           <span style={{ fontSize: 11, color: "var(--label2)", fontWeight: 600 }}>{label}</span>
                         </div>
-                        <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: "-0.03em", color: value === "—" ? "var(--label3)" : "var(--label)" }}>{value}</div>
+                        <div style={{
+                          fontSize: 17, fontWeight: 800, letterSpacing: "-0.03em",
+                          color: value === "—" ? "var(--label3)" : "var(--label)",
+                          fontVariantNumeric: "tabular-nums",
+                        }}>{value}</div>
                         <div style={{ fontSize: 10, color: "var(--label3)", marginTop: 3 }}>{note}</div>
                       </div>
                     ))}
@@ -639,7 +643,10 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                   {fundamental.market_cap !== null && (
                     <div style={{ marginTop: 12, paddingTop: 12, borderTop: "0.5px solid var(--sep)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <span style={{ fontSize: 12, color: "var(--label3)", fontWeight: 500 }}>시가총액</span>
-                      <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em" }}>{fmtMarketCap(fundamental.market_cap)}</span>
+                      <span style={{
+                        fontSize: 14, fontWeight: 800, letterSpacing: "-0.02em",
+                        fontVariantNumeric: "tabular-nums",
+                      }}>{fmtMarketCap(fundamental.market_cap)}</span>
                     </div>
                   )}
                 </div>
@@ -647,15 +654,15 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
               {/* ── 외인·기관 순매수 ── */}
               {loadingTradingFlow ? (
-                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
                   <Skeleton height={14} width="40%" />
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                     <Skeleton height={100} /><Skeleton height={100} />
                   </div>
                 </div>
               ) : tradingFlow.length > 0 ? (
-                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>외인·기관 순매수</div>
+                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
+                  <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em", marginBottom: 14 }}>외인·기관 순매수</div>
                   <div style={{ display: "flex", gap: 12, paddingTop: 12, borderTop: "0.5px solid var(--sep)" }}>
                     {([["외국인", "foreign_net"], ["기관", "institution_net"]] as [string, keyof TradingFlowItem][]).map(([label, key]) => (
                       <div key={label} style={{ flex: 1 }}>
@@ -666,7 +673,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                           return (
                             <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                               <span style={{ fontSize: 10, color: "var(--label3)" }}>{item.date}</span>
-                              <span style={{ fontSize: 12, fontWeight: 700, color }}>{val > 0 ? "+" : ""}{fmtFlow(val)}</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, color, fontVariantNumeric: "tabular-nums" }}>{val > 0 ? "+" : ""}{fmtFlow(val)}</span>
                             </div>
                           );
                         })}
@@ -678,18 +685,22 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
               {/* ── 공매도 비율 ── */}
               {loadingShortSelling ? (
-                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
                   <Skeleton height={14} width="30%" />
                   <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                     {[1,2,3,4,5].map(i => <Skeleton key={i} height={40} />)}
                   </div>
                 </div>
               ) : shortSelling && (shortSelling.ratio !== null || shortSelling.trend.length > 0) ? (
-                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "-0.02em", marginBottom: 12 }}>공매도 비율</div>
+                <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
+                  <div style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em", marginBottom: 14 }}>공매도 비율</div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0 12px", borderTop: "0.5px solid var(--sep)" }}>
                     <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-                      <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.04em", color: (shortSelling.ratio ?? 0) > 5 ? "var(--red)" : "var(--label)" }}>
+                      <span style={{
+                        fontSize: 28, fontWeight: 800, letterSpacing: "-0.04em",
+                        color: (shortSelling.ratio ?? 0) > 5 ? "var(--red)" : "var(--label)",
+                        fontVariantNumeric: "tabular-nums",
+                      }}>
                         {shortSelling.ratio !== null ? shortSelling.ratio.toFixed(1) : "—"}
                       </span>
                       <span style={{ fontSize: 13, color: "var(--label3)" }}>%</span>
@@ -728,11 +739,11 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
 
               {/* ── 기술적 지표 ── */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 2px 0" }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--label)" }}>기술적 지표</span>
+                <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em", color: "var(--label)" }}>기술적 지표</span>
                 <button
                   onClick={loadTechnical}
                   disabled={loadingTechnical}
-                  style={{ fontSize: 11, color: "var(--primary)", fontWeight: 700, padding: "5px 12px", background: "rgba(0,122,255,0.09)", borderRadius: 9, border: "none", cursor: "pointer" }}
+                  style={{ fontSize: 12, color: "var(--primary)", fontWeight: 700, padding: "6px 12px", background: "rgba(0,122,255,0.10)", borderRadius: 100, border: "none", cursor: "pointer", letterSpacing: "-0.01em" }}
                 >
                   {loadingTechnical ? "…" : "새로고침"}
                 </button>
@@ -743,7 +754,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
                 <TechnicalSection ta={technical} currentPrice={price?.current_price ?? technical.current_price} />
               ) : (
                 <div style={{ background: "var(--surface)", borderRadius: 20, padding: "24px", textAlign: "center", color: "var(--label2)", fontSize: 14, boxShadow: "var(--shadow)" }}>
-                  지표를 불러오지 못했습니다.
+                  지표를 불러올 수 없어요
                 </div>
               )}
             </div>
@@ -1087,7 +1098,7 @@ function SignalRow({ title, status, value, color, muted }: {
       <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
       <span style={{ fontSize: 13, color: "var(--label3)", minWidth: 72, fontWeight: 500 }}>{title}</span>
       <span style={{ fontSize: 13, fontWeight: 700, color: muted ? "var(--label)" : color, flex: 1 }}>{status}</span>
-      {value && <span style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600 }}>{value}</span>}
+      {value && <span style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{value}</span>}
     </div>
   );
 }
@@ -1125,7 +1136,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
   return (
     <>
       {/* ── 한눈에 보기 ── */}
-      <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+      <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
         <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>한눈에 보기</div>
         <div style={{ borderTop: "0.5px solid var(--sep)" }}>
           <SignalRow
@@ -1161,14 +1172,14 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
           </div>
           <RangeBar pct={ta.pos_in_52w_range} />
           <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-            <span style={{ fontSize: 11, color: "var(--label3)" }}>연저가 {fmt(ta.low_52w)}원</span>
-            <span style={{ fontSize: 11, color: "var(--label3)" }}>연고가 {fmt(ta.high_52w)}원</span>
+            <span style={{ fontSize: 11, color: "var(--label3)", fontVariantNumeric: "tabular-nums" }}>연저가 {fmt(ta.low_52w)}원</span>
+            <span style={{ fontSize: 11, color: "var(--label3)", fontVariantNumeric: "tabular-nums" }}>연고가 {fmt(ta.high_52w)}원</span>
           </div>
         </div>
       </div>
 
       {/* ── 평균 주가 흐름 ── */}
-      <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+      <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
           <span style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600 }}>평균 주가 흐름</span>
           <span style={{ fontSize: 11, fontWeight: 700, color: cross.color, background: `${cross.color}14`, borderRadius: 6, padding: "2px 8px" }}>
@@ -1202,7 +1213,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
 
       {/* ── 과열 지수 ── */}
       {rsi !== null && rsiState && (
-        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
           <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>과열 지수</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderTop: "0.5px solid var(--sep)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1224,7 +1235,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
 
       {/* ── 상승·하락 압력 ── */}
       {ta.macd !== null && macdState && (
-        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
           <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>상승·하락 압력</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderTop: "0.5px solid var(--sep)", marginBottom: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1249,7 +1260,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
 
       {/* ── 가격 변동 구간 ── */}
       {ta.bb_upper && ta.bb_mid && ta.bb_lower && (
-        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
           <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>가격 변동 구간</div>
           {ta.bb_position !== null && (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 0", borderTop: "0.5px solid var(--sep)", marginBottom: 10 }}>
@@ -1282,7 +1293,7 @@ function TechnicalSection({ ta, currentPrice }: { ta: TechnicalData; currentPric
 
       {/* ── 주요 가격대 ── */}
       {(ta.support || ta.resistance) && (
-        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 18px", boxShadow: "var(--shadow)" }}>
+        <div style={{ background: "var(--surface)", borderRadius: 20, padding: "16px 20px", boxShadow: "var(--shadow)" }}>
           <div style={{ fontSize: 12, color: "var(--label3)", fontWeight: 600, marginBottom: 4 }}>주요 가격대</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, borderTop: "0.5px solid var(--sep)", paddingTop: 12 }}>
             <div style={{ background: "rgba(0,122,255,0.06)", borderRadius: 12, padding: "12px 14px" }}>
