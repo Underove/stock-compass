@@ -25,10 +25,11 @@ export default function LoginPage() {
           onClick={() => signIn("google", { callbackUrl: "/" })}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 12, padding: "13px 20px", borderRadius: 14,
+            gap: 12, padding: "14px 20px", borderRadius: 14,
             border: "1.5px solid var(--sep)", background: "var(--surface)",
-            fontSize: 15, fontWeight: 600, cursor: "pointer", color: "var(--label)",
+            fontSize: 16, fontWeight: 700, cursor: "pointer", color: "var(--label)",
             boxShadow: "var(--shadow-sm)", transition: "box-shadow 0.15s",
+            letterSpacing: "-0.015em",
           }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
@@ -41,7 +42,7 @@ export default function LoginPage() {
         </button>
 
         <p style={{ fontSize: 11, color: "var(--label3)", textAlign: "center" }}>
-          로그인 시 개인 포트폴리오가 계정에 저장됩니다
+          로그인하면 포트폴리오가 계정에 안전하게 저장돼요
         </p>
       </div>
     </div>

@@ -193,15 +193,15 @@ export default function Home() {
                     boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
                     border: "0.5px solid var(--sep)", minWidth: 180, overflow: "hidden",
                   }}>
-                    <div style={{ padding: "12px 16px", borderBottom: "0.5px solid var(--sep)" }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "var(--label)" }}>{session.user.name}</div>
+                    <div style={{ padding: "14px 16px", borderBottom: "0.5px solid var(--sep)" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: "-0.022em", color: "var(--label)" }}>{session.user.name}</div>
                       <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 2 }}>{session.user.email}</div>
                     </div>
                     <button
                       onClick={() => { setShowProfileMenu(false); signOut({ callbackUrl: "/login" }); }}
                       style={{
                         width: "100%", padding: "12px 16px", textAlign: "left",
-                        fontSize: 13, fontWeight: 600, color: "var(--red)",
+                        fontSize: 14, fontWeight: 700, color: "var(--red)", letterSpacing: "-0.015em",
                         background: "transparent", cursor: "pointer",
                       }}
                     >
@@ -328,7 +328,7 @@ function MarketStatusBadge({ status }: { status: MarketStatus }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 5,
-      background: s.bg, borderRadius: 20, padding: "4px 10px",
+      background: s.bg, borderRadius: 100, padding: "4px 10px",
       border: `0.5px solid ${s.dot}30`,
     }}>
       <span style={{
@@ -476,20 +476,21 @@ function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAd
         maxHeight: "80dvh", display: "flex", flexDirection: "column",
       }}>
         {/* 헤더 */}
-        <div style={{ padding: "13px 16px 11px", borderBottom: "0.5px solid var(--sep)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>알림 {alerts.length}건</span>
-          <button onClick={onReadAll} style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600 }}>모두 읽음</button>
+        <div style={{ padding: "14px 16px 12px", borderBottom: "0.5px solid var(--sep)", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
+          <span style={{ fontSize: 17, fontWeight: 700, letterSpacing: "-0.022em" }}>알림 {alerts.length}건</span>
+          <button onClick={onReadAll} style={{ fontSize: 12, color: "var(--primary)", fontWeight: 700, padding: "6px 12px", background: "rgba(0,122,255,0.10)", borderRadius: 100, letterSpacing: "-0.01em" }}>모두 읽음</button>
         </div>
 
         {/* 모니터링 종목 */}
-        <div style={{ padding: "10px 16px 8px", borderBottom: "0.5px solid var(--sep)", flexShrink: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--label3)", marginBottom: 6 }}>모니터링 종목</div>
+        <div style={{ padding: "12px 16px 10px", borderBottom: "0.5px solid var(--sep)", flexShrink: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--label2)", marginBottom: 8, letterSpacing: "-0.01em" }}>모니터링 종목</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
             {watchStocks.map(w => (
               <div key={w.stock_code} style={{
-                display: "flex", alignItems: "center", gap: 4,
-                background: "var(--surface2)", borderRadius: 8,
-                padding: "3px 8px", fontSize: 12, fontWeight: 600, color: "var(--label)",
+                display: "flex", alignItems: "center", gap: 5,
+                background: "var(--surface2)", borderRadius: 100,
+                padding: "4px 10px", fontSize: 12, fontWeight: 700, color: "var(--label)",
+                letterSpacing: "-0.01em",
               }}>
                 {w.corp_name}
                 <button onClick={() => onRemoveWatch(w.stock_code)} style={{ fontSize: 11, color: "var(--label3)", padding: 0, lineHeight: 1 }}>×</button>
@@ -502,9 +503,10 @@ function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAd
               onChange={e => setWatchQuery(e.target.value)}
               placeholder="+ 종목 추가"
               style={{
-                width: "100%", padding: "6px 10px", borderRadius: 8,
+                width: "100%", padding: "8px 12px", borderRadius: 100,
                 border: "0.5px solid var(--sep)", background: "var(--surface2)",
-                fontSize: 12, color: "var(--label)",
+                fontSize: 12, color: "var(--label)", outline: "none",
+                letterSpacing: "-0.01em",
               }}
             />
             {watchResults.length > 0 && (
@@ -535,7 +537,7 @@ function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAd
         {/* 알림 목록 */}
         <div style={{ overflowY: "auto", flex: 1 }}>
           {alerts.length === 0 && (
-            <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--label3)", fontSize: 13 }}>새 알림 없음</div>
+            <div style={{ padding: "24px 16px", textAlign: "center", color: "var(--label3)", fontSize: 13 }}>새 알림이 없어요</div>
           )}
           {alerts.map((a, i) => {
             const color = ALERT_COLOR[a.type] ?? "var(--label2)";
@@ -546,9 +548,9 @@ function AlertDropdown({ alerts, watchStocks, onClose, onReadAll, onDelete, onAd
                 <div style={{ padding: "10px 12px 10px 16px", display: "flex", gap: 10, alignItems: "flex-start" }}>
                   <div style={{ width: 8, height: 8, borderRadius: "50%", marginTop: 5, flexShrink: 0, background: color }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontSize: 13, color: "var(--label)", lineHeight: 1.4 }}>{a.message}</div>
-                    <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 3 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color, marginBottom: 3 }}>{label}</div>
+                    <div style={{ fontSize: 14, color: "var(--label)", lineHeight: 1.45, letterSpacing: "-0.015em" }}>{a.message}</div>
+                    <div style={{ fontSize: 11, color: "var(--label3)", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
                       {new Date(a.created_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </div>
                   </div>
