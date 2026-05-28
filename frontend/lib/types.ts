@@ -199,12 +199,30 @@ export type DisclosureItem = {
   ai_summary?: string | null;
 };
 
+export type AnalysisHolding = {
+  corp_name: string;
+  verdict: string;
+  change_note?: string;
+  comment: string;
+};
+
+export type AnalysisSource = {
+  type: "dart" | "upload" | "news";
+  label: string;
+  snippet: string;
+  url?: string | null;
+  upload_id?: string | null;
+  filename?: string | null;
+};
+
 export type AnalysisResult = {
-  analysis: string;
+  summary: string;
+  holdings: AnalysisHolding[];
+  action_items: string[];
+  sources: AnalysisSource[];
   portfolio_count: number;
-  prices_loaded: number;
-  dart_chunks: number;
   upload_chunks: number;
+  dart_chunks: number;
   news_loaded?: number;
 };
 

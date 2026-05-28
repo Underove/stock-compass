@@ -216,7 +216,7 @@ export async function listUploads(): Promise<UploadSummary[]> {
 }
 
 export async function getUploadOriginalUrl(upload_id: string): Promise<string | null> {
-  const res = await fetch(`${API_BASE}/api/uploads/${upload_id}/original`);
+  const res = await fetch(`${API_BASE}/api/uploads/${upload_id}/original`, { headers: authHeaders() });
   if (!res.ok) return null;
   const data = await res.json();
   return data.url ?? null;
