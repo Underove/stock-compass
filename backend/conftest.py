@@ -18,6 +18,9 @@ if _ENV.exists():
             _k, _, _v = _line.partition("=")
             os.environ.setdefault(_k.strip(), _v.strip())
 
+# 테스트 중 Sentry로 에러 전송 방지 (프로덕션 대시보드 오염 방지)
+os.environ["SENTRY_DSN"] = ""
+
 # 테스트가 TRUNCATE로 비우는 테이블 (init_db가 만드는 것들)
 _TEST_TABLES = [
     "trades", "portfolio_snapshots", "user_profiles", "screener_snapshot",

@@ -3,8 +3,9 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
+from app.api.auth import get_current_user
 from app.db.chroma_client import get_user_uploads_collection
 from app.db.storage import delete_original, get_download_url, upload_original
 from app.parsers.pdf_parser import chunk_text, extract_text_from_pdf
@@ -39,6 +40,7 @@ def _store_in_vector_db(
     chunks: list[str],
     upload_id: str,
     filename: str,
+    username: str,
     storage_path: str | None = None,
 ) -> tuple[bool, str | None]:
     """벡터 저장 성공 시 (True, None), 실패 시 (False, error message)."""
@@ -51,6 +53,7 @@ def _store_in_vector_db(
             metadatas=[
                 {
                     "upload_id": upload_id,
+                    "username": username,
                     "filename": filename,
                     "uploaded_at": now,
                     "chunk_index": i,
@@ -66,10 +69,10 @@ def _store_in_vector_db(
 
 
 @router.get("/uploads")
-def list_uploads() -> dict:
-    """저장된 모든 업로드 자료 목록 반환 (upload_id별 deduplicate)."""
+def list_uploads(username: str = Depends(get_current_user)) -> dict:
+    """본인 업로드 자료 목록 반환 (upload_id별 deduplicate)."""
     collection = get_user_uploads_collection()
-    result = collection.get(include=["metadatas"])
+    result = collection.get(where={"username": username}, include=["metadatas"])
     metadatas = result.get("metadatas") or []
 
     seen: dict[str, dict] = {}
@@ -91,10 +94,10 @@ def list_uploads() -> dict:
 
 
 @router.get("/uploads/{upload_id}/original")
-def get_upload_original(upload_id: str):
-    """업로드 원본 파일의 임시 다운로드 URL 반환 (Supabase Storage)."""
+def get_upload_original(upload_id: str, username: str = Depends(get_current_user)):
+    """본인 업로드 원본 파일의 임시 다운로드 URL 반환 (Supabase Storage)."""
     collection = get_user_uploads_collection()
-    result = collection.get(where={"upload_id": upload_id}, include=["metadatas"])
+    result = collection.get(where={"upload_id": upload_id, "username": username}, include=["metadatas"])
     metas = result.get("metadatas") or []
     if not metas:
         raise HTTPException(404, "해당 자료를 찾을 수 없습니다.")
@@ -108,10 +111,10 @@ def get_upload_original(upload_id: str):
 
 
 @router.delete("/uploads/{upload_id}")
-def delete_upload(upload_id: str):
-    """upload_id에 해당하는 모든 청크 + 원본 파일 삭제."""
+def delete_upload(upload_id: str, username: str = Depends(get_current_user)):
+    """본인 upload_id의 모든 청크 + 원본 파일 삭제."""
     collection = get_user_uploads_collection()
-    result = collection.get(where={"upload_id": upload_id}, include=["metadatas"])
+    result = collection.get(where={"upload_id": upload_id, "username": username}, include=["metadatas"])
     ids = result.get("ids") or []
     metas = result.get("metadatas") or []
     if not ids:
@@ -124,7 +127,10 @@ def delete_upload(upload_id: str):
 
 
 @router.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    username: str = Depends(get_current_user),
+):
     suffix = Path(file.filename or "").suffix.lower()
     if suffix not in ALLOWED_EXTENSIONS:
         raise HTTPException(
@@ -152,7 +158,12 @@ async def upload_document(file: UploadFile = File(...)):
         file.content_type or ("application/pdf" if suffix == ".pdf" else "text/plain"),
     )
 
-    stored, error = _store_in_vector_db(chunks, upload_id, file.filename or "", storage_path)
+    stored, error = _store_in_vector_db(chunks, upload_id, file.filename or "", username, storage_path)
+
+    # #4 벡터 저장 실패 시 원본 orphan 방지 — 보상 삭제
+    if not stored and storage_path:
+        delete_original(storage_path)
+        storage_path = None
 
     return {
         "upload_id": upload_id,

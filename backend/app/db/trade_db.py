@@ -105,7 +105,7 @@ _SCHEMA = [
     )""",
     "CREATE INDEX IF NOT EXISTS idx_saved_filters_user ON saved_screener_filters(username)",
     """CREATE TABLE IF NOT EXISTS alerts (
-        id          TEXT    PRIMARY KEY,
+        id          TEXT    NOT NULL,
         username    TEXT    NOT NULL,
         type        TEXT    NOT NULL,
         stock_code  TEXT    NOT NULL,
@@ -113,7 +113,8 @@ _SCHEMA = [
         message     TEXT    NOT NULL,
         meta        TEXT,
         created_at  TEXT    NOT NULL,
-        read        INTEGER NOT NULL DEFAULT 0
+        read        INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (username, id)
     )""",
     "CREATE INDEX IF NOT EXISTS idx_alerts_user ON alerts(username, read, created_at DESC)",
     """CREATE TABLE IF NOT EXISTS alert_watch (
@@ -154,6 +155,27 @@ def init_db() -> None:
                 con.execute(ddl)
             except Exception:
                 pass
+        # alerts PK 마이그레이션: 단일 id → (username, id) — 사용자별 알림 유실 방지
+        # 단일 컬럼 PK일 때만 1회 교정 (idempotent)
+        try:
+            con.execute("""
+                DO $$
+                DECLARE n int;
+                BEGIN
+                  SELECT count(*) INTO n FROM pg_index i
+                    WHERE i.indrelid = 'alerts'::regclass AND i.indisprimary;
+                  IF n = 1 THEN
+                    SELECT array_length(i.indkey::int[], 1) INTO n FROM pg_index i
+                      WHERE i.indrelid = 'alerts'::regclass AND i.indisprimary;
+                    IF n = 1 THEN
+                      ALTER TABLE alerts DROP CONSTRAINT alerts_pkey;
+                      ALTER TABLE alerts ADD PRIMARY KEY (username, id);
+                    END IF;
+                  END IF;
+                END $$;
+            """)
+        except Exception:
+            pass
 
 
 def record_trade(
@@ -503,7 +525,7 @@ def insert_alert(
             """INSERT INTO alerts
                (id, username, type, stock_code, corp_name, message, meta, created_at, read)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 0)
-               ON CONFLICT(id) DO NOTHING""",
+               ON CONFLICT(username, id) DO NOTHING""",
             (
                 alert_id, username, type_, stock_code, corp_name, message,
                 _json.dumps(meta, ensure_ascii=False) if meta else None,

@@ -31,14 +31,31 @@ def _ensure_schema() -> None:
         con.execute("CREATE EXTENSION IF NOT EXISTS vector")
         con.execute(
             f"""CREATE TABLE IF NOT EXISTS rag_vectors (
-                id          TEXT PRIMARY KEY,
+                id          TEXT NOT NULL,
                 collection  TEXT NOT NULL,
                 document    TEXT NOT NULL,
                 metadata    JSONB,
-                embedding   vector({EMBED_DIM})
+                embedding   vector({EMBED_DIM}),
+                PRIMARY KEY (collection, id)
             )"""
         )
         con.execute("CREATE INDEX IF NOT EXISTS idx_rag_collection ON rag_vectors(collection)")
+        # 구버전(단일 id PK) 교정 — 단일 컬럼 PK일 때만 1회 (idempotent)
+        try:
+            con.execute("""
+                DO $$
+                DECLARE n int;
+                BEGIN
+                  SELECT array_length(i.indkey::int[], 1) INTO n FROM pg_index i
+                    WHERE i.indrelid = 'rag_vectors'::regclass AND i.indisprimary;
+                  IF n = 1 THEN
+                    ALTER TABLE rag_vectors DROP CONSTRAINT rag_vectors_pkey;
+                    ALTER TABLE rag_vectors ADD PRIMARY KEY (collection, id);
+                  END IF;
+                END $$;
+            """)
+        except Exception:
+            pass
     _initialized = True
 
 
@@ -90,9 +107,9 @@ class PgVectorCollection:
             for i in range(len(documents))
         ]
         conflict = (
-            "ON CONFLICT(id) DO UPDATE SET document=excluded.document, "
-            "metadata=excluded.metadata, embedding=excluded.embedding, collection=excluded.collection"
-            if upsert else "ON CONFLICT(id) DO NOTHING"
+            "ON CONFLICT(collection, id) DO UPDATE SET document=excluded.document, "
+            "metadata=excluded.metadata, embedding=excluded.embedding"
+            if upsert else "ON CONFLICT(collection, id) DO NOTHING"
         )
         with _get_pool().connection() as con:
             _register(con)
