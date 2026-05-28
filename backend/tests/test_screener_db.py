@@ -1,15 +1,8 @@
 # backend/tests/test_screener_db.py
-import os
-os.environ.setdefault("DATABASE_URL", "")
 
-def _make_db(tmp_path):
-    import app.db.trade_db as db
-    db._DB_PATH = tmp_path / "test.db"
+def test_upsert_and_query_screener(db_schema):
+    db = db_schema
     db.init_db()
-    return db
-
-def test_upsert_and_query_screener(tmp_path):
-    db = _make_db(tmp_path)
     db.upsert_screener_snapshot([
         {"stock_code": "005930", "corp_name": "삼성전자", "sector": "반도체",
          "market_cap": 3000000, "per": 12.5, "pbr": 1.2, "momentum_20d": 3.5,
@@ -22,8 +15,9 @@ def test_upsert_and_query_screener(tmp_path):
     assert len(results) == 2
     assert results[0]["stock_code"] == "000660"  # has_ta=1 → first by has_ta DESC sort
 
-def test_query_screener_rsi_filter(tmp_path):
-    db = _make_db(tmp_path)
+def test_query_screener_rsi_filter(db_schema):
+    db = db_schema
+    db.init_db()
     db.upsert_screener_snapshot([
         {"stock_code": "005930", "corp_name": "삼성전자", "sector": "반도체",
          "market_cap": 3000000, "per": 12.5, "pbr": 1.2, "momentum_20d": 3.5,
@@ -36,8 +30,9 @@ def test_query_screener_rsi_filter(tmp_path):
     assert len(results) == 1
     assert results[0]["stock_code"] == "005930"
 
-def test_saved_filters_crud(tmp_path):
-    db = _make_db(tmp_path)
+def test_saved_filters_crud(db_schema):
+    db = db_schema
+    db.init_db()
     fid = db.save_filter("alice", "반도체 과매도", '{"sector": "반도체", "rsi_max": 30}')
     filters = db.get_saved_filters("alice")
     assert len(filters) == 1
@@ -45,8 +40,9 @@ def test_saved_filters_crud(tmp_path):
     db.delete_filter(fid, "alice")
     assert db.get_saved_filters("alice") == []
 
-def test_get_top_market_cap_codes(tmp_path):
-    db = _make_db(tmp_path)
+def test_get_top_market_cap_codes(db_schema):
+    db = db_schema
+    db.init_db()
     rows = [
         {"stock_code": f"{i:06d}", "corp_name": f"종목{i}", "sector": "기타",
          "market_cap": i * 1000, "per": None, "pbr": None, "momentum_20d": 0.0,

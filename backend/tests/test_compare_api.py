@@ -4,9 +4,8 @@ from fastapi.testclient import TestClient
 
 
 @pytest.fixture()
-def client(tmp_path, monkeypatch):
-    import app.db.trade_db as trade_db
-    trade_db._DB_PATH = tmp_path / "test.db"
+def client(db_schema, monkeypatch):
+    trade_db = db_schema
     trade_db.init_db()
 
     trade_db.upsert_screener_snapshot([

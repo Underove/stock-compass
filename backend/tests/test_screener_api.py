@@ -1,16 +1,13 @@
 # backend/tests/test_screener_api.py
 import json
-import os
-os.environ.setdefault("DATABASE_URL", "")
 
 import pytest
 from fastapi.testclient import TestClient
 
 
 @pytest.fixture()
-def client(tmp_path, monkeypatch):
-    import app.db.trade_db as trade_db
-    trade_db._DB_PATH = tmp_path / "test.db"
+def client(db_schema, monkeypatch):
+    trade_db = db_schema
     trade_db.init_db()
 
     # 스냅샷 seed

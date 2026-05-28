@@ -51,7 +51,7 @@ def _get_metrics(stock_code: str) -> dict:
         row = con.execute(
             """SELECT corp_name, sector, market_cap, per, pbr, rsi,
                       momentum_20d, volume_ratio, foreign_net_buy
-               FROM screener_snapshot WHERE stock_code=?""",
+               FROM screener_snapshot WHERE stock_code=%s""",
             (stock_code,),
         ).fetchone()
     if not row:
