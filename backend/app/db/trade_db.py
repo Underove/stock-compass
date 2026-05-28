@@ -77,6 +77,8 @@ _SCHEMA = [
         risk_level  TEXT NOT NULL DEFAULT 'neutral',
         horizon     TEXT NOT NULL DEFAULT 'mid',
         sectors     TEXT NOT NULL DEFAULT '[]',
+        goal        TEXT NOT NULL DEFAULT 'growth',
+        experience  TEXT NOT NULL DEFAULT 'intermediate',
         ai_memo     TEXT NOT NULL DEFAULT '',
         updated_at  TEXT NOT NULL DEFAULT ''
     )""",
@@ -152,6 +154,8 @@ def init_db() -> None:
             "ALTER TABLE screener_snapshot ADD COLUMN IF NOT EXISTS volume_ratio DOUBLE PRECISION",
             "ALTER TABLE screener_snapshot ADD COLUMN IF NOT EXISTS foreign_net_buy BIGINT",
             "ALTER TABLE factcheck_results ADD COLUMN IF NOT EXISTS username TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS goal TEXT NOT NULL DEFAULT 'growth'",
+            "ALTER TABLE user_profiles ADD COLUMN IF NOT EXISTS experience TEXT NOT NULL DEFAULT 'intermediate'",
         ):
             try:
                 con.execute(ddl)
@@ -316,6 +320,8 @@ def get_profile(username: str) -> dict:
             "risk_level": "neutral",
             "horizon": "mid",
             "sectors": [],
+            "goal": "growth",
+            "experience": "intermediate",
             "ai_memo": "",
             "updated_at": "",
         }
@@ -329,23 +335,29 @@ def upsert_profile(
     risk_level: str | None = None,
     horizon: str | None = None,
     sectors: list[str] | None = None,
+    goal: str | None = None,
+    experience: str | None = None,
 ) -> None:
     """투자 성향 저장. None 필드는 기존 값 유지 (ai_memo는 건드리지 않음)."""
     current = get_profile(username)
     new_risk = risk_level if risk_level is not None else current["risk_level"]
     new_horizon = horizon if horizon is not None else current["horizon"]
     new_sectors = sectors if sectors is not None else current["sectors"]
+    new_goal = goal if goal is not None else current.get("goal", "growth")
+    new_exp = experience if experience is not None else current.get("experience", "intermediate")
     with _conn() as con:
         con.execute(
-            """INSERT INTO user_profiles (username, risk_level, horizon, sectors, ai_memo, updated_at)
-               VALUES (%s, %s, %s, %s, %s, %s)
+            """INSERT INTO user_profiles (username, risk_level, horizon, sectors, goal, experience, ai_memo, updated_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                ON CONFLICT(username) DO UPDATE SET
                    risk_level=excluded.risk_level,
                    horizon=excluded.horizon,
                    sectors=excluded.sectors,
+                   goal=excluded.goal,
+                   experience=excluded.experience,
                    updated_at=excluded.updated_at""",
             (username, new_risk, new_horizon, _json.dumps(new_sectors, ensure_ascii=False),
-             current["ai_memo"], _kst_now()),
+             new_goal, new_exp, current["ai_memo"], _kst_now()),
         )
 
 

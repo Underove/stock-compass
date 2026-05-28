@@ -17,22 +17,31 @@ router = APIRouter()
 
 _RISK_LABEL = {"aggressive": "공격적", "neutral": "중립", "defensive": "방어적"}
 _HORIZON_LABEL = {"short": "단기", "mid": "중기", "long": "장기"}
+_GOAL_LABEL = {"growth": "자산 증식", "income": "배당 수익", "trading": "단기 수익"}
+_EXP_LABEL = {"beginner": "초보", "intermediate": "중급", "expert": "고급"}
 
 
 def _build_profile_context(profile: dict) -> str | None:
-    """투자 성향 dict → LLM 주입용 텍스트. 기본값(neutral/mid/빈 섹터)이면 None."""
+    """투자 성향 dict → LLM 주입용 텍스트. 전부 기본값이면 None."""
     risk = profile.get("risk_level", "neutral")
     horizon = profile.get("horizon", "mid")
     sectors = profile.get("sectors") or []
+    goal = profile.get("goal", "growth")
+    experience = profile.get("experience", "intermediate")
     memo = profile.get("ai_memo", "")
 
-    is_default = (risk == "neutral" and horizon == "mid" and not sectors and not memo)
+    is_default = (risk == "neutral" and horizon == "mid" and not sectors and not memo
+                  and goal in ("", "growth") and experience in ("", "intermediate"))
     if is_default:
         return None
 
     lines = [
         f"리스크: {_RISK_LABEL.get(risk, risk)} / 기간: {_HORIZON_LABEL.get(horizon, horizon)}",
     ]
+    if goal:
+        lines.append(f"투자 목표: {_GOAL_LABEL.get(goal, goal)}")
+    if experience:
+        lines.append(f"투자 경험: {_EXP_LABEL.get(experience, experience)}")
     if sectors:
         lines.append(f"선호 섹터: {', '.join(sectors)}")
     if memo:
