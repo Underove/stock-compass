@@ -196,6 +196,9 @@ def get_price(stock_code: str):
     try:
         data = _get_price(stock_code)
         return data
+    except ValueError as e:
+        # 없는 종목 = 클라이언트 실수 → 404 (서버 장애 아님, Sentry 알림 대상 X)
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -216,6 +219,9 @@ def get_chart(stock_code: str, days: int = 90, interval: str | None = None):
             return {"stock_code": stock_code, "candles": candles, "interval": interval}
         candles = get_chart_data(stock_code, days=days)
         return {"stock_code": stock_code, "candles": candles}
+    except ValueError as e:
+        # 없는 종목/데이터 = 404 (Sentry 알림 대상 X)
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
