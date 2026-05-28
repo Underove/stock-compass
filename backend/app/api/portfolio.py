@@ -18,13 +18,24 @@ from app.llm.gemini import generate_answer, parse_json_response
 
 _KST = datetime.timezone(datetime.timedelta(hours=9))
 
+# 종목 현재가 5초 TTL 캐시 — KIS REST 반복 호출 방지 (화면 전환·브리핑·oneliner 등 중복 조회)
+_PRICE_CACHE_TTL = 5.0
+_price_cache: dict[str, tuple[float, dict]] = {}
+
 
 def _get_price(stock_code: str) -> dict:
-    """KIS REST 우선, 실패하거나 current_price=0이면 pykrx fallback."""
+    """KIS REST 우선, 실패하거나 current_price=0이면 pykrx fallback. 5초 TTL 캐시."""
+    import time as _time
+    now = _time.monotonic()
+    hit = _price_cache.get(stock_code)
+    if hit and now - hit[0] < _PRICE_CACHE_TTL:
+        return hit[1]
+
     if settings.kis_app_key and settings.kis_app_secret:
         try:
             result = get_current_price_kis(stock_code)
             if result.get("current_price", 0) > 0:
+                _price_cache[stock_code] = (now, result)
                 return result
         except Exception:
             pass
@@ -43,6 +54,7 @@ def _get_price(stock_code: str) -> dict:
     else:
         session = "closed"
     data["session"] = session
+    _price_cache[stock_code] = (now, data)
     return data
 
 

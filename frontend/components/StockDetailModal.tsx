@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Briefcase, FileText, FileX2, Megaphone, Newspaper, ShieldAlert, TrendingUp, Users } from "lucide-react";
 
 import { addWatchlistItem, fetchChartData, fetchCommentary, fetchDisclosures, fetchFundamental, fetchNote, fetchShortSelling, fetchStockNews, fetchStockPrice, fetchTechnical, fetchTradingFlow, getSimilarStocks, removePortfolioItem, saveNote, updatePortfolioItem } from "../lib/api";
@@ -190,7 +190,7 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
     loadCommentary();
   }, [loadCommentary]);
 
-  // ── 기술지표: 최초 로드 + 정규장 5분 자동갱신 + 수동 새로고침 ──────────────
+  // ── 기술지표: technical 탭 진입 시 로드 + 정규장 5분 자동갱신 + 수동 새로고침 ──
   const loadTechnical = useCallback(async () => {
     setLoadingTechnical(true);
     fetchTechnical(currentItem.stock_code)
@@ -198,40 +198,54 @@ export function StockDetailModal({ item, onClose, onEdit }: Props) {
       .finally(() => setLoadingTechnical(false));
   }, [currentItem.stock_code]);
 
+  // 탭별 lazy-load: 종목 바뀌면 로드 기록 초기화
+  const loadedTabsRef = useRef<Record<string, Set<Tab>>>({});
   useEffect(() => {
-    loadTechnical();
+    loadedTabsRef.current[currentItem.stock_code] ??= new Set<Tab>();
+  }, [currentItem.stock_code]);
+
+  // technical 탭: technical · fundamental · tradingFlow · shortSelling
+  useEffect(() => {
+    if (activeTab !== "technical") return;
+    const loaded = (loadedTabsRef.current[currentItem.stock_code] ??= new Set<Tab>());
+    if (!loaded.has("technical")) {
+      loaded.add("technical");
+      loadTechnical();
+      setLoadingFundamental(true);
+      setLoadingTradingFlow(true);
+      setLoadingShortSelling(true);
+      fetchFundamental(currentItem.stock_code)
+        .then(setFundamental).catch(() => setFundamental(null))
+        .finally(() => setLoadingFundamental(false));
+      fetchTradingFlow(currentItem.stock_code)
+        .then(d => setTradingFlow(d.flow)).catch(() => setTradingFlow([]))
+        .finally(() => setLoadingTradingFlow(false));
+      fetchShortSelling(currentItem.stock_code)
+        .then(setShortSelling).catch(() => setShortSelling(null))
+        .finally(() => setLoadingShortSelling(false));
+    }
     if (!isMarketOpen()) return;
     const id = setInterval(loadTechnical, 5 * 60_000);
     return () => clearInterval(id);
-  }, [loadTechnical]);
+  }, [activeTab, currentItem.stock_code, loadTechnical]);
 
+  // ai 탭: disclosures · news · note
   useEffect(() => {
+    if (activeTab !== "ai") return;
+    const loaded = (loadedTabsRef.current[currentItem.stock_code] ??= new Set<Tab>());
+    if (loaded.has("ai")) return;
+    loaded.add("ai");
     setLoadingDisclosures(true);
+    setLoadingNews(true);
     fetchDisclosures(currentItem.stock_code, 30)
       .then(setDisclosures).catch(() => setDisclosures([]))
       .finally(() => setLoadingDisclosures(false));
-  }, [currentItem.stock_code]);
-
-  useEffect(() => {
-    setLoadingFundamental(true);
-    setLoadingTradingFlow(true);
-    setLoadingNews(true);
-    setLoadingShortSelling(true);
-    fetchFundamental(currentItem.stock_code)
-      .then(setFundamental).catch(() => setFundamental(null))
-      .finally(() => setLoadingFundamental(false));
-    fetchTradingFlow(currentItem.stock_code)
-      .then(d => setTradingFlow(d.flow)).catch(() => setTradingFlow([]))
-      .finally(() => setLoadingTradingFlow(false));
     fetchStockNews(currentItem.stock_code, currentItem.corp_name)
       .then(d => setNews(d.news)).catch(() => setNews([]))
       .finally(() => setLoadingNews(false));
-    fetchShortSelling(currentItem.stock_code)
-      .then(setShortSelling).catch(() => setShortSelling(null))
-      .finally(() => setLoadingShortSelling(false));
     fetchNote(currentItem.stock_code)
       .then(setNote).catch(() => setNote(""));
-  }, [currentItem.stock_code, currentItem.corp_name]);
+  }, [activeTab, currentItem.stock_code, currentItem.corp_name]);
 
   const evalPnl = price !== null
     ? (price.current_price - currentItem.buy_price) * currentItem.quantity
