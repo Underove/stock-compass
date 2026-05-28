@@ -344,10 +344,10 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
       <div
         className="modal-backdrop-enter"
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 199 }}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 199 }}
       />
 
-      {/* 바텀 시트 패널 */}
+      {/* 중앙 모달 */}
       <div
         className="modal-enter"
         style={{
@@ -355,8 +355,9 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
           inset: 0,
           zIndex: 200,
           display: "flex",
-          alignItems: "flex-end",
+          alignItems: "center",
           justifyContent: "center",
+          padding: "24px",
           pointerEvents: "none",
         }}
       >
@@ -364,10 +365,12 @@ export function CompareModal({ initialCode, initialName, onClose }: Props) {
           style={{
             width: "100%",
             maxWidth: 480,
-            maxHeight: "92vh",
+            maxHeight: "90vh",
             background: "var(--bg)",
-            borderRadius: "20px 20px 0 0",
+            borderRadius: 20,
             overflowY: "auto",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.5)",
+            border: "0.5px solid var(--sep)",
             pointerEvents: "auto",
           }}
         >
