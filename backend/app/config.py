@@ -26,6 +26,10 @@ class Settings(BaseSettings):
 
     jwt_secret: str = "change-me-in-production"
 
+    # 모바일(iOS) 소셜 로그인 — 미설정 시 모바일 인증 엔드포인트 비활성(503)
+    google_ios_client_id: str = ""
+    apple_bundle_id: str = ""
+
     database_url: str = ""
     supabase_url: str = ""
     supabase_service_key: str = ""

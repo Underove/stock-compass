@@ -25,7 +25,8 @@ pykrx>=1.0.45
 apscheduler>=3.10.0
 
 # 인증
-PyJWT>=2.8.0
+PyJWT[crypto]>=2.8.0
+google-auth==2.53.0
 
 # OpenAI
 openai>=1.30.0
