@@ -45,6 +45,16 @@ export default function LoginPage() {
           로그인하면 포트폴리오가 계정에 안전하게 저장돼요
         </p>
       </div>
+
+      <p style={{
+        position: "fixed", bottom: 16, left: 0, right: 0,
+        fontSize: 10, color: "var(--label3)", textAlign: "center",
+        lineHeight: 1.5, padding: "0 32px", margin: 0, maxWidth: 480,
+        marginLeft: "auto", marginRight: "auto",
+      }}>
+        N.O.V.A가 제공하는 정보·AI 분석은 투자 참고용이며 투자 자문이 아니에요.
+        투자 판단과 그 결과의 책임은 본인에게 있습니다.
+      </p>
     </div>
   );
 }

@@ -426,6 +426,15 @@ export function ChatCard({ portfolioVersion = 0 }: { portfolioVersion?: number }
           </div>
         </>
       )}
+
+      {/* 투자 책임 고지 */}
+      <div style={{
+        flexShrink: 0, padding: "6px 16px",
+        borderTop: "0.5px solid var(--sep)", background: "var(--bg)",
+        fontSize: 10, color: "var(--label3)", lineHeight: 1.4, textAlign: "center",
+      }}>
+        AI 분석은 투자 참고용이며 자문이 아니에요. 투자 판단·책임은 본인에게 있습니다.
+      </div>
     </div>
   );
 }
