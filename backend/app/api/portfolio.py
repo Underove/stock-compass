@@ -501,11 +501,15 @@ def _compute_insight(snap: dict) -> dict | None:
 
 
 @router.get("/portfolio/insights")
-def get_portfolio_insights(username: str = Depends(get_current_user)):
-    """보유 종목별 인라인 한 줄 인사이트. 룰 베이스 (LLM 호출 없음)."""
+def get_portfolio_insights(codes: str | None = None, username: str = Depends(get_current_user)):
+    """종목별 인라인 한 줄 인사이트. 룰 베이스 (LLM 호출 없음).
+    codes 미지정 시 보유 종목, 지정 시(쉼표구분) 해당 종목 — 관심종목 등에서 사용."""
     from app.db.trade_db import _conn
-    items = _load(username)
-    codes = [i["stock_code"] for i in items]
+    if codes:
+        codes = [c.strip() for c in codes.split(",") if c.strip()]
+    else:
+        items = _load(username)
+        codes = [i["stock_code"] for i in items]
     if not codes:
         return {"insights": {}}
 
