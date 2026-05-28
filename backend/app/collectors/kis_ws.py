@@ -1,11 +1,17 @@
 """KIS (한국투자증권) OAuth 토큰 + 실시간 WebSocket 체결가 스트리밍."""
 import json
+import logging
 import time
 from pathlib import Path
 
 import httpx
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
+
+# 지수 WS 프레임 진단 로깅 throttle (지수당 60초 1회) — 근본 원인 파악용
+_index_diag_last: dict[str, float] = {}
 
 _IS_MOCK = settings.kis_is_mock
 _REST_BASE = (
@@ -196,6 +202,16 @@ def parse_index(raw: str) -> dict | None:
     fields = parts[3].split("^")
     if len(fields) < 5:
         return None
+
+    # ── 진단 로깅 (지수당 60초 1회) — 실제 KIS 필드 위치 파악용 ──
+    # KOSPI 지수값은 ~2600, KOSDAQ ~800 근처여야 함. 어느 필드가 그 값인지 로그로 확인.
+    _code = fields[0]
+    _now = time.time()
+    if _now - _index_diag_last.get(_code, 0) > 60:
+        _index_diag_last[_code] = _now
+        _indexed = " ".join(f"[{i}]={v}" for i, v in enumerate(fields[:12]))
+        logger.info("[KIS-WS 진단] tr=%s code=%s fields: %s", tr_id, _code, _indexed)
+
     try:
         # H0UPCNT0/H0UPDNT0 필드 순서:
         # [0]업종코드 [1]영업시간(HHMMSS) [2]지수현재가 [3]전일대비부호 [4]전일대비 [5]전일대비율 [6]누적거래량
