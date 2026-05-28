@@ -166,26 +166,39 @@ def factcheck_upload(upload_id: str, username: str) -> dict:
     company_names = extracted["companies"]
     claims = extracted["claims"]
 
-    companies_synced: list[dict] = []
-    for cname in company_names:
+    # 회사별 DART 동기화는 서로 독립 + cold sync가 매우 무거움(본문 다운로드·임베딩) → 병렬
+    def _sync_one(cname: str) -> dict | None:
         try:
-            company = ensure_company_synced(cname)
+            return ensure_company_synced(cname)
         except Exception:
-            company = None
-        if company:
-            companies_synced.append(company)
+            return None
 
-    claim_results: list[dict] = []
-    for claim in claims:
+    if company_names:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(5, len(company_names))) as ex:
+            synced = list(ex.map(_sync_one, company_names))
+        companies_synced = [c for c in synced if c]
+    else:
+        companies_synced = []
+
+    # 주장 검증은 서로 독립이라 병렬 처리 (순차 시 LLM 호출이 누적돼 매우 느림)
+    def _verify_one(claim: str) -> dict:
         try:
-            v = verify_claim(claim)
+            return {"claim": claim, **verify_claim(claim)}
         except Exception as e:
-            v = {
+            return {
+                "claim": claim,
                 "verdict": "근거없음",
                 "reasoning": f"검증 중 오류 발생: {type(e).__name__}",
                 "sources": [],
             }
-        claim_results.append({"claim": claim, **v})
+
+    if claims:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=min(5, len(claims))) as ex:
+            claim_results = list(ex.map(_verify_one, claims))
+    else:
+        claim_results = []
 
     signal, score = compute_signal(claim_results)
 

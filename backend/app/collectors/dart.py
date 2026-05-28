@@ -350,12 +350,7 @@ def has_body_in_trusted(stock_code: str) -> bool:
     trusted = get_trusted_collection()
     try:
         result = trusted.get(
-            where={
-                "$and": [
-                    {"stock_code": stock_code},
-                    {"source_type": "dart_disclosure_body"},
-                ]
-            },
+            where={"stock_code": stock_code, "source_type": "dart_disclosure_body"},
             limit=1,
         )
         return bool(result.get("ids"))
@@ -458,12 +453,7 @@ def has_financials_in_trusted(stock_code: str) -> bool:
     trusted = get_trusted_collection()
     try:
         result = trusted.get(
-            where={
-                "$and": [
-                    {"stock_code": stock_code},
-                    {"source_type": "dart_financial"},
-                ]
-            },
+            where={"stock_code": stock_code, "source_type": "dart_financial"},
             limit=1,
         )
         return bool(result.get("ids"))
