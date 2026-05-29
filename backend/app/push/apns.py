@@ -12,7 +12,7 @@ import httpx
 import jwt  # PyJWT[crypto] — ES256 서명에 cryptography 사용
 
 from app.config import settings
-from app.db.trade_db import delete_device_token, get_device_tokens, get_unread_alerts
+from app.db.trade_db import get_device_tokens, get_unread_alerts, purge_device_token
 
 _log = logging.getLogger(__name__)
 
@@ -99,7 +99,7 @@ def send_to_user(username: str, title: str, body: str, data: dict | None = None,
                 if resp.status_code == 200:
                     result["sent"] += 1
                 elif resp.status_code == 410 or (resp.status_code == 400 and "BadDeviceToken" in resp.text):
-                    delete_device_token(dt)
+                    purge_device_token(dt)
                     result["failed"] += 1
                     result["error"] = f"{resp.status_code} 무효토큰(정리됨)"
                     _log.info("[APNs] 무효 토큰 정리: %s…", dt[:8])

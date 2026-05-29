@@ -571,6 +571,9 @@ def insert_alert(
 
 def upsert_device_token(username: str, token: str, platform: str = "ios") -> None:
     with _conn() as con:
+        # 토큰 1개 = 물리 기기 1대 = 현재 유저 1명. 다른 유저에게 남아있던 같은 토큰을 회수해
+        # 등록을 권위 있게 만든다(로그아웃 DELETE 누락 시에도 타 유저가 이 기기 푸시 받는 누수 방지).
+        con.execute("DELETE FROM device_tokens WHERE token=%s AND username<>%s", (token, username))
         con.execute(
             """INSERT INTO device_tokens (username, token, platform, updated_at)
                VALUES (%s, %s, %s, %s)
@@ -588,8 +591,14 @@ def get_device_tokens(username: str) -> list[str]:
     return [r["token"] for r in rows]
 
 
-def delete_device_token(token: str) -> None:
-    """무효(410/BadDeviceToken) 토큰 정리 — 토큰 기준 전체 삭제."""
+def delete_device_token(username: str, token: str) -> None:
+    """사용자 본인 토큰 해제(로그아웃 등) — 호출자 소유분만 삭제(수평 권한 보호)."""
+    with _conn() as con:
+        con.execute("DELETE FROM device_tokens WHERE username=%s AND token=%s", (username, token))
+
+
+def purge_device_token(token: str) -> None:
+    """무효(410/BadDeviceToken) 토큰 전역 삭제 — APNs 정리 전용(소유자 무관)."""
     with _conn() as con:
         con.execute("DELETE FROM device_tokens WHERE token=%s", (token,))
 

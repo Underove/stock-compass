@@ -22,8 +22,8 @@ def register_device(body: DeviceIn, username: str = Depends(get_current_user)):
 
 @router.delete("/devices/{token}")
 def unregister_device(token: str, username: str = Depends(get_current_user)):
-    """로그아웃 등에서 토큰 해제."""
-    delete_device_token(token)
+    """로그아웃 등에서 토큰 해제 — 호출자 본인 소유분만."""
+    delete_device_token(username, token)
     return {"ok": True}
 
 
