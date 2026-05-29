@@ -59,43 +59,60 @@ def _get_client() -> httpx.Client:
 
 
 def send_to_user(username: str, title: str, body: str, data: dict | None = None,
-                 sound: str = "default") -> None:
-    """유저의 모든 기기로 푸시. 미설정/토큰없음이면 no-op. 무효 토큰(410/BadDeviceToken)은 정리."""
-    token = _provider_token()
-    if token is None:
-        return
-    device_tokens = get_device_tokens(username)
-    if not device_tokens:
-        return
-
+                 sound: str = "default") -> dict:
+    """유저의 모든 기기로 푸시. 미설정/토큰없음이면 no-op. 무효 토큰(410/BadDeviceToken)은 정리.
+    절대 예외를 밖으로 던지지 않고 진단용 결과(dict)를 반환한다 — insert_alert는 무시, 테스트 엔드포인트는 사용."""
+    result = {"configured": _configured(), "devices": 0, "sent": 0, "failed": 0, "error": None}
     try:
-        badge = len(get_unread_alerts(username))
-    except Exception:
-        badge = None
+        token = _provider_token()
+        if token is None:
+            return result
+        device_tokens = get_device_tokens(username)
+        result["devices"] = len(device_tokens)
+        if not device_tokens:
+            return result
 
-    aps: dict = {"alert": {"title": title, "body": body}, "sound": sound}
-    if badge is not None:
-        aps["badge"] = badge
-    payload: dict = {"aps": aps}
-    if data:
-        payload.update(data)
-    content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-
-    host = _SANDBOX_HOST if settings.apns_use_sandbox else _PROD_HOST
-    headers = {
-        "authorization": f"bearer {token}",
-        "apns-topic": settings.apns_bundle_id,
-        "apns-push-type": "alert",
-        "apns-priority": "10",
-    }
-    client = _get_client()
-    for dt in device_tokens:
         try:
-            resp = client.post(f"{host}/3/device/{dt}", content=content, headers=headers)
-            if resp.status_code == 410 or (resp.status_code == 400 and "BadDeviceToken" in resp.text):
-                delete_device_token(dt)
-                _log.info("[APNs] 무효 토큰 정리: %s…", dt[:8])
-            elif resp.status_code != 200:
-                _log.warning("[APNs] 발송 실패 %s: %s", resp.status_code, resp.text[:200])
-        except Exception as e:
-            _log.warning("[APNs] 발송 예외: %s", e)
+            badge = len(get_unread_alerts(username))
+        except Exception:
+            badge = None
+
+        aps: dict = {"alert": {"title": title, "body": body}, "sound": sound}
+        if badge is not None:
+            aps["badge"] = badge
+        payload: dict = {"aps": aps}
+        if data:
+            payload.update(data)
+        content = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+        host = _SANDBOX_HOST if settings.apns_use_sandbox else _PROD_HOST
+        headers = {
+            "authorization": f"bearer {token}",
+            "apns-topic": settings.apns_bundle_id,
+            "apns-push-type": "alert",
+            "apns-priority": "10",
+        }
+        client = _get_client()
+        for dt in device_tokens:
+            try:
+                resp = client.post(f"{host}/3/device/{dt}", content=content, headers=headers)
+                if resp.status_code == 200:
+                    result["sent"] += 1
+                elif resp.status_code == 410 or (resp.status_code == 400 and "BadDeviceToken" in resp.text):
+                    delete_device_token(dt)
+                    result["failed"] += 1
+                    result["error"] = f"{resp.status_code} 무효토큰(정리됨)"
+                    _log.info("[APNs] 무효 토큰 정리: %s…", dt[:8])
+                else:
+                    result["failed"] += 1
+                    result["error"] = f"{resp.status_code}: {resp.text[:160]}"
+                    _log.warning("[APNs] 발송 실패 %s: %s", resp.status_code, resp.text[:200])
+            except Exception as e:
+                result["failed"] += 1
+                result["error"] = f"{type(e).__name__}: {e}"
+                _log.warning("[APNs] 발송 예외: %s", e)
+    except Exception as e:
+        # JWT 서명(.p8 오류)·클라이언트 생성(h2) 등 설정 단계 예외
+        result["error"] = f"{type(e).__name__}: {e}"
+        _log.warning("[APNs] 설정/발송 예외: %s", e)
+    return result
