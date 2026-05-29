@@ -126,6 +126,13 @@ _SCHEMA = [
         corp_name   TEXT    NOT NULL,
         PRIMARY KEY (username, stock_code)
     )""",
+    """CREATE TABLE IF NOT EXISTS device_tokens (
+        username    TEXT    NOT NULL,
+        token       TEXT    NOT NULL,
+        platform    TEXT    NOT NULL DEFAULT 'ios',
+        updated_at  TEXT    NOT NULL,
+        PRIMARY KEY (username, token)
+    )""",
     """CREATE TABLE IF NOT EXISTS disclosure_summary (
         rcept_no    TEXT    PRIMARY KEY,
         summary     TEXT    NOT NULL,
@@ -532,10 +539,11 @@ def insert_alert(
     corp_name: str,
     message: str,
     meta: dict | None = None,
-) -> None:
-    """중복 alert_id는 무시 (ON CONFLICT DO NOTHING)."""
+) -> bool:
+    """알림 저장. 중복 alert_id는 무시(ON CONFLICT DO NOTHING).
+    새로 저장된 경우에만 True를 반환하고, 그때만 APNs 푸시를 best-effort로 발송한다."""
     with _conn() as con:
-        con.execute(
+        cur = con.execute(
             """INSERT INTO alerts
                (id, username, type, stock_code, corp_name, message, meta, created_at, read)
                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 0)
@@ -546,6 +554,44 @@ def insert_alert(
                 _kst_now(),
             ),
         )
+        inserted = cur.rowcount > 0
+
+    if inserted:
+        # 푸시는 부가 기능 — 실패해도 알림 저장에는 영향 없게 격리. (lazy import: DB층이 푸시/httpx에 하드 의존하지 않게)
+        try:
+            from app.push.apns import send_to_user
+            send_to_user(username, title=corp_name, body=message,
+                         data={"alert_id": alert_id, "type": type_, "stock_code": stock_code})
+        except Exception:
+            pass
+    return inserted
+
+
+# ─── 기기 푸시 토큰 ────────────────────────────────────────────────────────────
+
+def upsert_device_token(username: str, token: str, platform: str = "ios") -> None:
+    with _conn() as con:
+        con.execute(
+            """INSERT INTO device_tokens (username, token, platform, updated_at)
+               VALUES (%s, %s, %s, %s)
+               ON CONFLICT(username, token) DO UPDATE SET
+                 platform=excluded.platform, updated_at=excluded.updated_at""",
+            (username, token, platform, _kst_now()),
+        )
+
+
+def get_device_tokens(username: str) -> list[str]:
+    with _conn() as con:
+        rows = con.execute(
+            "SELECT token FROM device_tokens WHERE username=%s", (username,)
+        ).fetchall()
+    return [r["token"] for r in rows]
+
+
+def delete_device_token(token: str) -> None:
+    """무효(410/BadDeviceToken) 토큰 정리 — 토큰 기준 전체 삭제."""
+    with _conn() as con:
+        con.execute("DELETE FROM device_tokens WHERE token=%s", (token,))
 
 
 def get_unread_alerts(username: str) -> list[dict]:

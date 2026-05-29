@@ -10,6 +10,7 @@ pydantic-settings==2.6.0
 
 # HTTP 클라이언트
 httpx>=0.28.1
+h2>=4.1.0  # APNs는 HTTP/2 전용 — httpx http2 백엔드
 
 # PDF 파싱
 pdfplumber==0.11.4
