@@ -189,6 +189,25 @@ def init_db() -> None:
             """)
         except Exception:
             pass
+        # 보안: public 테이블 RLS 활성 — 백엔드는 postgres 유저로 bypass, anon/authenticated는 차단.
+        # 이미 켜져 있으면 no-op(idempotent). 테이블이 없으면 조용히 skip.
+        for ddl in (
+            "ALTER TABLE trades                 ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE portfolio_snapshots    ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE screener_snapshot      ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE device_tokens          ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE user_profiles          ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE saved_screener_filters ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE alerts                 ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE alert_watch            ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE disclosure_summary     ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE rag_vectors            ENABLE ROW LEVEL SECURITY",
+            "ALTER TABLE factcheck_results      ENABLE ROW LEVEL SECURITY",
+        ):
+            try:
+                con.execute(ddl)
+            except Exception:
+                pass
 
 
 def record_trade(
