@@ -34,14 +34,24 @@ LLM이 단순히 답만 하지 않습니다. **function calling으로 필요한 
 
 <table>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/factcheck.png" alt="팩트체크 결과 화면"><br><b>팩트체크</b><br><sub>주장별 지지·모순 판정 + 신뢰도 점수, 근거 문서 인용</sub></td>
-    <td align="center" width="33%"><img src="docs/images/chat.png" alt="AI 채팅 화면"><br><b>에이전틱 AI 채팅</b><br><sub>도구를 직접 호출해 근거를 모으고 [자료 N]으로 출처 인용</sub></td>
-    <td align="center" width="33%"><img src="docs/images/briefing.png" alt="AI 브리핑 화면"><br><b>오늘의 AI 브리핑</b><br><sub>내 포트폴리오 기준 데일리 코멘트·체크리스트</sub></td>
+    <td align="center" width="33%" valign="top"><img src="docs/images/factcheck.png" width="280" alt="팩트체크 결과 화면"></td>
+    <td align="center" width="33%" valign="top"><img src="docs/images/chat.png" width="280" alt="AI 채팅 화면"></td>
+    <td align="center" width="33%" valign="top"><img src="docs/images/briefing.png" width="280" alt="AI 브리핑 화면"></td>
   </tr>
   <tr>
-    <td align="center" width="33%"><img src="docs/images/quote.png" alt="실시간 시세 차트 화면"><br><b>실시간 시세·차트</b><br><sub>KIS WebSocket 체결가, MA·매수가 라인, AI 시황 해설</sub></td>
-    <td align="center" width="33%"><img src="docs/images/pattern.png" alt="AI 매매 패턴 진단 화면"><br><b>AI 매매 패턴 진단</b><br><sub>승률·집중·반복매매 등 내 매매 습관 5개 관점 리포트</sub></td>
-    <td align="center" width="33%"><img src="docs/images/screener.png" alt="종목 스크리너 화면"><br><b>종목 스크리너</b><br><sub>섹터·PER·RSI·이동평균 조건 필터링</sub></td>
+    <td align="center" valign="top"><b>팩트체크</b><br><sub>주장별 지지·모순 판정 + 신뢰도 점수</sub></td>
+    <td align="center" valign="top"><b>에이전틱 AI 채팅</b><br><sub>근거를 [자료 N]으로 인용해 답변</sub></td>
+    <td align="center" valign="top"><b>오늘의 AI 브리핑</b><br><sub>내 포트폴리오 기준 데일리 코멘트</sub></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><img src="docs/images/quote.png" width="280" alt="실시간 시세 차트 화면"></td>
+    <td align="center" valign="top"><img src="docs/images/pattern.png" width="280" alt="AI 매매 패턴 진단 화면"></td>
+    <td align="center" valign="top"><img src="docs/images/screener.png" width="280" alt="종목 스크리너 화면"></td>
+  </tr>
+  <tr>
+    <td align="center" valign="top"><b>실시간 시세·차트</b><br><sub>KIS WebSocket 체결가 + AI 시황 해설</sub></td>
+    <td align="center" valign="top"><b>AI 매매 패턴 진단</b><br><sub>내 매매 습관 5개 관점 리포트</sub></td>
+    <td align="center" valign="top"><b>종목 스크리너</b><br><sub>섹터·PER·RSI 조건 필터링</sub></td>
   </tr>
 </table>
 
@@ -74,14 +84,22 @@ LLM이 단순히 답만 하지 않습니다. **function calling으로 필요한 
 <img src="docs/images/architecture.png" width="920" alt="N.O.V.A 시스템 아키텍처 — 웹/iOS 클라이언트, FastAPI 백엔드, PostgreSQL·pgvector, 외부 API">
 </div>
 
-**RAG 팩트체크 파이프라인** — DART 공시·사용자 PDF를 800자 단위(오버랩 150자)로 청킹 → Gemini 임베딩(gemini-embedding-001, 3072차원) → PostgreSQL pgvector 저장. 공용 자료(trusted)와 사용자 업로드를 컬렉션으로 격리해 남의 문서가 검색되지 않는 멀티테넌시를 강제하고, 질문마다 top-5 유사도 검색 후 출처를 인용해 판정합니다.
+### RAG 팩트체크 파이프라인
 
-**엔지니어링 하이라이트**
+| 단계 | 하는 일 |
+|------|---------|
+| **① 인덱싱** | DART 공시·사용자 PDF를 800자 단위(오버랩 150자)로 청킹 → Gemini 임베딩(`gemini-embedding-001`, 3072차원) → pgvector 저장 |
+| **② 격리** | 공용 자료(`trusted`)와 사용자 업로드(`user_uploads`)를 컬렉션으로 분리 — 다른 사용자의 문서는 검색되지 않음 |
+| **③ 검색·판정** | 질문마다 top-5 유사도 검색 → `[자료 N — 출처]` 인용 답변, 팩트체크는 주장별 지지·모순 판정 + 신뢰도 점수 |
 
-- **팩트체크 응답 142초 → 약 8초** — 요청마다 공시 전체를 재수집하던 구조를 증분 동기화 + 병렬 수집으로 재설계
-- **KIS 토큰 캐싱** — 발급이 하루 1회로 제한되는 KIS API 정책에 맞춘 토큰 재사용 구조
-- **멀티유저 보안** — 독립 AI 리뷰 프로세스로 수평 권한·APNs 토큰 누수를 발견·수정, 인증·데이터 접근 경로에 사용자 격리 일괄 적용
-- **웹·iOS 단일 API 계약** — 두 클라이언트가 같은 백엔드(19개 REST 도메인)를 공유
+### 엔지니어링 하이라이트
+
+| 항목 | 내용 |
+|------|------|
+| **팩트체크 142초 → 약 8초** | 요청마다 공시 전체를 재수집하던 구조를 증분 동기화 + 병렬 수집으로 재설계 |
+| **KIS 토큰 캐싱** | 발급이 하루 1회로 제한되는 KIS API 정책에 맞춘 토큰 재사용 구조 |
+| **멀티유저 보안** | 독립 AI 리뷰 프로세스로 수평 권한·APNs 토큰 누수를 발견·수정 |
+| **단일 API 계약** | 웹·iOS 두 클라이언트가 같은 백엔드(REST 19개 도메인)를 공유 |
 
 ---
 
